@@ -3,6 +3,7 @@
 `timescale 100 ns / 10 ns
 
 `include "register.test"
+`include "ram.test"
 
 module top_tb ();
 
@@ -14,8 +15,12 @@ wire reg_result;
 wire reg_done;
 register_test register (.clk(clk), .result_out(reg_result), .done(reg_done));
 
-wire done = reg_done;
-wire result = reg_result;
+wire ram_result;
+wire ram_done;
+ram_test ram(.clk(clk), .result_out(ram_result), .done(ram_done));
+
+wire done = reg_done & ram_done;
+wire result = reg_result | ram_result;
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));
