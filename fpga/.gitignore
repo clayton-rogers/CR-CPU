@@ -1,0 +1,8 @@
+.sconsign.dblite
+hardware.asc
+hardware.bin
+hardware.blif
+hardware.out
+hardware.rpt
+top_tb.out
+top_tb.vcd
