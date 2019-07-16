@@ -4,6 +4,7 @@
 
 `include "register.test"
 `include "ram.test"
+`include "program_counter.test"
 
 module top_tb ();
 
@@ -19,8 +20,12 @@ wire ram_result;
 wire ram_done;
 ram_test ram(.clk(clk), .result_out(ram_result), .done(ram_done));
 
-wire done = reg_done & ram_done;
-wire result = reg_result | ram_result;
+wire pc_result;
+wire pc_done;
+program_counter_test pc(.clk(clk), .result_out(pc_result), .done(pc_done));
+
+wire result = reg_result | ram_result | pc_result;
+wire done = reg_done & ram_done & pc_done;
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));

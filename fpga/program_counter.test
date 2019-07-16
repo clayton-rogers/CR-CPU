@@ -1,0 +1,46 @@
+`default_nettype none
+
+module program_counter_test(
+  input wire clk,
+  output wire result_out,
+  output reg done
+  );
+
+reg inc = 0;
+wire [15:0] inst;
+
+program_counter #(.PROGRAM_FILENAME("test_ram.hex")) pc
+  (.i_clk(clk), .i_inc(inc), .o_instruction(inst));
+
+reg [15:0] expected = 16'h0000;
+
+wire [31:0] result = inst - expected;
+reg output_valid = 1'b0;
+assign result_out = |result & output_valid;
+
+initial begin
+done = 1'b0;
+inc = 0;
+
+// the program memory is statically defined (for now)
+#3
+inc = 1;
+output_valid = 1;
+expected = 0;
+#1
+expected = 1;
+inc = 0;
+#3
+inc = 1;
+#1
+expected = 3;
+#1
+expected = 16'h0040;
+#1
+
+
+output_valid = 1'b0;
+done = 1'b1;
+end
+
+endmodule

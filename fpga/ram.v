@@ -2,6 +2,7 @@
 
 module ram (i_clk, i_load, i_addr, i_data, o_data);
 parameter ADDR_WIDTH = 8;
+parameter FILENAME = "empty.hex";
   input i_clk;
   input i_load;
   input [ADDR_WIDTH-1:0] i_addr;
@@ -9,6 +10,7 @@ parameter ADDR_WIDTH = 8;
   output reg [15:0] o_data;
 
   reg [15:0] memory [(1<<ADDR_WIDTH)-1:0];
+  initial $readmemh(FILENAME, memory);
 
 always @ (posedge i_clk) begin
   if (i_load) begin

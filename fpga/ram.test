@@ -42,6 +42,10 @@ load = 0;
 addr = 0;
 output_valid = 1;
 expected = 16'hFFFF;
+#1
+// Verify that one clock later the output is still 0xFFFF
+#1
+// And again one clock later
 
 #1
 addr = 1;
