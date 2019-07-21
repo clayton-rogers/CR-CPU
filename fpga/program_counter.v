@@ -13,7 +13,7 @@ parameter PROGRAM_FILENAME = "program.hex";
   assign o_addr = instruction_address;
 
 reg [(ADDR_WIDTH-1):0] instruction_address = 0;
-ram #(.FILENAME(PROGRAM_FILENAME)) ram (
+ram #(.ADDR_WIDTH(ADDR_WIDTH), .FILENAME(PROGRAM_FILENAME)) ram (
   .i_clk(i_clk),
   .i_load(1'b0),
   .i_addr(instruction_address),
