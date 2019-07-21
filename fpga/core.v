@@ -1,10 +1,8 @@
 `default_nettype none
 
-module core (i_clk, o_led0, o_led1, o_led2);
+module core (i_clk, o_leds);
     input i_clk;
-    output o_led0;
-    output o_led1;
-    output o_led2;
+    output [2:0] o_leds;
 
     localparam INST_ADDR_WIDTH = 8;
     localparam DATA_ADDR_WIDTH = 8;
@@ -27,8 +25,8 @@ module core (i_clk, o_led0, o_led1, o_led2);
       (.i_clk(i_clk), .i_load(load_ram), .i_addr(ram_addr), .i_data(ram_data_in), .o_data(ram_data_out));
 
     // OUTPUT
-    assign o_led0 = inst[0];
-    assign o_led1 = inst[4];
-    assign o_led2 = inst[8];
+    assign o_leds[0] = inst[0];
+    assign o_leds[1] = inst[4];
+    assign o_leds[2] = inst[8];
 
 endmodule

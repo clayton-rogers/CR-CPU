@@ -30,6 +30,6 @@ module top (
       end
     end
 
-    core core (.i_clk(real_clock), .o_led0(PIN_13), .o_led1(PIN_10), .o_led2(LED));
+    core core (.i_clk(real_clock), .o_leds({PIN_13, PIN_10, LED}));
 
 endmodule
