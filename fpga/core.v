@@ -24,6 +24,24 @@ module core (i_clk, o_leds);
     ram #(.ADDR_WIDTH(DATA_ADDR_WIDTH), .FILENAME("empty.hex")) ram
       (.i_clk(i_clk), .i_load(load_ram), .i_addr(ram_addr), .i_data(ram_data_in), .o_data(ram_data_out));
 
+    // DECODER
+    wire [3:0] opcode = inst[15:12];
+    wire [1:0] extra_high = inst[11:10];
+    wire [1:0] extra_low = inst[9:8];
+    wire [7:0] constant = inst[7:0];
+
+    // ALU
+    reg [15:0] data1 = 0;
+    reg [15:0] data2 = 0;
+    wire [15:0] alu_out;
+    ALU ALU
+      (.i_opcode(opcode),
+       .i_extra(extra_low),
+       .i_data1(data1),
+       .i_data2(data2),
+       .i_const (constant),
+       .o_data(alu_out));
+
     // OUTPUT
     assign o_leds[0] = inst[0];
     assign o_leds[1] = inst[4];
