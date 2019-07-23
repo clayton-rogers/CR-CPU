@@ -25,6 +25,10 @@ module ALU (i_opcode, i_extra, i_data1, i_data2, i_const, o_data);
   localparam UNDEF5 = 4'hE;
   localparam UNDEF6 = 4'hF;
 
+  // For add, sub, and, or
+  wire operant2_switch = i_extra[0];
+  wire [15:0] operant2 = (operant2_switch == 1'b0) ? i_data2 : i_const;
+
   wire shift_dir = i_extra[0];
   localparam SHIFT_RIGHT = 1'b0;
   localparam SHIFT_LEFT = 1'b1;
@@ -42,10 +46,10 @@ module ALU (i_opcode, i_extra, i_data1, i_data2, i_const, o_data);
 
   always @ ( * ) begin
     case (i_opcode)
-      ADD    : o_data = i_data1 + i_data2;
-      SUB    : o_data = i_data1 - i_data2;
-      AND    : o_data = i_data1 & i_data2;
-      OR     : o_data = i_data1 | i_data2;
+      ADD    : o_data = i_data1 + operant2;
+      SUB    : o_data = i_data1 - operant2;
+      AND    : o_data = i_data1 & operant2;
+      OR     : o_data = i_data1 | operant2;
       SHIFT  : begin
         case (shift_dir)
           SHIFT_RIGHT : o_data = i_data1 >> shift_amount;
