@@ -42,6 +42,54 @@ module core (i_clk, o_leds);
        .i_const (constant),
        .o_data(alu_out));
 
+    // REGISTERS
+    reg [1:0] load_reg = 2'b00;
+    reg [15:0] reg_input = 16'h0000;
+    wire [15:0] reg_output [1:0];
+    register register
+      (.i_clk(i_clk),
+       .i_load(load_reg[0]),
+       .i_data(reg_input),
+       .o_data(reg_output[0]));
+
+    // *** CORE **** //
+    `include "opcodes.vh"
+    // INPUT 1
+    reg [15:0] input_1;
+    // always @ ( * ) begin
+    // case (opcode)
+    //   ADD    : input_1
+    //   begin
+    //     case (extra_low[1])
+    //       1'b0 :
+    //     endcase
+    //   end
+    //   SUB    :
+    //   AND    :
+    //   OR     :
+    //   SHIFT  :
+    //   LOAD   :
+    //   STORE  :
+    //   MOVE   :
+    //   JUMP   :
+    //   LOADC  :
+    //   UNDEF1 :
+    //   UNDEF2 :
+    //   UNDEF3 :
+    //   UNDEF4 :
+    //   UNDEF5 :
+    //   UNDEF6 :
+    // endcase
+    // end
+
+    // INPUT 2
+    reg [15:0] input_2 = 16'h0000;
+
+    // STATE
+    localparam INITIAL = 0;
+    localparam LOAD_NEXT_INST = 1;
+    reg [7:0] state = LOAD_NEXT_INST;
+
     // OUTPUT
     assign o_leds[0] = inst[0];
     assign o_leds[1] = inst[4];
