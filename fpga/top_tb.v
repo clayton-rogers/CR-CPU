@@ -6,6 +6,7 @@
 `include "ram.test"
 `include "program_counter.test"
 `include "core.test"
+`include "ALU.test"
 
 module top_tb ();
 
@@ -29,8 +30,12 @@ wire core_result;
 wire core_done;
 core_test core(.clk(clk), .result_out(core_result), .done(core_done));
 
-wire result = reg_result | ram_result | pc_result | core_result;
-wire done = reg_done & ram_done & pc_done & core_done;
+wire alu_result;
+wire alu_done;
+alu_test alu(.clk(clk), .result_out(alu_result), .done(alu_done));
+
+wire result = reg_result | ram_result | pc_result | core_result | alu_result;
+wire done = reg_done & ram_done & pc_done & core_done & alu_done;
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));
