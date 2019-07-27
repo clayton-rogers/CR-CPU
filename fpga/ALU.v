@@ -1,13 +1,12 @@
 `default_nettype none
 
-module ALU (i_opcode, i_extra, i_data1, i_data2, o_data);
+module ALU (i_opcode, i_shift_dir, i_data1, i_data2, o_data);
   input [3:0] i_opcode;
-  input [1:0] i_extra;
+  input i_shift_dir;
   input [15:0] i_data1;
   input [15:0] i_data2;
   output reg [15:0] o_data;
 
-  wire shift_dir = i_extra[0];
   localparam SHIFT_RIGHT = 1'b0;
   localparam SHIFT_LEFT = 1'b1;
 
@@ -19,7 +18,7 @@ module ALU (i_opcode, i_extra, i_data1, i_data2, o_data);
       AND    : o_data = i_data1 & i_data2;
       OR     : o_data = i_data1 | i_data2;
       SHIFT  : begin
-        case (shift_dir)
+        case (i_shift_dir)
           SHIFT_RIGHT : o_data = i_data1 >> i_data2;
           SHIFT_LEFT  : o_data = i_data1 << i_data2;
         endcase

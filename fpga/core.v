@@ -39,7 +39,7 @@ module core (i_clk, o_leds);
     assign reg_output[1] = raw_reg_output[47:32];
     assign reg_output[2] = raw_reg_output[31:16];
     assign reg_output[3] = raw_reg_output[15:0 ];
-    register register [0:3]
+    register register [3:0]
       (.i_clk(i_clk),
        .i_load(load_reg),
        .i_data(reg_input),
@@ -95,12 +95,12 @@ module core (i_clk, o_leds);
       OR:
         case (extra_low[0])
           1'b0: input_2 = reg_output[3];
-          1'b1: input_2 = constant;
+          1'b1: input_2 = {8'h00, constant};
         endcase
       SHIFT  :
         case (extra_low[1])
           1'b0: input_2 = reg_output[3];
-          1'b1: input_2 = constant;
+          1'b1: input_2 = {8'h00, constant};
         endcase
       LOAD   : input_1 = 16'h0000;
       STORE  : input_1 = 16'h0000;
@@ -120,7 +120,7 @@ module core (i_clk, o_leds);
     wire [15:0] alu_out;
     ALU ALU
       (.i_opcode(opcode),
-       .i_extra(extra_low),
+       .i_shift_dir(extra_low[0]),
        .i_data1(input_1),
        .i_data2(input_2),
        .o_data(alu_out));
