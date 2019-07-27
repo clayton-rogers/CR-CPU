@@ -30,18 +30,6 @@ module core (i_clk, o_leds);
     wire [1:0] extra_low = inst[9:8];
     wire [7:0] constant = inst[7:0];
 
-    // ALU
-    reg [15:0] data1 = 0;
-    reg [15:0] data2 = 0;
-    wire [15:0] alu_out;
-    ALU ALU
-      (.i_opcode(opcode),
-       .i_extra(extra_low),
-       .i_data1(data1),
-       .i_data2(data2),
-       .i_const (constant),
-       .o_data(alu_out));
-
     // REGISTERS
     reg [3:0] load_reg = 4'b0000;
     reg [15:0] reg_input = 16'h0000;
@@ -57,38 +45,85 @@ module core (i_clk, o_leds);
        .i_data(reg_input),
        .o_data(raw_reg_output));
 
-    // *** CORE **** //
     `include "opcodes.vh"
     // INPUT 1
     reg [15:0] input_1;
-    // always @ ( * ) begin
-    // case (opcode)
-    //   ADD    : input_1
-    //   begin
-    //     case (extra_low[1])
-    //       1'b0 :
-    //     endcase
-    //   end
-    //   SUB    :
-    //   AND    :
-    //   OR     :
-    //   SHIFT  :
-    //   LOAD   :
-    //   STORE  :
-    //   MOVE   :
-    //   JUMP   :
-    //   LOADC  :
-    //   UNDEF1 :
-    //   UNDEF2 :
-    //   UNDEF3 :
-    //   UNDEF4 :
-    //   UNDEF5 :
-    //   UNDEF6 :
-    // endcase
-    // end
+    always @ ( * ) begin
+    case (opcode)
+      ADD,
+      SUB,
+      AND,
+      OR:
+        case (extra_low[1])
+          1'b0: input_1 = reg_output[0];
+          1'b1: input_1 = reg_output[1];
+        endcase
+      SHIFT  :
+        case (extra_high)
+          2'b00: input_1 = reg_output[0];
+          2'b01: input_1 = reg_output[1];
+          2'b10: input_1 = reg_output[2];
+          2'b11: input_1 = reg_output[3];
+        endcase
+      LOAD   : input_1 = 16'h0000;
+      STORE  : input_1 = 16'h0000;
+      MOVE   : // MOVE goes through the alu
+        case (extra_high)
+          2'b00: input_1 = reg_output[0];
+          2'b01: input_1 = reg_output[1];
+          2'b10: input_1 = reg_output[2];
+          2'b11: input_1 = reg_output[3];
+        endcase
+      JUMP   : input_1 = 16'h0000;
+      LOADC  : input_1 = 16'h0000;
+      UNDEF1 : input_1 = 16'h0000;
+      UNDEF2 : input_1 = 16'h0000;
+      UNDEF3 : input_1 = 16'h0000;
+      UNDEF4 : input_1 = 16'h0000;
+      UNDEF5 : input_1 = 16'h0000;
+      UNDEF6 : input_1 = 16'h0000;
+    endcase
+    end
 
     // INPUT 2
     reg [15:0] input_2 = 16'h0000;
+    always @ ( * ) begin
+    case (opcode)
+      ADD,
+      SUB,
+      AND,
+      OR:
+        case (extra_low[0])
+          1'b0: input_2 = reg_output[3];
+          1'b1: input_2 = constant;
+        endcase
+      SHIFT  :
+        case (extra_low[1])
+          1'b0: input_2 = reg_output[3];
+          1'b1: input_2 = constant;
+        endcase
+      LOAD   : input_1 = 16'h0000;
+      STORE  : input_1 = 16'h0000;
+      MOVE   : input_1 = 16'h0000;
+      JUMP   : input_1 = 16'h0000;
+      LOADC  : input_1 = 16'h0000;
+      UNDEF1 : input_1 = 16'h0000;
+      UNDEF2 : input_1 = 16'h0000;
+      UNDEF3 : input_1 = 16'h0000;
+      UNDEF4 : input_1 = 16'h0000;
+      UNDEF5 : input_1 = 16'h0000;
+      UNDEF6 : input_1 = 16'h0000;
+    endcase
+    end
+
+    // ALU
+    wire [15:0] alu_out;
+    ALU ALU
+      (.i_opcode(opcode),
+       .i_extra(extra_low),
+       .i_data1(input_1),
+       .i_data2(input_2),
+       .o_data(alu_out));
 
     // STATE
     localparam INITIAL = 0;
