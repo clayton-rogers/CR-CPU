@@ -12,7 +12,7 @@ module ALU (i_opcode, i_extra, i_data1, i_data2, i_const, o_data);
 
   // For add, sub, and, or
   wire operant2_switch = i_extra[0];
-  wire [15:0] operant2 = (operant2_switch == 1'b0) ? i_data2 : i_const;
+  wire [15:0] operant2 = (operant2_switch == 1'b0) ? i_data2 : {8'h00, i_const};
 
   wire shift_dir = i_extra[0];
   localparam SHIFT_RIGHT = 1'b0;

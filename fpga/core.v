@@ -43,14 +43,19 @@ module core (i_clk, o_leds);
        .o_data(alu_out));
 
     // REGISTERS
-    reg [1:0] load_reg = 2'b00;
+    reg [3:0] load_reg = 4'b0000;
     reg [15:0] reg_input = 16'h0000;
-    wire [15:0] reg_output [1:0];
-    register register
+    wire [63:0] raw_reg_output;
+    wire [15:0] reg_output [3:0];
+    assign reg_output[0] = raw_reg_output[63:48];
+    assign reg_output[1] = raw_reg_output[47:32];
+    assign reg_output[2] = raw_reg_output[31:16];
+    assign reg_output[3] = raw_reg_output[15:0 ];
+    register register [0:3]
       (.i_clk(i_clk),
-       .i_load(load_reg[0]),
+       .i_load(load_reg),
        .i_data(reg_input),
-       .o_data(reg_output[0]));
+       .o_data(raw_reg_output));
 
     // *** CORE **** //
     `include "opcodes.vh"
