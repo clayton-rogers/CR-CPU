@@ -12,12 +12,11 @@ reg [1:0] extra = 2'b00;
 reg [15:0] d1 = 16'h0000;
 reg [15:0] d2 = 16'h0000;
 reg [7:0] constant = 16'h0000;
-ALU alu(
+ALU alu (
   .i_opcode(opcode),
-  .i_extra(extra),
+  .i_shift_dir(extra[0]),
   .i_data1(d1),
   .i_data2(d2),
-  .i_const(constant),
   .o_data(out_data));
 reg [15:0] expected = 16'h0000;
 
