@@ -16,20 +16,20 @@ module core (i_clk, o_leds);
     localparam LOAD_NEXT_INST      = 1;
     localparam EXECUTE             = 2;
     localparam LOAD_FROM_RAM       = 3;
-    reg [7:0] state = LOAD_NEXT_INST;
+    reg [7:0] state = EXECUTE;
     always @ ( posedge i_clk ) begin
       case (state)
         LOAD_NEXT_INST:
           state <= EXECUTE;
         EXECUTE:
-          state <= LOAD_NEXT_INST;
+          state <= EXECUTE;
         default:
           state <= LOAD_NEXT_INST;
       endcase
     end
 
     // PROGRAM COUNTER
-    wire inc_inst = state == LOAD_NEXT_INST;
+    wire inc_inst = opcode != JUMP;
     wire [15:0] inst;
     wire [(INST_ADDR_WIDTH-1):0] in_pc_addr = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
     wire load_pc = (state == EXECUTE && opcode == JUMP);

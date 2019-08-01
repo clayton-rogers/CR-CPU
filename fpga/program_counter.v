@@ -10,15 +10,21 @@ parameter PROGRAM_FILENAME = "program.hex";
   output [(ADDR_WIDTH-1):0] o_addr;
   output [15:0] o_instruction;
 
+  reg last_was_load = 1'b1;
+
+  // If the PC was loaded on the last cycle, then it takes an additional
+  // cycle to load the next instruction from ram, so mask the output with a NOP
+  assign o_instruction =  (last_was_load) ? 16'hFFFF : ram_out;
   assign o_addr = instruction_address;
 
 reg [(ADDR_WIDTH-1):0] instruction_address = 0;
+wire [15:0] ram_out;
 ram #(.ADDR_WIDTH(ADDR_WIDTH), .FILENAME(PROGRAM_FILENAME)) ram (
   .i_clk(i_clk),
   .i_load(1'b0),
   .i_addr(instruction_address),
   .i_data(16'h0000),
-  .o_data(o_instruction));
+  .o_data(ram_out));
 
 always @ ( posedge i_clk ) begin
   if (i_load) begin
@@ -26,6 +32,13 @@ always @ ( posedge i_clk ) begin
   end else if (i_inc) begin
     instruction_address <= instruction_address + 1;
   end
+end
+
+always @ ( posedge i_clk ) begin
+  case (last_was_load)
+  1'b0: last_was_load <= i_load;
+  1'b1: last_was_load <= 1'b0;
+  endcase
 end
 
 endmodule
