@@ -68,15 +68,7 @@ module core (i_clk, o_out);
     // DATA RAM
     wire load_ram = (state == EXECUTE && opcode == STORE);
     wire [(DATA_ADDR_WIDTH-1):0] ram_addr = constant; // For now RAM address is always constant
-    reg [15:0] ram_data_in;
-    always @ ( * ) begin
-      case (extra_high)
-        2'b00: ram_data_in = reg_output[0];
-        2'b01: ram_data_in = reg_output[1];
-        2'b10: ram_data_in = reg_output[2];
-        2'b11: ram_data_in = reg_output[3];
-      endcase
-    end
+    wire [15:0] ram_data_in = reg_output[extra_high];
     wire [15:0] ram_data_out;
     ram #(.ADDR_WIDTH(DATA_ADDR_WIDTH), .FILENAME("empty.hex")) ram
       (.i_clk(i_clk), .i_load(load_ram), .i_addr(ram_addr), .i_data(ram_data_in), .o_data(ram_data_out));
@@ -101,7 +93,10 @@ module core (i_clk, o_out);
         LOAD:
           reg_input = ram_data_out;
         LOADC:
-          reg_input = {8'h00, constant}; // TODO for now load c just loads the lower byte
+          case (extra_low[1])
+            1'b0: reg_input = {8'h00, constant};
+            1'b1: reg_input = {constant, reg_output[extra_high][7:0]};
+          endcase
         default:
           reg_input = 16'h0000;
       endcase
@@ -145,27 +140,12 @@ module core (i_clk, o_out);
       SUB,
       AND,
       OR,
-      XOR:
-        case (extra_low[1])
-          1'b0: input_1 = reg_output[0];
-          1'b1: input_1 = reg_output[1];
-        endcase
-      SHIFT  :
-        case (extra_high)
-          2'b00: input_1 = reg_output[0];
-          2'b01: input_1 = reg_output[1];
-          2'b10: input_1 = reg_output[2];
-          2'b11: input_1 = reg_output[3];
-        endcase
+      XOR    : input_1 = reg_output[ (extra_low[1]) ? 2'b10 : 2'b00 ];
+      SHIFT  : input_1 = reg_output[extra_high];
       LOAD   : input_1 = 16'h0000;
       STORE  : input_1 = 16'h0000;
-      MOVE   : // MOVE goes through the alu
-        case (extra_high)
-          2'b00: input_1 = reg_output[0];
-          2'b01: input_1 = reg_output[1];
-          2'b10: input_1 = reg_output[2];
-          2'b11: input_1 = reg_output[3];
-        endcase
+      // MOVE goes through the alu
+      MOVE   : input_1 = reg_output[extra_high];
       JUMP   : input_1 = 16'h0000;
       LOADC  : input_1 = 16'h0000;
       OUT    : input_1 = 16'h0000;
@@ -186,12 +166,12 @@ module core (i_clk, o_out);
       OR,
       XOR:
         case (extra_low[0])
-          1'b0: input_2 = reg_output[2];
+          1'b0: input_2 = reg_output[2'b01];
           1'b1: input_2 = {8'h00, constant};
         endcase
       SHIFT  :
         case (extra_low[1])
-          1'b0: input_2 = reg_output[3];
+          1'b0: input_2 = reg_output[2'b01];
           1'b1: input_2 = {8'h00, constant};
         endcase
       LOAD   : input_2 = 16'h0000;
