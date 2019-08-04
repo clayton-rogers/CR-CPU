@@ -16,25 +16,46 @@ module core (i_clk, o_out);
     localparam LOAD_NEXT_INST      = 1;
     localparam EXECUTE             = 2;
     localparam WAIT_FOR_LOAD       = 3;
+    localparam HALT_STATE          = 4;
     reg [7:0] state = EXECUTE;
     always @ ( posedge i_clk ) begin
       case (state)
         EXECUTE:
           // These instructions require a cycle to get new data from ram
-          if (opcode == LOAD || opcode == JUMP) begin
-            state <= WAIT_FOR_LOAD;
-          end else begin
-            state <= EXECUTE;
-          end
+          case (opcode)
+            LOAD,
+            JUMP: state <= WAIT_FOR_LOAD;
+            HALT: state <= HALT_STATE;
+            default: state <= EXECUTE;
+          endcase
         WAIT_FOR_LOAD:
           state <= EXECUTE;
+        HALT_STATE:
+          state <= HALT_STATE;
         default:
           state <= LOAD_NEXT_INST;
       endcase
     end
 
     // PROGRAM COUNTER
-    wire inc_inst = !((opcode == LOAD || opcode == JUMP) && state == EXECUTE);
+    reg inc_inst;
+    always @ ( * ) begin
+      case (state)
+        EXECUTE:
+          case (opcode)
+            LOAD, JUMP: // These instructions take two cycles
+              inc_inst = 1'b0;
+            default: // In general we inc the pc every clock
+              inc_inst = 1'b1;
+          endcase
+        WAIT_FOR_LOAD:
+          inc_inst = 1'b1; // This is the second clock for these op so inc
+        HALT_STATE:
+          inc_inst = 1'b0; // Should stop incrementing when halted
+        default:
+          inc_inst = 1'b0; // unknown state should halt the proc
+      endcase
+    end
     wire [15:0] inst;
     wire [(INST_ADDR_WIDTH-1):0] pc_addr_in = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
     wire load_pc = (state == EXECUTE && opcode == JUMP);

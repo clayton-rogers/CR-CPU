@@ -30,7 +30,9 @@ module top (
       end
     end
 
-    wire [15:0] core_output;
+    /* verilator lint_off UNUSED */
+    wire [15:0] core_output; // some bits are unused
+    /* verilator lint_on UNUSED */
     core core (.i_clk(real_clock), .o_out(core_output));
 
     assign {PIN_13, PIN_10, LED} = core_output[2:0];
