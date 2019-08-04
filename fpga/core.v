@@ -38,11 +38,11 @@ module core (i_clk, o_leds);
     // PROGRAM COUNTER
     wire inc_inst = !((opcode == LOAD || opcode == JUMP) && state == EXECUTE);
     wire [15:0] inst;
-    wire [(INST_ADDR_WIDTH-1):0] in_pc_addr = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
+    wire [(INST_ADDR_WIDTH-1):0] pc_addr_in = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
     wire load_pc = (state == EXECUTE && opcode == JUMP);
     wire [(INST_ADDR_WIDTH-1):0] pc_addr; // unused
     program_counter #(.ADDR_WIDTH(INST_ADDR_WIDTH), .PROGRAM_FILENAME(PROGRAM_FILENAME)) pc
-      (.i_clk(i_clk), .i_inc(inc_inst), .i_load(load_pc), .i_addr(in_pc_addr), .o_addr(pc_addr), .o_instruction(inst));
+      (.i_clk(i_clk), .i_inc(inc_inst), .i_load(load_pc), .i_addr(pc_addr_in), .o_addr(pc_addr), .o_instruction(inst));
 
     // DATA RAM
     wire load_ram = (state == EXECUTE && opcode == STORE);
@@ -87,7 +87,7 @@ module core (i_clk, o_leds);
     end
     wire [63:0] raw_reg_output;
     wire [15:0] reg_output [3:0];
-    wire should_load_reg = (state == EXECUTE &&
+    wire load_reg = (state == EXECUTE &&
       (opcode == ADD ||
         opcode == SUB ||
         opcode == AND ||
@@ -105,14 +105,14 @@ module core (i_clk, o_leds);
         2'b11: reg_to_load = 4'b1000;
       endcase
     end
-    wire [3:0] load_reg = (should_load_reg) ? reg_to_load : 4'h0;
+    wire [3:0] load_reg_flags = (load_reg) ? reg_to_load : 4'h0;
     assign reg_output[3] = raw_reg_output[63:48];
     assign reg_output[2] = raw_reg_output[47:32];
     assign reg_output[1] = raw_reg_output[31:16];
     assign reg_output[0] = raw_reg_output[15:0 ];
     register register [3:0]
       (.i_clk(i_clk),
-       .i_load(load_reg),
+       .i_load(load_reg_flags),
        .i_data(reg_input),
        .o_data(raw_reg_output));
 
