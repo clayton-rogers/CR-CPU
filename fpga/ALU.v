@@ -17,6 +17,7 @@ module ALU (i_opcode, i_shift_dir, i_data1, i_data2, o_data);
       SUB    : o_data = i_data1 - i_data2;
       AND    : o_data = i_data1 & i_data2;
       OR     : o_data = i_data1 | i_data2;
+      XOR    : o_data = i_data1 ^ i_data2;
       SHIFT  : begin
         case (i_shift_dir)
           SHIFT_RIGHT : o_data = i_data1 >> i_data2;
@@ -28,12 +29,11 @@ module ALU (i_opcode, i_shift_dir, i_data1, i_data2, o_data);
       MOVE   : o_data = i_data1;
       JUMP   : o_data = 16'h0000; // ALU is unused
       LOADC  : o_data = 16'h0000; // ALU is unused
-      UNDEF1 : o_data = 16'h0000; // ALU is unused
-      UNDEF2 : o_data = 16'h0000; // ALU is unused
+      OUT    : o_data = 16'h0000; // ALU is unused
       UNDEF3 : o_data = 16'h0000; // ALU is unused
       UNDEF4 : o_data = 16'h0000; // ALU is unused
-      UNDEF5 : o_data = 16'h0000; // ALU is unused
-      UNDEF6 : o_data = 16'h0000; // ALU is unused
+      HALT   : o_data = 16'h0000; // ALU is unused
+      NOP    : o_data = 16'h0000; // ALU is unused
     endcase
   end
 

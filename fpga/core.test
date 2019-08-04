@@ -7,8 +7,8 @@ module core_test(
   );
 assign result_out = 0;
 
-wire [2:0] leds;
-core core (.i_clk(clk), .o_leds(leds));
+wire [15:0] core_output;
+core core (.i_clk(clk), .o_out(core_output));
 
 initial begin
 done = 1'b0;

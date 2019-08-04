@@ -30,6 +30,8 @@ module top (
       end
     end
 
-    core core (.i_clk(real_clock), .o_leds({PIN_13, PIN_10, LED}));
+    wire [15:0] core_output;
+    core core (.i_clk(real_clock), .o_out(core_output));
 
+    assign {PIN_13, PIN_10, LED} = core_output[2:0];
 endmodule

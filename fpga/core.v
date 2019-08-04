@@ -1,8 +1,8 @@
 `default_nettype none
 
-module core (i_clk, o_leds);
+module core (i_clk, o_out);
     input i_clk;
-    output [2:0] o_leds;
+    output reg [15:0] o_out;
 
     parameter PROGRAM_FILENAME = "program.hex";
 
@@ -19,8 +19,6 @@ module core (i_clk, o_leds);
     reg [7:0] state = EXECUTE;
     always @ ( posedge i_clk ) begin
       case (state)
-        LOAD_NEXT_INST:
-          state <= EXECUTE;
         EXECUTE:
           // These instructions require a cycle to get new data from ram
           if (opcode == LOAD || opcode == JUMP) begin
@@ -40,7 +38,9 @@ module core (i_clk, o_leds);
     wire [15:0] inst;
     wire [(INST_ADDR_WIDTH-1):0] pc_addr_in = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
     wire load_pc = (state == EXECUTE && opcode == JUMP);
+    /* verilator lint_off UNUSED */
     wire [(INST_ADDR_WIDTH-1):0] pc_addr; // unused
+    /* verilator lint_on UNUSED */
     program_counter #(.ADDR_WIDTH(INST_ADDR_WIDTH), .PROGRAM_FILENAME(PROGRAM_FILENAME)) pc
       (.i_clk(i_clk), .i_inc(inc_inst), .i_load(load_pc), .i_addr(pc_addr_in), .o_addr(pc_addr), .o_instruction(inst));
 
@@ -123,7 +123,8 @@ module core (i_clk, o_leds);
       ADD,
       SUB,
       AND,
-      OR:
+      OR,
+      XOR:
         case (extra_low[1])
           1'b0: input_1 = reg_output[0];
           1'b1: input_1 = reg_output[1];
@@ -146,12 +147,11 @@ module core (i_clk, o_leds);
         endcase
       JUMP   : input_1 = 16'h0000;
       LOADC  : input_1 = 16'h0000;
-      UNDEF1 : input_1 = 16'h0000;
-      UNDEF2 : input_1 = 16'h0000;
+      OUT    : input_1 = 16'h0000;
       UNDEF3 : input_1 = 16'h0000;
       UNDEF4 : input_1 = 16'h0000;
-      UNDEF5 : input_1 = 16'h0000;
-      UNDEF6 : input_1 = 16'h0000;
+      HALT   : input_1 = 16'h0000;
+      NOP    : input_1 = 16'h0000;
     endcase
     end
 
@@ -162,7 +162,8 @@ module core (i_clk, o_leds);
       ADD,
       SUB,
       AND,
-      OR:
+      OR,
+      XOR:
         case (extra_low[0])
           1'b0: input_2 = reg_output[2];
           1'b1: input_2 = {8'h00, constant};
@@ -177,12 +178,11 @@ module core (i_clk, o_leds);
       MOVE   : input_2 = 16'h0000;
       JUMP   : input_2 = 16'h0000;
       LOADC  : input_2 = 16'h0000;
-      UNDEF1 : input_2 = 16'h0000;
-      UNDEF2 : input_2 = 16'h0000;
+      OUT    : input_2 = 16'h0000;
       UNDEF3 : input_2 = 16'h0000;
       UNDEF4 : input_2 = 16'h0000;
-      UNDEF5 : input_2 = 16'h0000;
-      UNDEF6 : input_2 = 16'h0000;
+      HALT   : input_2 = 16'h0000;
+      NOP    : input_2 = 16'h0000;
     endcase
     end
 
@@ -196,8 +196,12 @@ module core (i_clk, o_leds);
        .o_data(alu_out));
 
     // OUTPUT
-    assign o_leds[0] = inst[0];
-    assign o_leds[1] = inst[4];
-    assign o_leds[2] = inst[8];
+    always @ ( posedge i_clk ) begin
+      if (opcode == OUT) begin
+        o_out <= reg_output[extra_high];
+      end else begin
+        o_out <= o_out;
+      end
+    end
 
 endmodule
