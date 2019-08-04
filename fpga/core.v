@@ -15,13 +15,20 @@ module core (i_clk, o_leds);
     localparam INITIAL             = 0;
     localparam LOAD_NEXT_INST      = 1;
     localparam EXECUTE             = 2;
-    localparam LOAD_FROM_RAM       = 3;
+    localparam WAIT_FOR_LOAD       = 3;
     reg [7:0] state = EXECUTE;
     always @ ( posedge i_clk ) begin
       case (state)
         LOAD_NEXT_INST:
           state <= EXECUTE;
         EXECUTE:
+          // These instructions require a cycle to get new data from ram
+          if (opcode == LOAD || opcode == JUMP) begin
+            state <= WAIT_FOR_LOAD;
+          end else begin
+            state <= EXECUTE;
+          end
+        WAIT_FOR_LOAD:
           state <= EXECUTE;
         default:
           state <= LOAD_NEXT_INST;
@@ -29,7 +36,7 @@ module core (i_clk, o_leds);
     end
 
     // PROGRAM COUNTER
-    wire inc_inst = opcode != JUMP;
+    wire inc_inst = !((opcode == LOAD || opcode == JUMP) && state == EXECUTE);
     wire [15:0] inst;
     wire [(INST_ADDR_WIDTH-1):0] in_pc_addr = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
     wire load_pc = (state == EXECUTE && opcode == JUMP);
@@ -39,8 +46,16 @@ module core (i_clk, o_leds);
 
     // DATA RAM
     wire load_ram = (state == EXECUTE && opcode == STORE);
-    wire [(DATA_ADDR_WIDTH-1):0] ram_addr = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now RAM address is always ra
-    wire [15:0] ram_data_in = reg_output[1]; // For now RAM input data is always rb
+    wire [(DATA_ADDR_WIDTH-1):0] ram_addr = constant; // For now RAM address is always constant
+    reg [15:0] ram_data_in;
+    always @ ( * ) begin
+      case (extra_high)
+        2'b00: ram_data_in = reg_output[0];
+        2'b01: ram_data_in = reg_output[1];
+        2'b10: ram_data_in = reg_output[2];
+        2'b11: ram_data_in = reg_output[3];
+      endcase
+    end
     wire [15:0] ram_data_out;
     ram #(.ADDR_WIDTH(DATA_ADDR_WIDTH), .FILENAME("empty.hex")) ram
       (.i_clk(i_clk), .i_load(load_ram), .i_addr(ram_addr), .i_data(ram_data_in), .o_data(ram_data_out));
@@ -54,8 +69,6 @@ module core (i_clk, o_leds);
     // REGISTERS (ra, rb, rc, rd)
     reg [15:0] reg_input;
     always @ ( * ) begin
-      reg_input = 16'h0000;
-      if (state == EXECUTE) begin
       case (opcode)
         ADD,
         SUB,
@@ -71,7 +84,6 @@ module core (i_clk, o_leds);
         default:
           reg_input = 16'h0000;
       endcase
-      end
     end
     wire [63:0] raw_reg_output;
     wire [15:0] reg_output [3:0];
@@ -82,8 +94,8 @@ module core (i_clk, o_leds);
         opcode == OR ||
         opcode == SHIFT ||
         opcode == MOVE ||
-        opcode == LOAD ||
-        opcode == LOADC));
+        opcode == LOADC) ||
+        (state == WAIT_FOR_LOAD && opcode == LOAD));
     reg [3:0] reg_to_load;
     always @ ( * ) begin
       case (extra_high)

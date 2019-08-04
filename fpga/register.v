@@ -4,7 +4,7 @@ module register (i_clk, i_load, i_data, o_data);
   input i_clk;
   input i_load;
   input [15:0] i_data;
-  output reg [15:0] o_data;
+  output reg [15:0] o_data = 16'h0000;
 
 always @ (posedge i_clk) begin
   if (i_load) begin
