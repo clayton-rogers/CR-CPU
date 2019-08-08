@@ -251,7 +251,9 @@ static instruction_type token_to_instruction(const std::vector<std::string>& tok
 std::string machine_to_string(std::uint16_t machine) {
 	std::stringstream output;
 	output << std::hex << std::setfill('0') << std::setw(4) << machine;
-	return output.str();
+	std::string temp = output.str();
+	for (auto& c : temp) c = static_cast<char>(std::toupper(c));
+	return temp;
 }
 
 std::map<opcode, int> opcode_to_machine = 
