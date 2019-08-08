@@ -7,7 +7,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cr-cc", "cr-cc\cr-cc.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cr-cc-test", "cr-cc-test\cr-cc-test.vcxproj", "{AFA098DD-ABFF-4F10-AA5D-1835904994C1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cr-cc-lib", "cr-cc-lib\cr-cc-lib.vcxitems", "{712AA810-1CAF-4D58-A4B0-2D2822B09AD2}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		cr-cc-lib\cr-cc-lib.vcxitems*{712aa810-1caf-4d58-a4b0-2d2822b09ad2}*SharedItemsImports = 9
+		cr-cc-lib\cr-cc-lib.vcxitems*{afa098dd-abff-4f10-aa5d-1835904994c1}*SharedItemsImports = 4
+		cr-cc-lib\cr-cc-lib.vcxitems*{e8f6846d-8c1a-45b0-9212-b3e8e4b01a45}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
