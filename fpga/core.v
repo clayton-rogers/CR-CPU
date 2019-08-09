@@ -57,7 +57,15 @@ module core (i_clk, o_out);
       endcase
     end
     wire [15:0] inst;
-    wire [(INST_ADDR_WIDTH-1):0] pc_addr_in = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
+    reg [(INST_ADDR_WIDTH-1):0] pc_addr_in;
+    always @ ( * ) begin
+      case (extra_low)
+      2'b00: pc_addr_in = constant + reg_output[0][(INST_ADDR_WIDTH-1):0];
+      2'b01: pc_addr_in = constant + reg_output[1][(INST_ADDR_WIDTH-1):0];
+      2'b10: pc_addr_in = constant + reg_output[2][(INST_ADDR_WIDTH-1):0];
+      2'b11: pc_addr_in = constant; // none + constant;
+      endcase
+    end
     reg load_pc;
     always @ ( * ) begin
       if (state == EXECUTE) begin
@@ -161,7 +169,7 @@ module core (i_clk, o_out);
       LOAD   : input_1 = 16'h0000;
       STORE  : input_1 = 16'h0000;
       // MOVE goes through the alu
-      MOVE   : input_1 = reg_output[extra_high];
+      MOVE   : input_1 = reg_output[extra_low];
       JUMP   : input_1 = 16'h0000;
       LOADC  : input_1 = 16'h0000;
       OUT    : input_1 = 16'h0000;
