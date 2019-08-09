@@ -58,7 +58,23 @@ module core (i_clk, o_out);
     end
     wire [15:0] inst;
     wire [(INST_ADDR_WIDTH-1):0] pc_addr_in = reg_output[0][(DATA_ADDR_WIDTH-1):0]; // For now PC in is always ra
-    wire load_pc = (state == EXECUTE && opcode == JUMP);
+    reg load_pc;
+    always @ ( * ) begin
+      if (state == EXECUTE) begin
+        if (opcode == JUMP) begin
+          case (extra_high)
+            2'b00: load_pc = 1'b1; // JMP
+            2'b01: load_pc = (|reg_output[0] == 0); // jump if zero
+            2'b10: load_pc = (|reg_output[0] != 0); // jump if not zero
+            2'b11: load_pc = (reg_output[0][15] == 0); // jump if greater than zero
+          endcase
+        end else begin
+          load_pc = 1'b0;
+        end
+      end else begin
+        load_pc = 1'b0;
+      end
+    end
     /* verilator lint_off UNUSED */
     wire [(INST_ADDR_WIDTH-1):0] pc_addr; // unused
     /* verilator lint_on UNUSED */
