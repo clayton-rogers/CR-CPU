@@ -430,7 +430,7 @@ std::string instruction_to_machine(instruction_type inst) {
 		}
 
 		int offset = 0;
-		switch (inst.arg[1].type) {
+		switch (inst.arg[0].type) {
 		case argument_t::RA:    offset = 0; break;
 		case argument_t::RB:    offset = 1; break;
 		case argument_t::RC:    offset = 2; break;
