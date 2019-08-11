@@ -111,6 +111,7 @@ module core (i_clk, o_out);
         SUB,
         AND,
         OR,
+        XOR,
         SHIFT,
         MOVE:
           reg_input = alu_out;
@@ -132,6 +133,7 @@ module core (i_clk, o_out);
         opcode == SUB ||
         opcode == AND ||
         opcode == OR ||
+        opcode == XOR ||
         opcode == SHIFT ||
         opcode == MOVE ||
         opcode == LOADC) ||
