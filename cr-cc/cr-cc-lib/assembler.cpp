@@ -170,7 +170,12 @@ static const argument get_arg(std::string token) {
 
 	if (output.type == argument_t::CONST) {
 		try {
-			output.value = std::stoi(token);
+			if (token.at(0) == '0' &&
+				token.at(1) == 'x') {
+				output.value = std::stoi(token, 0, 16);
+			} else {
+				output.value = std::stoi(token);
+			}
 		} catch (std::logic_error e) {
 			throw std::logic_error("Failed to parse token as register or constant: " + token);
 		}
