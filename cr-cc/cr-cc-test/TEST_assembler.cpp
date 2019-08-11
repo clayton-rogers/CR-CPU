@@ -29,7 +29,10 @@ struct Test_Point {
 
 TEST_CASE("Test assembler", "[asm]") {
 	std::vector<Test_Point> test_points = {
-		{"ADD RA, RC, 10", "030A"}
+		{"ADD RA, RC, 10", "030A"},
+		{"loadc ra, 0x30", "A030"},
+		{"loadc rb, 0xFF", "A4FF"},
+		{"loadc rc 32",    "A820"},
 	};
 
 	for (const auto& test_point : test_points) {
