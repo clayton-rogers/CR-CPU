@@ -17,7 +17,7 @@ module top (
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
-    localparam OUTPUT_CLOCK    = 1;
+    localparam OUTPUT_CLOCK    = 4;
 
     // drive USB pull-up resistor to '0' to disable USB
     assign USBPU = 0;
@@ -28,7 +28,7 @@ module top (
     // Slow down the clock to one second.
     reg [31:0] count = 0;
     always @ ( posedge CLK ) begin
-      if (count < (INPUT_CLOCK / 2 * OUTPUT_CLOCK)) begin
+      if (count < (INPUT_CLOCK / (2 * OUTPUT_CLOCK))) begin
         count <= count + 1;
       end else begin
         count <= 0;
