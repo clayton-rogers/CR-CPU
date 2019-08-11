@@ -6,8 +6,14 @@ module top (
     output LED,   // User/boot LED next to power LED
     output USBPU,  // USB pull-up resistor
 
-    output PIN_13,
-    output PIN_10
+    output PIN_1,
+    output PIN_3,
+    output PIN_5,
+    output PIN_7,
+    output PIN_10,
+    output PIN_11,
+    output PIN_12,
+    output PIN_13
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
@@ -35,5 +41,6 @@ module top (
     /* verilator lint_on UNUSED */
     core core (.i_clk(real_clock), .o_out(core_output));
 
-    assign {PIN_13, PIN_10, LED} = core_output[2:0];
+    assign {PIN_13, PIN_12, PIN_11, PIN_10, PIN_1, PIN_3, PIN_5, PIN_7} = core_output[7:0];
+    assign LED = 1'b1;
 endmodule
