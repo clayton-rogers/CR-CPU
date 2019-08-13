@@ -16,13 +16,17 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc ra, 0x30", "A030 "},
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
+		//{"jmp -1", ""}, TODO move to should throw
+		{"jmp 1", "9301 "},
+		{"jmp 0", "9300 "},
 		{"", ""},
 		{"# test comment", ""},
 	};
 
 	for (const auto& test_point : test_points) {
 		const std::string output = assemble(test_point.input);
-
+		
+		INFO(test_point.input);
 		CHECK(output == test_point.expected_out);
 	}
 }
@@ -31,6 +35,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	std::vector<Test_Point> test_points = {
 		{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
 		{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
+		{"label.txt", "A00A 0101 B000 9301 "},
 	};
 
 	for (const auto& test_point : test_points) {
@@ -49,7 +54,7 @@ TEST_CASE("Benchmarks", "[bench]") {
 
 	REQUIRE(program.length() != 0);
 
-	BENCHMARK("Assemble test program") {	
+	BENCHMARK("Assemble test program") {
 		return assemble(program);
 	};
 }

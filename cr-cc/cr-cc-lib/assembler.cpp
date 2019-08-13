@@ -44,13 +44,23 @@ enum class argument_t {
 struct argument {
 	argument_t type = argument_t::RA;
 	int value = 0;
+	std::string label_value = "";
 };
 
+// one destination and up to two arguments
 static const int NUMBER_ARGS = 3;
 
-struct instruction_type {
+struct instruction_t {
 	opcode opcode = opcode::NOP;
 	argument arg[NUMBER_ARGS];
+};
+
+struct line_t {
+	int line_number;
+	std::string line;
+	std::vector<std::string> tokens;
+	bool is_instruction;
+	instruction_t inst;
 };
 
 struct instruction_info {
@@ -70,7 +80,7 @@ static const instruction_info STANDARD_ARITHMETIC = {
    {argument_t::RB, argument_t::CONST}
 };
 
-static const instruction_info NO_ARGS = {NO_ARG,NO_ARG,NO_ARG};
+static const instruction_info NO_ARGS = { NO_ARG,NO_ARG,NO_ARG };
 
 static std::map<opcode, instruction_info> instructions = {
 	{opcode::ADD,  STANDARD_ARITHMETIC},
@@ -92,13 +102,6 @@ static std::map<opcode, instruction_info> instructions = {
 	{opcode::OUT, {ALL_REG, NO_ARG, NO_ARG}},
 	{opcode::HALT,  NO_ARGS},
 	{opcode::NOP,  NO_ARGS},
-};
-
-struct line_t {
-	int line_number;
-	std::string line;
-	std::vector<std::string> tokens;
-	instruction_type inst;
 };
 
 static std::string convert_line(const std::string& input) {
@@ -163,7 +166,6 @@ static const std::map<std::string, argument_t> argument_map = {
 static const argument get_arg(std::string token) {
 	argument output;
 
-
 	try {
 		output.type = argument_map.at(token);
 	} catch (std::out_of_range e) {
@@ -173,8 +175,12 @@ static const argument get_arg(std::string token) {
 
 	if (output.type == argument_t::CONST) {
 		try {
-			if (token.at(0) == '0' &&
-				token.at(1) == 'x') {
+			if (token.at(0) == '.') {
+				output.label_value = token.substr(1, std::string::npos);
+				output.value = -1;
+			} else if (token.length() > 2 &&
+			           token.at(0) == '0' &&
+			           token.at(1) == 'x') {
 				output.value = std::stoi(token, 0, 16);
 			} else {
 				output.value = std::stoi(token);
@@ -183,7 +189,7 @@ static const argument get_arg(std::string token) {
 			throw std::logic_error("Failed to parse token as register or constant: " + token);
 		}
 
-		if (output.value < 0 || output.value >= 256) {
+		if (output.value < -1 || output.value >= 256) {
 			throw std::logic_error("Parsed constant token out of range (0 .. 255): " + output.value);
 		}
 	}
@@ -211,8 +217,8 @@ static std::string to_string(argument_t t) {
 	return "none";
 }
 
-static instruction_type token_to_instruction(const std::vector<std::string>& tokens) {
-	instruction_type output;
+static instruction_t tokens_to_instruction(const std::vector<std::string>& tokens) {
+	instruction_t output;
 
 	output.opcode = instruction_map.at(tokens.at(0));
 
@@ -264,7 +270,7 @@ std::string machine_to_string(std::uint16_t machine) {
 	return temp;
 }
 
-std::map<opcode, int> opcode_to_machine = 
+std::map<opcode, int> opcode_to_machine =
 {
 	{opcode::ADD,  0},
 	{opcode::SUB,  1},
@@ -286,7 +292,7 @@ std::map<opcode, int> opcode_to_machine =
 	{opcode::NOP,  15},
 };
 
-std::string instruction_to_machine(instruction_type inst) {
+std::string instruction_to_machine(const instruction_t& inst, const std::map<std::string, int>& labels) {
 	std::uint16_t machine = 0;
 
 	// Top four bits are always opcode
@@ -295,10 +301,10 @@ std::string instruction_to_machine(instruction_type inst) {
 	// Bottom 8 bits are always constant if it exists
 	for (argument a : inst.arg) {
 		if (a.type == argument_t::CONST) {
-			machine += static_cast<std::uint16_t>(a.value);
+			machine += static_cast<std::uint16_t>((a.value == -1) ? labels.at(a.label_value) : a.value);
 		}
 	}
-	
+
 	switch (inst.opcode) {
 	case opcode::ADD:
 	case opcode::SUB:
@@ -481,7 +487,7 @@ std::string instruction_to_machine(instruction_type inst) {
 
 		machine |= dest << 10;
 		machine |= 1 << 9; // this is what makes it the high part of reg
-		
+
 		break;
 	}
 	case opcode::OUT:
@@ -516,11 +522,13 @@ std::string instruction_to_machine(instruction_type inst) {
 
 std::string assemble(std::string assembly) {
 	std::vector<line_t> lines;
+	std::map<std::string, int> labels;
 
 	// Parse assembly into lines
 	{
 		std::stringstream asm_wrapper(assembly);
 		line_t line;
+		line.is_instruction = false; // as a default
 		int line_number = 1;
 		while (std::getline(asm_wrapper, line.line, '\n')) {
 			line.line_number = line_number++;
@@ -528,35 +536,64 @@ std::string assemble(std::string assembly) {
 		}
 	}
 
-	// Handle each line
-	std::ostringstream output;
+	// Tokenize
 	for (line_t& line : lines) {
-		
 		try {
+
 			line.line = convert_line(line.line);
 
-			// split into tokens
-			{
-				std::string temp;
-				std::stringstream input(line.line);
-				while (std::getline(input, temp, ' ')) {
-					line.tokens.push_back(temp);
-				}
-			}
-
-			if (line.tokens.size() != 0) {
-				// parse tokens
-				line.inst = token_to_instruction(line.tokens);
-
-				// output to text
-				output << instruction_to_machine(line.inst) << " ";
+			std::string temp;
+			std::stringstream input(line.line);
+			while (std::getline(input, temp, ' ')) {
+				line.tokens.push_back(temp);
 			}
 
 		} catch (std::logic_error e) {
-			std::cout << "Encountered error on line: " << line.line_number << std::endl;
+			std::cout << "Encountered error while tokenizing line: " << line.line_number << std::endl;
 			std::cout << "Error: " << e.what() << std::endl;
 		}
 	}
 
-	return output.str();
+	// Find all labels and decide which lines are instructions
+	int instruction_number = 0;
+	for (line_t& line : lines) {
+		try {
+
+			if (line.tokens.size() != 0) {
+				if (line.tokens.at(0).at(0) == '.') {
+					auto end_of_label = line.tokens.at(0).find(':');
+					if (std::string::npos != end_of_label) {
+						std::string label = line.tokens.at(0).substr(1, (end_of_label - 1));
+						labels[label] = instruction_number;
+					}
+				} else {
+					line.is_instruction = true;
+					instruction_number++;
+				}
+			}
+		} catch (std::logic_error e) {
+			std::cout << "Encountered error while labeling on line: " << line.line_number << std::endl;
+			std::cout << "Error: " << e.what() << std::endl;
+		}
+	}
+
+	// Parse each line
+	std::ostringstream output_machine_code;
+	for (line_t& line : lines) {
+		try {
+			if (line.is_instruction) {
+				// parse tokens
+				line.inst = tokens_to_instruction(line.tokens);
+
+				// output to text
+				output_machine_code << instruction_to_machine(line.inst, labels) << " ";
+			}
+
+		} catch (std::logic_error e) {
+			std::cout << "Encountered error while assembling on line: " << line.line_number << std::endl;
+			std::cout << "Error: " << e.what() << std::endl;
+		}
+	}
+
+	return output_machine_code.str();
 }
