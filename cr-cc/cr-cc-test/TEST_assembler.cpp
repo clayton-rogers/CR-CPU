@@ -16,7 +16,6 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc ra, 0x30", "A030 "},
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
-		//{"jmp -1", ""}, TODO move to should throw
 		{"jmp 1", "9301 "},
 		{"jmp 0", "9300 "},
 		{"", ""},
@@ -28,6 +27,17 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		
 		INFO(test_point.input);
 		CHECK(output == test_point.expected_out);
+	}
+}
+
+TEST_CASE("Test assembler should throw instructions", "[asm]") {
+	std::vector<std::string> test_points = {
+		"jmp -1", // constant jump location must be 0 .. 255
+	};
+
+	for (const auto& test_point : test_points) {
+		INFO(test_point);
+		CHECK_THROWS(assemble(test_point));
 	}
 }
 
