@@ -12,16 +12,17 @@ struct Test_Point {
 
 TEST_CASE("Test assembler instructions", "[asm]") {
 	std::vector<Test_Point> test_points = {
-		{"ADD RA, RC, 10", "030A"},
-		{"loadc ra, 0x30", "A030"},
-		{"loadc rb, 0xFF", "A4FF"},
-		{"loadc rc 32",    "A820"},
+		{"ADD RA, RC, 10", "030A "},
+		{"loadc ra, 0x30", "A030 "},
+		{"loadc rb, 0xFF", "A4FF "},
+		{"loadc rc 32",    "A820 "},
+		{"", ""},
 	};
 
 	for (const auto& test_point : test_points) {
 		const std::string output = assemble(test_point.input);
 
-		CHECK(output == test_point.expected_out+" ");
+		CHECK(output == test_point.expected_out);
 	}
 }
 

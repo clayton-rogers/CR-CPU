@@ -541,11 +541,14 @@ std::string assemble(std::string assembly) {
 				}
 			}
 
-			// parse tokens
-			line.inst = token_to_instruction(line.tokens);
+			if (line.tokens.size() != 0) {
+				// parse tokens
+				line.inst = token_to_instruction(line.tokens);
 
-			// output to text
-			output << instruction_to_machine(line.inst) << " ";
+				// output to text
+				output << instruction_to_machine(line.inst) << " ";
+			}
+
 		} catch (std::logic_error e) {
 			std::cout << "Encountered error on line: " << line.line_number << std::endl;
 			std::cout << "Error: " << e.what() << std::endl;

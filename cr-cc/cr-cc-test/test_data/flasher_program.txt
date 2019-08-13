@@ -1,5 +1,7 @@
  loadc RA, 0x55
  loadc RB, 0xFF
+
  out ra
  xor ra, ra, rb
+
  jmp 2
