@@ -179,8 +179,8 @@ static const argument get_arg(std::string token) {
 				output.label_value = token.substr(1, std::string::npos);
 				output.value = -1;
 			} else if (token.length() > 2 &&
-			           token.at(0) == '0' &&
-			           token.at(1) == 'x') {
+				token.at(0) == '0' &&
+				token.at(1) == 'x') {
 				output.value = std::stoi(token, 0, 16);
 			} else {
 				output.value = std::stoi(token);
@@ -523,22 +523,26 @@ std::string instruction_to_machine(const instruction_t& inst, const std::map<std
 std::string assemble(std::string assembly) {
 	std::vector<line_t> lines;
 	std::map<std::string, int> labels;
+	int current_line = 0;
+	std::ostringstream output_machine_code;
 
-	// Parse assembly into lines
-	{
-		std::stringstream asm_wrapper(assembly);
-		line_t line;
-		line.is_instruction = false; // as a default
-		int line_number = 1;
-		while (std::getline(asm_wrapper, line.line, '\n')) {
-			line.line_number = line_number++;
-			lines.push_back(line);
+	try {
+
+		// Parse assembly into lines
+		{
+			std::stringstream asm_wrapper(assembly);
+			line_t line;
+			line.is_instruction = false; // as a default
+			int line_number = 1;
+			while (std::getline(asm_wrapper, line.line, '\n')) {
+				line.line_number = line_number++;
+				lines.push_back(line);
+			}
 		}
-	}
 
-	// Tokenize
-	for (line_t& line : lines) {
-		try {
+		// Tokenize
+		for (line_t& line : lines) {
+			current_line = line.line_number;
 
 			line.line = convert_line(line.line);
 
@@ -547,17 +551,12 @@ std::string assemble(std::string assembly) {
 			while (std::getline(input, temp, ' ')) {
 				line.tokens.push_back(temp);
 			}
-
-		} catch (std::logic_error e) {
-			std::cout << "Encountered error while tokenizing line: " << line.line_number << std::endl;
-			std::cout << "Error: " << e.what() << std::endl;
 		}
-	}
 
-	// Find all labels and decide which lines are instructions
-	int instruction_number = 0;
-	for (line_t& line : lines) {
-		try {
+		// Find all labels and decide which lines are instructions
+		int instruction_number = 0;
+		for (line_t& line : lines) {
+			current_line = line.line_number;
 
 			if (line.tokens.size() != 0) {
 				if (line.tokens.at(0).at(0) == '.') {
@@ -571,16 +570,12 @@ std::string assemble(std::string assembly) {
 					instruction_number++;
 				}
 			}
-		} catch (std::logic_error e) {
-			std::cout << "Encountered error while labeling on line: " << line.line_number << std::endl;
-			std::cout << "Error: " << e.what() << std::endl;
 		}
-	}
 
-	// Parse each line
-	std::ostringstream output_machine_code;
-	for (line_t& line : lines) {
-		try {
+		// Parse each line
+		for (line_t& line : lines) {
+			current_line = line.line_number;
+
 			if (line.is_instruction) {
 				// parse tokens
 				line.inst = tokens_to_instruction(line.tokens);
@@ -588,11 +583,11 @@ std::string assemble(std::string assembly) {
 				// output to text
 				output_machine_code << instruction_to_machine(line.inst, labels) << " ";
 			}
-
-		} catch (std::logic_error e) {
-			std::cout << "Encountered error while assembling on line: " << line.line_number << std::endl;
-			std::cout << "Error: " << e.what() << std::endl;
 		}
+
+	} catch (std::logic_error e) {
+		std::string msg = std::string("line ") + std::to_string(current_line) + ": " + e.what();
+		throw std::logic_error(msg);
 	}
 
 	return output_machine_code.str();
