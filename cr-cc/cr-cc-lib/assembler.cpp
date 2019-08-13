@@ -110,6 +110,9 @@ static std::string convert_line(const std::string& input) {
 		char current = input.at(i);
 
 		current = static_cast<char>(std::tolower(current));
+		if (current == '#') {
+			break;
+		}
 		if (current == ',' || current == '\t') {
 			current = ' ';
 		}

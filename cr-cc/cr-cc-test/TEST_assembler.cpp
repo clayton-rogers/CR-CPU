@@ -17,6 +17,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
 		{"", ""},
+		{"# test comment", ""},
 	};
 
 	for (const auto& test_point : test_points) {
