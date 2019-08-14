@@ -218,6 +218,11 @@ static std::string to_string(argument_t t) {
 }
 
 static instruction_t tokens_to_instruction(const std::vector<std::string>& tokens) {
+
+	if (tokens.size() > 1 + NUMBER_ARGS) {
+		throw std::logic_error("Too many arguments");
+	}
+
 	instruction_t output;
 
 	output.opcode = instruction_map.at(tokens.at(0));
