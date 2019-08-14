@@ -16,9 +16,11 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc ra, 0x30", "A030 "},
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
+		{"loadc rc 32 \n .top: \n loadc rc 31 \n jmp .top", "A820 A81F 9301 "},
 		{"jmp 1", "9301 "},
 		{"jmp 0", "9300 "},
 		{"", ""},
+		{" ", ""},
 		{"# test comment", ""},
 	};
 
@@ -30,9 +32,16 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 	}
 }
 
-TEST_CASE("Test assembler should throw instructions", "[asm]") {
+TEST_CASE("Test assembler should throw", "[asm]") {
 	std::vector<std::string> test_points = {
 		"jmp -1", // constant jump location must be 0 .. 255
+		"jmp", // missing argument
+		"add ra, ra", // missing argument
+		"add ra, 32", // missing argument (constant)
+		"add ra, ra, rb, rc", // too many arguments
+		"add ra, ra, rb, 23", // too many arguments (constant)
+		"add ra, 32, rb", // invalid constant location
+		"add ra, rb, rb", // input 1 cannot be rb (only ra, rc)
 	};
 
 	for (const auto& test_point : test_points) {
@@ -55,6 +64,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		std::string output = assemble(program);
 
+		INFO(test_point.expected_out);
 		CHECK(output == test_point.expected_out);
 	}
 }
