@@ -60,10 +60,10 @@ module core (i_clk, o_out);
     reg [(INST_ADDR_WIDTH-1):0] pc_addr_in;
     always @ ( * ) begin
       case (extra_low)
-      2'b00: pc_addr_in = constant + reg_output[0][(INST_ADDR_WIDTH-1):0];
-      2'b01: pc_addr_in = constant + reg_output[1][(INST_ADDR_WIDTH-1):0];
-      2'b10: pc_addr_in = constant + reg_output[2][(INST_ADDR_WIDTH-1):0];
-      2'b11: pc_addr_in = constant; // none + constant;
+      2'b00: pc_addr_in = pc_addr + constant + reg_output[0][(INST_ADDR_WIDTH-1):0];
+      2'b01: pc_addr_in = pc_addr + constant + reg_output[1][(INST_ADDR_WIDTH-1):0];
+      2'b10: pc_addr_in = pc_addr + constant + reg_output[2][(INST_ADDR_WIDTH-1):0];
+      2'b11: pc_addr_in = pc_addr + constant; // none + constant;
       endcase
     end
     reg load_pc;
@@ -83,9 +83,8 @@ module core (i_clk, o_out);
         load_pc = 1'b0;
       end
     end
-    /* verilator lint_off UNUSED */
-    wire [(INST_ADDR_WIDTH-1):0] pc_addr; // unused
-    /* verilator lint_on UNUSED */
+
+    wire [(INST_ADDR_WIDTH-1):0] pc_addr;
     program_counter #(.ADDR_WIDTH(INST_ADDR_WIDTH), .PROGRAM_FILENAME(PROGRAM_FILENAME)) pc
       (.i_clk(i_clk), .i_inc(inc_inst), .i_load(load_pc), .i_addr(pc_addr_in), .o_addr(pc_addr), .o_instruction(inst));
 

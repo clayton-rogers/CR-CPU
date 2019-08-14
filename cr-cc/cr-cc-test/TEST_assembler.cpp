@@ -17,8 +17,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc ra, 0x30", "A030 "},
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
-		{"loadc rc 32 \n .top: \n loadc rc 31 \n jmp .top", "A820 A81F 9301 "},
-		{"jmp .end \n .end: \n nop", "9301 F000 "},
+		{"loadc rc 32 \n .top: \n loadc rc 31 \n jmp .top", "A820 A81F 93FF "}, // jmp -1
+		{"jmp .end \n .end: \n nop", "9301 F000 "}, // jmp 1
 		{"jmp 1", "9301 "},
 		{"jmp 0", "9300 "},
 		{"", ""},
@@ -46,6 +46,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"out rd", "BC00 "},
 		{"halt", "E000 "},
 		{"nop", "F000 "},
+		{"jmp -1", "93FF "},
 	};
 
 	for (const auto& test_point : test_points) {
@@ -59,7 +60,6 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 
 TEST_CASE("Test assembler should throw", "[asm]") {
 	std::vector<std::string> test_points = {
-		"jmp -1", // constant jump location must be 0 .. 255
 		"jmp", // missing argument
 		"add ra, ra", // missing argument
 		"add ra, 32", // missing argument (constant)
@@ -91,12 +91,12 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	std::vector<Test_Point> test_points = {
 		{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
 		{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
-		{"label.txt", "A00A 0101 B000 9301 "},
-		{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9F0B A804 A400 8100 6600 0000 1B01 8400 8200 9F13 B400 E000 " },
+		{"label.txt", "A00A 0101 B000 93FE "},
+		{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9FFB A804 A400 8100 6600 0000 1B01 8400 8200 9FFA B400 E000 " },
 	};
 
 	for (const auto& test_point : test_points) {
-		INFO(test_point.expected_out);
+		INFO(test_point.input);
 
 		std::string program = read_file(std::string("./cr-cc-test/test_data/") + test_point.input);
 
