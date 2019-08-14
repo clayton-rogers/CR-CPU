@@ -256,6 +256,12 @@ static instruction_t tokens_to_instruction(const std::vector<std::string>& token
 			}
 		}
 
+		if (arg > 0 &&
+			output.arg[arg - 1].type == argument_t::CONST &&
+			a.type == argument_t::CONST) {
+			throw std::logic_error("Got two constants in a row");
+		}
+
 		if (!good) {
 			throw std::logic_error("Got an argument of type that wasn't expected. Got: " + to_string(a.type));
 		}
