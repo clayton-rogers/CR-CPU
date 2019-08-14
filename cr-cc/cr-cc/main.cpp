@@ -17,11 +17,16 @@ int main(int argc, char **argv) {
 
 	std::string file_contents = file_reader(filename);
 
-	std::cout << "File contents: \n" << file_contents << std::endl;
+	std::cout << "\nFile contents: \n" << file_contents << std::endl;
 
-	std::string machine_code = assemble(file_contents);
-
-	std::cout << "Machine code: \n" << machine_code << std::endl;
+	std::string machine_code;
+	try {
+		machine_code = assemble(file_contents);
+		std::cout << "\nMachine code: \n" << machine_code << std::endl;
+	} catch (std::logic_error& e) {
+		std::cout << "ASSEMBLY ERROR: \n";
+		std::cout << e.what() << std::endl;
+	}
 
 	return 0;
 }
