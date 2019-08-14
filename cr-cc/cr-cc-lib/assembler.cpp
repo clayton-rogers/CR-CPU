@@ -574,6 +574,9 @@ std::vector<std::string> assemble(std::string assembly) {
 					auto end_of_label = line.tokens.at(0).find(':');
 					if (std::string::npos != end_of_label) {
 						std::string label = line.tokens.at(0).substr(1, (end_of_label - 1));
+						if (labels.find(label) != labels.end()) {
+							throw std::logic_error("Duplicate label found: " + label);
+						}
 						labels[label] = instruction_number;
 					}
 				} else {

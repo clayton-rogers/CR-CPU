@@ -76,6 +76,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"halt 0x10", // does not allow constants
 		"nop rb", // does not allow registers
 		"nop 0x10", // does not allow constants
+		"nop \n nop \n jmp .top", // jump to label that doesn't exist
+		".top: \n nop \n .top: \n nop \n jmp .top", // cannot define duplicate label
 	};
 
 	for (const auto& test_point : test_points) {
