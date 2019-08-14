@@ -18,6 +18,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
 		{"loadc rc 32 \n .top: \n loadc rc 31 \n jmp .top", "A820 A81F 9301 "},
+		{"jmp .end \n .end: \n nop", "9301 F000 "},
 		{"jmp 1", "9301 "},
 		{"jmp 0", "9300 "},
 		{"", ""},
