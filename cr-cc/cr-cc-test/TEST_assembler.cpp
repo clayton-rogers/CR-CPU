@@ -55,6 +55,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
 		{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
 		{"label.txt", "A00A 0101 B000 9301 "},
+		{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9F0B A804 A400 8100 6600 0000 1B01 8400 8200 9F13 B400 E000 " },
 	};
 
 	for (const auto& test_point : test_points) {
@@ -71,6 +72,14 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 TEST_CASE("Benchmarks", "[bench]") {
 	std::string program = file_reader("./cr-cc-test/test_data/bench_program1.txt");
+
+	REQUIRE(program.length() != 0);
+
+	BENCHMARK("Assemble simple test program") {
+		return assemble(program);
+	};
+
+	program = file_reader("./cr-cc-test/test_data/sum.txt");
 
 	REQUIRE(program.length() != 0);
 

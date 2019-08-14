@@ -12,7 +12,7 @@ core core (.i_clk(clk), .o_out(core_output));
 
 initial begin
 done = 1'b0;
-#40
+#150
 done = 1'b1;
 end
 

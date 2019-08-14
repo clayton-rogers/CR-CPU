@@ -1,0 +1,36 @@
+loadc ra, 10
+store ra 0
+loadc ra, 11
+store ra 1
+loadc ra, 23
+store ra 2
+loadc ra, 8
+store ra 3
+loadc ra, 3
+store ra 4
+
+loadc rc 4
+
+.add_loop:
+load ra, rc
+add ra, ra, 1
+store ra, rc
+sub rc, rc, 1
+mov ra, rc
+jgz .add_loop
+
+loadc rc 4
+loadc rb 0
+
+.sum_loop:
+mov ra, rb
+load rb, rc
+add ra, ra, rb
+sub rc, rc, 1
+mov rb, ra
+mov ra, rc
+jgz .sum_loop
+
+out rb
+halt
+
