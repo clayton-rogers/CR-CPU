@@ -16,7 +16,7 @@ parameter PROGRAM_FILENAME = "program.hex";
   // cycle to load the next instruction from ram, so mask the output with
   // a copy of the last instruction
   assign o_instruction =  (last_was_load) ? last_instruction : ram_out;
-  assign o_addr = instruction_address;
+  assign o_addr = instruction_address - 1;
 
 reg [(ADDR_WIDTH-1):0] instruction_address = 0;
 wire [15:0] ram_out;

@@ -48,6 +48,7 @@ struct argument {
 
 // one destination and up to two arguments
 static const int NUMBER_ARGS = 3;
+static const int CONST_LABEL_VALUE = -256;
 
 struct instruction_t {
 	opcode opcode = opcode::NOP;
@@ -59,6 +60,7 @@ struct line_t {
 	std::string line;
 	std::vector<std::string> tokens;
 	bool is_instruction;
+	int instruction_number;
 	instruction_t inst;
 };
 
@@ -173,24 +175,32 @@ static const argument get_arg(std::string token) {
 	}
 
 	if (output.type == argument_t::CONST) {
-		try {
-			if (token.at(0) == '.') {
-				output.label_value = token.substr(1, std::string::npos);
-				output.value = -1;
-			} else if (token.length() > 2 &&
-				token.at(0) == '0' &&
-				token.at(1) == 'x') {
+
+		if (token.at(0) == '.') {
+			output.label_value = token.substr(1, std::string::npos);
+			output.value = CONST_LABEL_VALUE;
+		} else if (token.length() > 2 &&
+			token.at(0) == '0' &&
+			token.at(1) == 'x') {
+			try {
 				output.value = std::stoi(token, 0, 16);
-			} else {
-				output.value = std::stoi(token);
+			} catch (std::logic_error e) {
+				throw std::logic_error("Failed to parse token as register or constant: " + token);
 			}
-		} catch (std::logic_error e) {
-			throw std::logic_error("Failed to parse token as register or constant: " + token);
+			if (output.value < 0 || output.value > 0xFF) {
+				throw std::logic_error("Parsed hex constant out of range (0x00 .. 0xFF): " + std::to_string(output.value));
+			}
+		} else {
+			try {
+				output.value = std::stoi(token);
+			} catch (std::logic_error e) {
+				throw std::logic_error("Failed to parse token as register or constant: " + token);
+			}
+			if (output.value < -128 || output.value > 127) {
+				throw std::logic_error("Parsed dec constant out of range (-128 .. 127): " + std::to_string(output.value));
+			}
 		}
 
-		if (output.value < -1 || output.value >= 256) {
-			throw std::logic_error("Parsed constant token out of range (0 .. 255): " + output.value);
-		}
 	}
 
 	return output;
@@ -302,7 +312,7 @@ std::map<opcode, int> opcode_to_machine =
 	{opcode::NOP,  15},
 };
 
-std::string instruction_to_machine(const instruction_t& inst, const std::map<std::string, int>& labels) {
+std::string instruction_to_machine(const instruction_t& inst, const int instruction_number, const std::map<std::string, int>& labels) {
 	std::uint16_t machine = 0;
 
 	// Top four bits are always opcode
@@ -311,7 +321,14 @@ std::string instruction_to_machine(const instruction_t& inst, const std::map<std
 	// Bottom 8 bits are always constant if it exists
 	for (argument a : inst.arg) {
 		if (a.type == argument_t::CONST) {
-			machine += static_cast<std::uint16_t>((a.value == -1) ? labels.at(a.label_value) : a.value);
+			int const_value = 0;
+			if (a.value != CONST_LABEL_VALUE) {
+				const_value = a.value;
+			} else {
+				// label instruction numbers should be relative to current instruction
+				const_value = labels.at(a.label_value) - instruction_number;
+			}
+			machine += static_cast<std::uint8_t>(const_value);
 		}
 	}
 
@@ -581,6 +598,7 @@ std::vector<std::string> assemble(std::string assembly) {
 					}
 				} else {
 					line.is_instruction = true;
+					line.instruction_number = instruction_number;
 					instruction_number++;
 				}
 			}
@@ -595,11 +613,11 @@ std::vector<std::string> assemble(std::string assembly) {
 				line.inst = tokens_to_instruction(line.tokens);
 
 				// output to text
-				output_machine_code.push_back(instruction_to_machine(line.inst, labels));
+				output_machine_code.push_back(instruction_to_machine(line.inst, line.instruction_number, labels));
 			}
 		}
 
-	} catch (std::logic_error e) {
+	} catch (const std::logic_error& e) {
 		std::string msg = std::string("line ") + std::to_string(current_line) + ": " + e.what();
 		throw std::logic_error(msg);
 	}
