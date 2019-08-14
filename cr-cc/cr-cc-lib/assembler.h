@@ -1,5 +1,6 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-std::string assemble(std::string assembly);
+std::vector<std::string> assemble(std::string assembly);

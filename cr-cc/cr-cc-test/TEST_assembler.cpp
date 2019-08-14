@@ -1,5 +1,6 @@
 #include "assembler.h"
-#include "file_reader.h"
+#include "file_io.h"
+#include "machine_io.h"
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
 
@@ -25,7 +26,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 	};
 
 	for (const auto& test_point : test_points) {
-		const std::string output = assemble(test_point.input);
+		std::string output = machine_inst_to_unformatted(assemble(test_point.input));
 		
 		INFO(test_point.input);
 		CHECK(output == test_point.expected_out);
@@ -59,11 +60,11 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	};
 
 	for (const auto& test_point : test_points) {
-		std::string program = file_reader(std::string("./cr-cc-test/test_data/") + test_point.input);
+		std::string program = read_file(std::string("./cr-cc-test/test_data/") + test_point.input);
 
 		REQUIRE(program.length() != 0);
 
-		std::string output = assemble(program);
+		std::string output = machine_inst_to_unformatted(assemble(program));
 
 		INFO(test_point.expected_out);
 		CHECK(output == test_point.expected_out);
@@ -71,7 +72,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 }
 
 TEST_CASE("Benchmarks", "[bench]") {
-	std::string program = file_reader("./cr-cc-test/test_data/bench_program1.txt");
+	std::string program = read_file("./cr-cc-test/test_data/bench_program1.txt");
 
 	REQUIRE(program.length() != 0);
 
@@ -79,7 +80,7 @@ TEST_CASE("Benchmarks", "[bench]") {
 		return assemble(program);
 	};
 
-	program = file_reader("./cr-cc-test/test_data/sum.txt");
+	program = read_file("./cr-cc-test/test_data/sum.txt");
 
 	REQUIRE(program.length() != 0);
 

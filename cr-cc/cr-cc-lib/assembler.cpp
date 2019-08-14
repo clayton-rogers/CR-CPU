@@ -1,7 +1,6 @@
 #include "assembler.h"
 
 #include <map>
-#include <vector>
 #include <sstream>
 #include <cctype>
 #include <algorithm>
@@ -525,11 +524,12 @@ std::string instruction_to_machine(const instruction_t& inst, const std::map<std
 	return machine_to_string(machine);
 }
 
-std::string assemble(std::string assembly) {
+std::vector<std::string> assemble(std::string assembly) {
 	std::vector<line_t> lines;
 	std::map<std::string, int> labels;
 	int current_line = 0;
-	std::ostringstream output_machine_code;
+
+	std::vector<std::string> output_machine_code;
 
 	try {
 
@@ -586,7 +586,7 @@ std::string assemble(std::string assembly) {
 				line.inst = tokens_to_instruction(line.tokens);
 
 				// output to text
-				output_machine_code << instruction_to_machine(line.inst, labels) << " ";
+				output_machine_code.push_back(instruction_to_machine(line.inst, labels));
 			}
 		}
 
@@ -595,5 +595,5 @@ std::string assemble(std::string assembly) {
 		throw std::logic_error(msg);
 	}
 
-	return output_machine_code.str();
+	return output_machine_code;
 }
