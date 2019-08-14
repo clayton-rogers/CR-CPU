@@ -1,10 +1,10 @@
-#include "file_reader.h"
+#include "file_io.h"
 
 #include <fstream>
 #include <iostream>
 #include <streambuf>
 
-std::string file_reader(std::string filename) {
+std::string read_file(std::string filename) {
 	std::ifstream file(filename);
 
 	if (!file) {
@@ -23,4 +23,10 @@ std::string file_reader(std::string filename) {
 		std::istreambuf_iterator<char>());
 
 	return output;
+}
+
+void write_file(std::string filename, std::string data) {
+	std::ofstream file(filename);
+
+	file << data;
 }
