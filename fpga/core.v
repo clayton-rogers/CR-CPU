@@ -91,7 +91,15 @@ module core (i_clk, o_out);
 
     // DATA RAM
     wire load_ram = (state == EXECUTE && opcode == STORE);
-    wire [(DATA_ADDR_WIDTH-1):0] ram_addr = constant; // For now RAM address is always constant
+    reg [(DATA_ADDR_WIDTH-1):0] ram_addr; // TODO For now RAM address is always constant
+    always @ ( * ) begin
+      case (extra_low)
+      2'b00: ram_addr = constant + reg_output[0][(DATA_ADDR_WIDTH-1):0];
+      2'b01: ram_addr = constant + reg_output[1][(DATA_ADDR_WIDTH-1):0];
+      2'b10: ram_addr = constant + reg_output[2][(DATA_ADDR_WIDTH-1):0];
+      2'b11: ram_addr = constant; // none + constant;
+      endcase
+    end
     wire [15:0] ram_data_in = reg_output[extra_high];
     wire [15:0] ram_data_out;
     ram #(.ADDR_WIDTH(DATA_ADDR_WIDTH), .FILENAME("empty.hex")) ram
