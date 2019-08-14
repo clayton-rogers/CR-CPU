@@ -17,7 +17,7 @@ module top (
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
-    localparam OUTPUT_CLOCK    = 4;
+    localparam OUTPUT_CLOCK    = 100;
 
     // drive USB pull-up resistor to '0' to disable USB
     assign USBPU = 0;
