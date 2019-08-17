@@ -47,6 +47,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"halt", "E000 "},
 		{"nop", "F000 "},
 		{"jmp -1", "93FF "},
+		{".var int[3] abc \n loadc ra, 10 \n store ra, .abc[2]","A00A 7302 "},
 	};
 
 	for (const auto& test_point : test_points) {
@@ -87,16 +88,20 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 	}
 }
 
-TEST_CASE("Test assembler programs", "[asm]") {
-	std::vector<Test_Point> test_points = {
-		{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
-		{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
-		{"label.txt", "A00A 0101 B000 93FE "},
-		// Note this program should produce the output 003C when run
-		{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9FFB A804 A400 8100 6600 0000 1B01 8400 8200 9FFA B400 E000 " },
-	};
+static const std::vector<Test_Point> test_programs = {
+	{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
+	{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
+	{"label.txt", "A00A 0101 B000 93FE "},
+	// Note this program should produce the output 003C when run
+	{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9FFB A804 A400 8100 6600 0000 1B01 8400 8200 9FFA B400 E000 " },
+	// Should produce 0x0016 output
+	{"var_test.txt", "A00A 7300 A00B A401 0000 7301 6300 6701 0000 7300 B000 E000 "},
+	// Should produce 0x002B output
+	{"array_test.txt", "A00A 7300 A00B 7301 A016 7302 A000 6702 0400 A801 6200 0400 1B01 8200 9FFC B400 E000 "},
+};
 
-	for (const auto& test_point : test_points) {
+TEST_CASE("Test assembler programs", "[asm]") {
+	for (const auto& test_point : test_programs) {
 		INFO(test_point.input);
 
 		std::string program = read_file(std::string("./test_data/") + test_point.input);
@@ -110,19 +115,13 @@ TEST_CASE("Test assembler programs", "[asm]") {
 }
 
 TEST_CASE("Benchmarks", "[bench]") {
-	std::string program = read_file("./test_data/bench_program1.txt");
+	for (const auto& test_point : test_programs) {
+		std::string program = read_file(std::string("./test_data/") + test_point.input);
 
-	REQUIRE(program.length() != 0);
+		REQUIRE(program.length() != 0);
 
-	BENCHMARK("Assemble simple test program") {
-		return assemble(program);
-	};
-
-	program = read_file("./test_data/sum.txt");
-
-	REQUIRE(program.length() != 0);
-
-	BENCHMARK("Assemble test program") {
-		return assemble(program);
-	};
+		BENCHMARK(std::string("Benchmark: ") + test_point.input) {
+			return assemble(program);
+		};
+	}
 }

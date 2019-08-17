@@ -1,0 +1,17 @@
+# create simple var
+.var int var
+.var int second
+
+loadc ra, 10
+store ra, .var
+loadc ra, 11
+loadc rb, 1
+add ra, ra, rb
+store ra .second
+load ra, .var
+load rb, .second
+add ra, ra, rb
+store ra, .var
+out ra
+halt
+

@@ -234,7 +234,11 @@ static instruction_t tokens_to_instruction(const std::vector<std::string>& token
 
 	instruction_t output;
 
-	output.opcode = instruction_map.at(tokens.at(0));
+	try {
+		output.opcode = instruction_map.at(tokens.at(0));
+	} catch (const std::logic_error&) {
+		throw std::logic_error("Invalid opcode: " + tokens.at(0));
+	}
 
 	const instruction_info& i_info = instructions.at(output.opcode);
 
@@ -325,8 +329,35 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 			if (a.value != CONST_LABEL_VALUE) {
 				const_value = a.value;
 			} else {
-				// label instruction numbers should be relative to current instruction
-				const_value = labels.at(a.label_value) - instruction_number;
+				switch (inst.opcode) {
+				case opcode::JMP:
+				case opcode::JIFZ:
+				case opcode::JINZ:
+				case opcode::JGZ:
+					// label instruction numbers should be relative to current instruction
+					const_value = labels.at(a.label_value) - instruction_number;
+					break;
+				default:
+				{
+					// else must be a variable label
+					std::string label_str;
+					std::string offset_str;
+					int offset = 0;
+					const auto beg = a.label_value.find('[');
+					const auto end = a.label_value.find(']');
+					if (beg != std::string::npos) {
+						label_str = a.label_value.substr(0, beg);
+						offset_str = a.label_value.substr(beg + 1, end - beg - 1);
+						offset = std::stoi(offset_str);
+					} else {
+						label_str = a.label_value;
+					}
+
+					const_value = labels.at(label_str) + offset;
+				}
+					break;
+				}
+				
 			}
 			machine += static_cast<std::uint8_t>(const_value);
 		}
@@ -583,11 +614,14 @@ std::vector<std::string> assemble(std::string assembly) {
 
 		// Find all labels and decide which lines are instructions
 		int instruction_number = 0;
+		int var_offset = 0;
 		for (line_t& line : lines) {
 			current_line = line.line_number;
 
 			if (line.tokens.size() != 0) {
 				if (line.tokens.at(0).at(0) == '.') {
+					// lines with a . are either goto labels when they have ":"
+					// otherwise are compiler directives.
 					auto end_of_label = line.tokens.at(0).find(':');
 					if (std::string::npos != end_of_label) {
 						std::string label = line.tokens.at(0).substr(1, (end_of_label - 1));
@@ -595,6 +629,29 @@ std::vector<std::string> assemble(std::string assembly) {
 							throw std::logic_error("Duplicate label found: " + label);
 						}
 						labels[label] = instruction_number;
+					} else {
+						std::string directive = line.tokens.at(0).substr(1, std::string::npos);
+						if (directive == "var") {
+							// format is
+							// .VAR int my_var
+							// .VAR int[10] my_var
+							const std::string type = line.tokens.at(1);
+							const std::string var_name = line.tokens.at(2);
+							labels[var_name] = var_offset;
+							
+							const auto beg = type.find('[');
+							const auto end = type.find(']');
+							if (beg == std::string::npos) {
+								var_offset++;
+							} else {
+								std::string var_size_str = type.substr(beg + 1, end - beg);
+								int var_size = std::stoi(var_size_str);
+								var_offset += var_size;
+							}
+							
+						} else {
+							throw std::logic_error("Unknown directive: " + directive);
+						}
 					}
 				} else {
 					line.is_instruction = true;
