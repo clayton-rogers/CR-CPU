@@ -1,0 +1,31 @@
+# create array var
+.var int[2] var
+.var int second
+
+# load three numbers
+loadc ra, 10
+store ra, .var[0]
+loadc ra, 11
+store ra, .var[1]
+loadc ra, 22
+store ra, .second
+
+
+# sum up single number
+loadc ra, 0
+load rb, .second
+add rb, ra, rb
+# keep sum in rb
+
+# for loop to add up array
+loadc rc, 1
+.array_loop:
+load ra, rc, .var
+add rb, ra, rb
+sub rc, rc, 1
+mov ra, rc
+jgz .array_loop
+
+out rb
+halt
+
