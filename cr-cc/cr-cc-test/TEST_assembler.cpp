@@ -18,6 +18,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadc rb, 0xFF", "A4FF "},
 		{"loadc rc 32",    "A820 "},
 		{"loadc rc 32 \n .top: \n loadc rc 31 \n jmp .top", "A820 A81F 93FF "}, // jmp -1
+		{"loadch rc 0xEE", "AAEE "},
 		{"jmp .end \n .end: \n nop", "9301 F000 "}, // jmp 1
 		{"jmp 1", "9301 "},
 		{"jmp 0", "9300 "},
@@ -98,6 +99,7 @@ static const std::vector<Test_Point> test_programs = {
 	{"var_test.txt", "A00A 7300 A00B A401 0000 7301 6300 6701 0000 7300 B000 E000 "},
 	// Should produce 0x002B output
 	{"array_test.txt", "A00A 7300 A00B 7301 A016 7302 A000 6702 0400 A801 6200 0400 1B01 8200 9FFC B400 E000 "},
+	{"flash.txt", "A0FF B000 A090 A201 1101 9FFF A000 B000 A090 A201 1101 9FFF 93F4 "},
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
