@@ -1,0 +1,28 @@
+### all on ###
+.top:
+loadc ra, 0xff
+out ra
+
+
+### loop for 400 count ###
+loadc ra, 0x90  #0x190 == 400
+loadch ra, 0x01
+.top_loop:
+sub ra, ra, 1
+jgz .top_loop
+
+
+### all off ###
+loadc ra, 0x00
+out ra
+
+
+### loop for another 400 count ###
+loadc ra, 0x90  #0x190 == 400
+loadch ra, 0x01
+.top_loop2:
+sub ra, ra, 1
+jgz .top_loop2
+
+### stard the whole thing again
+jmp .top
