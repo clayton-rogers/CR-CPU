@@ -1,10 +1,10 @@
 # load alternating pattern and all ones
- loadc RA, 0x55
- loadc RB, 0xFF
+ loadi RA, 0x55
+ loadi RB, 0xFF
 
 # output reg and then flip it
  out ra
- xor ra, ra, rb
+ xor ra, rb
 
 # jump back to the out instruction
  jmp 2

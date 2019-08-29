@@ -1,10 +1,11 @@
 # load first two numbers of series
-loadc RA, 1
-loadc RB, 1
+loadi RA, 1
+loadi RB, 1
 
 # add and slide over results
-add rc, ra, rb
-mov ra, rb
-mov rb, rc
 out ra
+add ra, rb
+mov bp, ra
+mov ra, rb
+mov rb, bp
 jmp 2
