@@ -1,10 +1,13 @@
 #include "assembler.h"
+#include "simulator.h"
 #include "file_io.h"
 #include "machine_io.h"
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
 
 #include <string>
+#include <iostream>
+#include <iomanip>
 
 TEST_CASE("Internal assembler test", "[asm]") {
 	// Don't bother checking anything else if the internal test fails
@@ -117,24 +120,26 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 	}
 }
 
+// Used for both the assembler tests and benchmarks
 static const std::vector<Test_Point> test_programs = {
 	// Should flash alternating 0x55 and 0xAA
-	{"flasher_program.txt", "A055 A4FF B000 4000 9302 "},
+	{"flasher_program.txt", "A055 A4FF B100 4100 9202 "},
 	// Should output the fibonacci sequence
-	{"fib_program.txt", "A001 A401 0800 8100 8600 B000 9302 "},
+	{"fib_program.txt", "A001 A401 B100 0100 8800 8100 8600 9202 "},
 	// Tests using labels and relative jumps. Should just count up
-	{"label.txt", "A00A 0101 B000 93FE "},
+	{"label.txt", "A00A 0301 B100 90FE "},
 	// Note this program should produce the output 003C when run
-	{"sum.txt", "A00A 7300 A00B 7301 A017 7302 A008 7303 A003 7304 A804 6200 0101 7200 1B01 8200 9FFB A804 A400 8100 6600 0000 1B01 8400 8200 9FFA B400 E000 " },
+	{"sum.txt", "D000 A00A 7200 A00B 7201 A017 7202 A008 7203 A003 7204 A804 6000 0301 7000 1B01 8200 9CFB A804 4500 8100 6400 0100 1B01 8400 8200 9CFA B500 E000 " },
 	// Should produce 0x0016 output
-	{"var_test.txt", "A00A 7300 A00B A401 0000 7301 6300 6701 0000 7300 B000 E000 "},
+	{"var_test.txt", "D000 A00A 7200 A00B A401 0100 7201 6200 6601 0100 7200 B100 E000 "},
 	// Should produce 0x002B output
-	{"array_test.txt", "A00A 7300 A00B 7301 A016 7302 A000 6702 0400 A801 6200 0400 1B01 8200 9FFC B400 E000 "},
+	{"array_test.txt", "D000 A00A 7200 A00B 7201 A016 7202 A000 6602 0400 A801 6000 0400 1B01 8200 9CFC B500 E000 "},
 	// Alternately flashes all the LEDs on and off for 400 "counts" each (~3 * 400 clocks)
-	{"flash.txt", "A0FF B000 A090 A201 1101 9FFF A000 B000 A090 A201 1101 9FFF 93F4 "},
+	{"flash.txt", "D000 A0FF B100 A090 A201 1301 9CFF A000 B100 A090 A201 1301 9CFF 9201 "},
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
+
 	for (const auto& test_point : test_programs) {
 		INFO(test_point.input);
 
@@ -145,6 +150,22 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		std::string output = machine_inst_to_unformatted(assemble(program));
 
 		CHECK(output == test_point.expected_out);
+
+		auto instructions = assemble(program);
+		Simulator sim(instructions, 256);
+		int steps = 0;
+		std::cout << std::hex << std::setfill('0');
+		while (!sim.is_halted && steps < 200) {
+			sim.step();
+//			std::cout
+//				<< std::setw(2) << steps << " "
+//				<< std::setw(4) << sim.pc << " "
+//				<< std::setw(4)  << sim.inst << " "
+//				<< std::setw(4) << sim.next_inst << " "
+//				<< std::setw(4) <<  sim.output
+//				<< std::endl;
+			++steps;
+		}
 	}
 }
 
