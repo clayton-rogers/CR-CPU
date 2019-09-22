@@ -9,9 +9,21 @@ localparam LOAD   = 4'h6;
 localparam STORE  = 4'h7;
 localparam MOVE   = 4'h8;
 localparam JUMP   = 4'h9;
-localparam LOADC  = 4'hA;
-localparam OUT    = 4'hB;
-localparam UNDEF3 = 4'hC;
-localparam UNDEF4 = 4'hD;
-localparam HALT   = 4'hE;
-localparam NOP    = 4'hF;
+localparam LOADI  = 4'hA;
+localparam IN_OUT_PUSH_POP = 4'hB;
+localparam CALL_RCALL_RET  = 4'hC;
+localparam LOADA           = 4'hD;
+localparam HALT            = 4'hE;
+localparam NOP             = 4'hF;
+
+// Sub commands for 0xB
+localparam SUB_IN = 2'b00;
+localparam SUB_OUT = 2'b01;
+localparam SUB_PUSH = 2'b10;
+localparam SUB_POP = 2'b11;
+
+// Sub commands for 0xC
+localparam SUB_CALL = 2'b00;
+localparam SUB_RCALL = 2'b01;
+localparam SUB_RET1 = 2'b10;
+localparam SUB_RET2 = 2'b11;

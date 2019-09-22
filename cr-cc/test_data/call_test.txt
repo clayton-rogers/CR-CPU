@@ -1,0 +1,53 @@
+.static 11 rand_buffer
+.static 6 vars
+
+loadi sp 0x00
+loadi.h sp 0x01
+
+
+loadi bp .vars
+loadi ra 11
+store.bp ra 0
+loadi ra 12
+store.bp ra 1
+loadi ra 13
+store.bp ra 2
+loadi ra 14
+store.bp ra 3
+loadi ra 15
+store.bp ra 4
+loadi ra 16
+store.bp ra 5
+
+
+
+loada .vars
+load ra, 11
+push ra
+load ra, 12
+load rb, 13
+call.r .fn_add
+pop rb # get rid of extra slot
+push ra
+load ra, 14
+push ra
+load ra, 15
+load rb, 16
+call.r .fn_add
+pop rb # extra from fx
+pop rb # arg from first call
+add ra, rb
+out ra
+halt
+
+
+# add three numbers
+#   INPUT
+#       ra, rb, sp+1
+#   OUTPUT
+#       ra
+.fn_add:
+add ra, rb
+load.sp rb, 1
+add ra, rb
+ret

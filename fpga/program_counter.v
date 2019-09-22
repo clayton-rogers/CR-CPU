@@ -6,8 +6,8 @@ parameter PROGRAM_FILENAME = "program.hex";
   input i_clk;
   input i_inc;
   input i_load;
-  input [(ADDR_WIDTH-1):0] i_addr;
-  output [(ADDR_WIDTH-1):0] o_addr;
+  input [15:0] i_addr;
+  output [15:0] o_addr;
   output [15:0] o_instruction;
 
   reg last_was_load = 1'b1;
@@ -18,7 +18,7 @@ parameter PROGRAM_FILENAME = "program.hex";
   assign o_instruction =  (last_was_load) ? last_instruction : ram_out;
   assign o_addr = instruction_address - 1;
 
-reg [(ADDR_WIDTH-1):0] instruction_address = 0;
+reg [15:0] instruction_address = 0;
 wire [15:0] ram_out;
 ram #(.ADDR_WIDTH(ADDR_WIDTH), .FILENAME(PROGRAM_FILENAME)) ram (
   .i_clk(i_clk),

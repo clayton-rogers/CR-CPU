@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <iomanip>
 
-enum class opcode {
+enum class OPCODE {
 	ADD,
 	SUB,
 	AND,
@@ -21,94 +21,243 @@ enum class opcode {
 	STORE,
 	MOV,
 	JMP,
-	JIFZ,
-	JINZ,
-	JGZ,
-	LOADC,
-	LOADCH,
+	LOADI,
+	IN,
 	OUT,
+	PUSH,
+	POP,
+	CALL,
+	RET,
+	LOADA,
 	HALT,
 	NOP,
+
+	LAST,
+	FIRST = ADD,
 };
 
-enum class argument_t {
+static const std::map<std::string, OPCODE> instruction_str_map = {
+	{"add", OPCODE::ADD},
+	{"sub", OPCODE::SUB},
+	{"and", OPCODE::AND},
+	{"or", OPCODE::OR},
+	{"xor", OPCODE::XOR},
+	{"shftl", OPCODE::SHFTL},
+	{"shftr", OPCODE::SHFTR},
+	{"load", OPCODE::LOAD},
+	{"store", OPCODE::STORE},
+	{"mov", OPCODE::MOV},
+	{"jmp", OPCODE::JMP},
+	{"loadi", OPCODE::LOADI},
+	{"in", OPCODE::IN},
+	{"out", OPCODE::OUT},
+	{"push", OPCODE::PUSH},
+	{"pop", OPCODE::POP},
+	{"call", OPCODE::CALL},
+	{"ret", OPCODE::RET},
+	{"loada", OPCODE::LOADA},
+	{"halt", OPCODE::HALT},
+	{"nop", OPCODE::NOP},
+};
+
+
+enum class ARG_TYPE {
 	RA,
 	RB,
-	RC,
-	RD,
+	BP,
+	SP,
 	CONST,
 	NONE,
 };
 
-struct argument {
-	argument_t type = argument_t::RA;
+static const std::map<std::string, ARG_TYPE> argument_str_map = {
+	{"ra", ARG_TYPE::RA},
+	{"rb", ARG_TYPE::RB},
+	{"bp", ARG_TYPE::BP},
+	{"sp", ARG_TYPE::SP},
+};
+
+enum class FLAGS_TYPE {
+	RELATIVE, // For jumps and calls
+	IF_ZERO,  // For conditional jumps
+	IF_NON_ZERO, // "
+	IF_GREATER_ZERO, // "
+	HIGH_BYTE, // For load immediate
+	BASE_POINTER, // For load/store
+	STACK_POINTER, // "
+};
+
+static const std::map<std::string, FLAGS_TYPE> flags_str_map = {
+	{"r", FLAGS_TYPE::RELATIVE},
+	{"ifz", FLAGS_TYPE::IF_ZERO},
+	{"inz", FLAGS_TYPE::IF_NON_ZERO},
+	{"igz", FLAGS_TYPE::IF_GREATER_ZERO},
+	{"h", FLAGS_TYPE::HIGH_BYTE},
+	{"bp", FLAGS_TYPE::BASE_POINTER},
+	{"sp", FLAGS_TYPE::STACK_POINTER},
+};
+
+struct Argument {
+	ARG_TYPE type = ARG_TYPE::RA;
+	bool const_is_label = false; // whether the constant value is a immediate or label
 	int value = 0;
 	std::string label_value = "";
 };
 
-// one destination and up to two arguments
-static const int NUMBER_ARGS = 3;
-static const int CONST_LABEL_VALUE = -256;
-
-struct instruction_t {
-	opcode opcode = opcode::NOP;
-	argument arg[NUMBER_ARGS];
+struct Instruction {
+	int number = 0;
+	OPCODE opcode = OPCODE::NOP;
+	std::vector<FLAGS_TYPE> flags;
+	std::vector<Argument> args;
 };
 
-struct line_t {
-	int line_number;
-	std::string line;
-	std::vector<std::string> tokens;
-	bool is_instruction;
-	int instruction_number;
-	instruction_t inst;
-};
-
-struct instruction_info {
+struct Instruction_Info {
 	// one destination and up to two arguments
-	std::vector<argument_t> allowable[NUMBER_ARGS];
+	std::vector<ARG_TYPE> allowable_arg1 = {};
+	std::vector<ARG_TYPE> allowable_arg2 = {};
+	std::vector<FLAGS_TYPE> allowable_flags = {};
 };
 
-static const std::vector<argument_t> ALL_REG = { argument_t::RA, argument_t::RB, argument_t::RC, argument_t::RD };
-// exclusion of RD from this list is deliberate
-static const std::vector<argument_t> ANY_REG = { argument_t::RA, argument_t::RB, argument_t::RC, argument_t::CONST };
-static const std::vector<argument_t> OPTIONAL_CONST = { argument_t::CONST, argument_t::NONE };
-static const std::vector<argument_t> NO_ARG = { argument_t::NONE };
+static const std::vector<ARG_TYPE> ALL_REGISTER = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::BP, ARG_TYPE::SP };
+static const std::vector<ARG_TYPE> REGULAR_REGISTER_OR_CONSTANT = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::BP, ARG_TYPE::CONST };
+static const std::vector<ARG_TYPE> ADDRESS_OFFSET = { ARG_TYPE::BP, ARG_TYPE::SP, ARG_TYPE::CONST };
+static const std::vector<ARG_TYPE> NO_ARG = { ARG_TYPE::NONE };
 
-static const instruction_info STANDARD_ARITHMETIC = {
-	ALL_REG,
-   {argument_t::RA, argument_t::RC},
-   {argument_t::RB, argument_t::CONST}
+static const Instruction_Info STANDARD_ARITHMETIC = {
+	ALL_REGISTER, // Destination/arg1
+	REGULAR_REGISTER_OR_CONSTANT, // Source/arg2
+	{} // No flags allowed
 };
 
-static const instruction_info NO_ARGS = { NO_ARG,NO_ARG,NO_ARG };
-
-static std::map<opcode, instruction_info> instructions = {
-	{opcode::ADD,  STANDARD_ARITHMETIC},
-	{opcode::SUB,  STANDARD_ARITHMETIC},
-	{opcode::AND,  STANDARD_ARITHMETIC},
-	{opcode::OR,   STANDARD_ARITHMETIC},
-	{opcode::XOR,  STANDARD_ARITHMETIC},
-	{opcode::SHFTL, {ALL_REG, {argument_t::RB, argument_t::CONST},{argument_t::NONE}}},
-	{opcode::SHFTR, {ALL_REG, {argument_t::RB, argument_t::CONST},{argument_t::NONE}}},
-	{opcode::LOAD,  {ALL_REG, ANY_REG, OPTIONAL_CONST}},
-	{opcode::STORE, {ALL_REG, ANY_REG, OPTIONAL_CONST}},
-	{opcode::MOV,   {ALL_REG, ALL_REG, NO_ARG}},
-	{opcode::JMP,   {ANY_REG, OPTIONAL_CONST, NO_ARG}},
-	{opcode::JIFZ,  {ANY_REG, OPTIONAL_CONST, NO_ARG}},
-	{opcode::JINZ,  {ANY_REG, OPTIONAL_CONST, NO_ARG}},
-	{opcode::JGZ,   {ANY_REG, OPTIONAL_CONST, NO_ARG}},
-	{opcode::LOADC, {ALL_REG, {argument_t::CONST}, NO_ARG}},
-	{opcode::LOADCH,{ALL_REG, {argument_t::CONST}, NO_ARG}},
-	{opcode::OUT, {ALL_REG, NO_ARG, NO_ARG}},
-	{opcode::HALT,  NO_ARGS},
-	{opcode::NOP,  NO_ARGS},
+static std::map<OPCODE, Instruction_Info> instruction_definitions = {
+	{OPCODE::ADD,  STANDARD_ARITHMETIC},
+	{OPCODE::SUB,  STANDARD_ARITHMETIC},
+	{OPCODE::AND,  STANDARD_ARITHMETIC},
+	{OPCODE::OR,   STANDARD_ARITHMETIC},
+	{OPCODE::XOR,  STANDARD_ARITHMETIC},
+	{OPCODE::SHFTL, {ALL_REGISTER, {ARG_TYPE::RB, ARG_TYPE::CONST},{}}},
+	{OPCODE::SHFTR, {ALL_REGISTER, {ARG_TYPE::RB, ARG_TYPE::CONST},{}}},
+	{OPCODE::LOAD,  {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::BASE_POINTER, FLAGS_TYPE::STACK_POINTER}}},
+	{OPCODE::STORE, {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::BASE_POINTER, FLAGS_TYPE::STACK_POINTER}}},
+	{OPCODE::MOV,   {ALL_REGISTER, ALL_REGISTER, {}}},
+	{OPCODE::JMP,   {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE, FLAGS_TYPE::IF_GREATER_ZERO, FLAGS_TYPE::IF_NON_ZERO, FLAGS_TYPE::IF_ZERO}}},
+	{OPCODE::LOADI, {ALL_REGISTER, {ARG_TYPE::CONST}, {FLAGS_TYPE::HIGH_BYTE}}},
+	{OPCODE::IN,    {ALL_REGISTER, NO_ARG, {}}},
+	{OPCODE::OUT,   {ALL_REGISTER, NO_ARG, {}}},
+	{OPCODE::PUSH,  {ALL_REGISTER, NO_ARG, {}}},
+	{OPCODE::POP,   {ALL_REGISTER, NO_ARG, {}}},
+	{OPCODE::CALL,  {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE}}},
+	{OPCODE::RET,   {NO_ARG, NO_ARG, {}}},
+	{OPCODE::LOADA, {{ARG_TYPE::CONST}, NO_ARG, {}}},
+	{OPCODE::HALT,  {NO_ARG, NO_ARG, {}}},
+	{OPCODE::NOP,   {NO_ARG, NO_ARG, {}}},
 };
 
-static std::string convert_line(const std::string& input) {
-	std::string output;
-	output.reserve(input.size());
 
+struct AssemblerState {
+	std::map<std::string, int> label_map;
+	std::vector<Instruction> instructions;
+	int current_line = 0;
+
+	int static_allocation_offset = 0;
+	int next_inst_addr = 0;
+};
+
+static std::vector<std::string> split_by_lines(const std::string& assembly) {
+	std::vector<std::string> lines;
+	std::stringstream asm_wrapper(assembly);
+	std::string temp;
+	while (std::getline(asm_wrapper, temp, '\n')) {
+		lines.push_back(temp);
+	}
+
+	return lines;
+}
+
+// Generic function to see if a vector contains a particular value.
+template <typename T>
+bool vector_contains(const T item, const std::vector<T>& list) {
+	bool found = false;
+	for (const auto& item_of_list : list) {
+		if (item == item_of_list) {
+			found = true;
+			break;
+		}
+	}
+
+	return found;
+}
+
+static std::string to_string(ARG_TYPE t) {
+	switch (t) {
+	case ARG_TYPE::CONST:
+		return "const";
+	case ARG_TYPE::RA:
+		return "ra";
+	case ARG_TYPE::RB:
+		return "rb";
+	case ARG_TYPE::BP:
+		return "bp";
+	case ARG_TYPE::SP:
+		return "sp";
+	case ARG_TYPE::NONE:
+		return "none";
+	}
+
+	// Should never hit this
+	return "none-unknown";
+}
+
+static const Argument parse_token_for_arg(std::string token) {
+	Argument output;
+
+	try {
+		output.type = argument_str_map.at(token);
+		return output;
+
+	} catch (std::out_of_range e) {
+		// if we failed to find a match then it must be a constant (or error);
+		output.type = ARG_TYPE::CONST;
+	}
+
+	// If we got here then it must be a constant
+	if (token.at(0) == '.') {
+		output.const_is_label = true;
+		output.label_value = token.substr(1, std::string::npos);
+	} else if (token.length() > 2 && token.at(0) == '0' && token.at(1) == 'x') {
+		try {
+			output.value = std::stoi(token, 0, 16);
+		} catch (std::logic_error e) {
+			throw std::logic_error("Failed to parse token as register or constant: " + token);
+		}
+		if (output.value < 0 || output.value > 0xFF) {
+			throw std::logic_error("Parsed hex constant out of range (0x00 .. 0xFF): " + std::to_string(output.value));
+		}
+	} else {
+		try {
+			output.value = std::stoi(token);
+		} catch (std::logic_error e) {
+			throw std::logic_error("Failed to parse token as register or constant: " + token);
+		}
+		if (output.value < -128 || output.value > 127) {
+			throw std::logic_error("Parsed dec constant out of range (-128 .. 127): " + std::to_string(output.value));
+		}
+	}
+
+	return output;
+}
+
+// This function makes lines more uniform for easier parsing. It:
+// - converts to lowercase
+// - strips comments ("#")
+// - converts punctuation to space
+// - strips extra space
+// - converts each word into a token
+static std::vector<std::string> tokenize_line(const std::string& input) {
+	std::string converted;
+	converted.reserve(input.size());
+
+	// Perform transform
 	char last = ' ';
 	for (int i = 0; i < input.size(); ++i) {
 		char current = input.at(i);
@@ -124,219 +273,178 @@ static std::string convert_line(const std::string& input) {
 		if (current == ' ' && last == ' ') {
 			// don't add
 		} else {
-			output.append(&current, 1);
+			converted.append(&current, 1);
 		}
 
 		last = current;
 	}
 
-	return output;
-}
-
-static const std::map<std::string, opcode> instruction_map = {
-	{"add", opcode::ADD},
-	{"sub", opcode::SUB},
-	{"and", opcode::AND},
-	{"or", opcode::OR},
-	{"xor", opcode::XOR},
-	{"shftl", opcode::SHFTL},
-	{"shftr", opcode::SHFTR},
-	{"load", opcode::LOAD},
-	{"store", opcode::STORE},
-	{"mov", opcode::MOV},
-	{"jmp", opcode::JMP},
-	{"jifz", opcode::JIFZ},
-	{"jinz", opcode::JINZ},
-	{"jgz", opcode::JGZ},
-	{"loadc", opcode::LOADC},
-	{"loadch", opcode::LOADCH},
-	{"out", opcode::OUT},
-	{"halt", opcode::HALT},
-	{"nop", opcode::NOP},
-
-	// TODO add rest
-};
-
-static const std::map<std::string, argument_t> argument_map = {
-	{"ra", argument_t::RA},
-	{"rb", argument_t::RB},
-	{"rc", argument_t::RC},
-	{"rd", argument_t::RD},
-};
-
-static const argument get_arg(std::string token) {
-	argument output;
-
-	try {
-		output.type = argument_map.at(token);
-	} catch (std::out_of_range e) {
-		// if we failed to find a match then it must be a constant (or error);
-		output.type = argument_t::CONST;
-	}
-
-	if (output.type == argument_t::CONST) {
-
-		if (token.at(0) == '.') {
-			output.label_value = token.substr(1, std::string::npos);
-			output.value = CONST_LABEL_VALUE;
-		} else if (token.length() > 2 &&
-			token.at(0) == '0' &&
-			token.at(1) == 'x') {
-			try {
-				output.value = std::stoi(token, 0, 16);
-			} catch (std::logic_error e) {
-				throw std::logic_error("Failed to parse token as register or constant: " + token);
-			}
-			if (output.value < 0 || output.value > 0xFF) {
-				throw std::logic_error("Parsed hex constant out of range (0x00 .. 0xFF): " + std::to_string(output.value));
-			}
-		} else {
-			try {
-				output.value = std::stoi(token);
-			} catch (std::logic_error e) {
-				throw std::logic_error("Failed to parse token as register or constant: " + token);
-			}
-			if (output.value < -128 || output.value > 127) {
-				throw std::logic_error("Parsed dec constant out of range (-128 .. 127): " + std::to_string(output.value));
-			}
+	// Separate into tokens
+	std::vector<std::string> output;
+	{
+		std::string temp;
+		std::stringstream converted_ss(converted);
+		while (std::getline(converted_ss, temp, ' ')) {
+			output.push_back(temp);
 		}
-
 	}
 
 	return output;
 }
 
-static std::string to_string(argument_t t) {
-	switch (t) {
-	case argument_t::CONST:
-		return "const";
-	case argument_t::RA:
-		return "ra";
-	case argument_t::RB:
-		return "rb";
-	case argument_t::RC:
-		return "rc";
-	case argument_t::RD:
-		return "rd";
-	case argument_t::NONE:
-		return "none";
+static void handle_assembler_directive(const std::vector<std::string>& tokens, AssemblerState* as) {
+
+	const std::string& directive = tokens.at(0);
+
+	auto end_of_label = directive.find(':');
+	if (end_of_label != std::string::npos) {
+		// This is a goto label
+		std::string label = directive.substr(1, (end_of_label - 1));
+		if (as->label_map.count(label) == 1) {
+			throw std::logic_error("Duplicate label: " + label);
+		}
+		as->label_map[label] = as->next_inst_addr;
+
+		return;
 	}
 
-	// Should never hit this
-	return "none";
+	if (directive == ".static") {
+		const int size = std::stoi(tokens.at(1));
+		as->label_map[tokens.at(2)] = as->static_allocation_offset;
+		as->static_allocation_offset += size;
+
+		return;
+	}
+
+	// If we didn't hit any of the ifs, then the directive is unknown
+	throw std::logic_error("Encountered unknown assembler directive: " + tokens.at(0));
 }
 
-static instruction_t tokens_to_instruction(const std::vector<std::string>& tokens) {
+static Instruction tokens_to_instruction(const std::vector<std::string>& tokens) {
 
-	if (tokens.size() > 1 + NUMBER_ARGS) {
+	// one input1/destination, one input2/constant
+	static const int MAX_NUMBER_ARGS = 2;
+
+	if (tokens.size() > 1 + MAX_NUMBER_ARGS) {
 		throw std::logic_error("Too many arguments");
 	}
 
-	instruction_t output;
+	Instruction output;
 
 	try {
-		output.opcode = instruction_map.at(tokens.at(0));
+		std::stringstream full_opcode(tokens.at(0));
+		std::string temp;
+		std::getline(full_opcode, temp, '.');
+		output.opcode = instruction_str_map.at(temp);
+		while (std::getline(full_opcode, temp, '.')) {
+			output.flags.push_back(flags_str_map.at(temp));
+		}
 	} catch (const std::logic_error&) {
-		throw std::logic_error("Invalid opcode: " + tokens.at(0));
+		throw std::logic_error("Invalid opcode or flag: " + tokens.at(0));
 	}
 
-	const instruction_info& i_info = instructions.at(output.opcode);
+	const Instruction_Info& i_info = instruction_definitions.at(output.opcode);
 
-	for (int arg = 0; arg < NUMBER_ARGS; ++arg) {
-		if (tokens.size() <= arg + 1) {
-			// check that none is allowed
-			bool good = false;
-			for (const argument_t& allowed : i_info.allowable[arg]) {
-				if (allowed == argument_t::NONE) {
-					good = true;
-				}
-			}
-			if (!good) {
-				throw std::logic_error("Fewer than required arguments found.");
-			}
-			continue;
+	// Verify previously decoded flags
+	for (const auto& flag : output.flags) {
+		if (!vector_contains(flag, i_info.allowable_flags)) {
+			throw std::logic_error("Received unexpected flag: " + tokens.at(0));
 		}
-
-		if (i_info.allowable[arg].size() == 0) {
-			// got an arg, but none is allowed
-			throw std::logic_error("Got more arguments then were expected");
-		}
-
-		argument a = get_arg(tokens.at(arg + 1));
-		bool good = false;
-		for (const argument_t& allowed : i_info.allowable[arg]) {
-			if (a.type == allowed) {
-				good = true;
-			}
-		}
-
-		if (arg > 0 &&
-			output.arg[arg - 1].type == argument_t::CONST &&
-			a.type == argument_t::CONST) {
-			throw std::logic_error("Got two constants in a row");
-		}
-
-		if (!good) {
-			throw std::logic_error("Got an argument of type that wasn't expected. Got: " + to_string(a.type));
-		}
-
-		output.arg[arg] = a;
 	}
+
+
+	if (tokens.size() == 1) {
+		if (!vector_contains(ARG_TYPE::NONE, i_info.allowable_arg1)) {
+			throw std::logic_error("Fewer than required arguments found.");
+		}
+
+		return output;
+	}
+
+	// Must have at least the first arg if here.
+	Argument arg = parse_token_for_arg(tokens.at(1));
+	if (!vector_contains(arg.type, i_info.allowable_arg1)) {
+		throw std::logic_error("Got an argument 1 of type that wasn't expected. Got: " + to_string(arg.type));
+	}
+
+	output.args.push_back(arg);
+
+	if (tokens.size() == 2) {
+		if (!vector_contains(ARG_TYPE::NONE, i_info.allowable_arg2)) {
+			throw std::logic_error("Fewer than required arguments found.");
+		}
+
+		return output;
+	}
+
+	// Must have both arguments if here.
+	arg = parse_token_for_arg(tokens.at(2));
+	if (!vector_contains(arg.type, i_info.allowable_arg2)) {
+		throw std::logic_error("Got an argument 2 of type that wasn't expected. Got: " + to_string(arg.type));
+	}
+
+	output.args.push_back(arg);
 
 	return output;
 }
 
-std::string machine_to_string(std::uint16_t machine) {
-	std::stringstream output;
-	output << std::hex << std::setfill('0') << std::setw(4) << machine;
-	std::string temp = output.str();
-	for (auto& c : temp) c = static_cast<char>(std::toupper(c));
-	return temp;
-}
+static std::string instruction_to_machine(const Instruction& inst, const int instruction_number, const std::map<std::string, int>& labels) {
 
-std::map<opcode, int> opcode_to_machine =
-{
-	{opcode::ADD,   0},
-	{opcode::SUB,   1},
-	{opcode::AND,   2},
-	{opcode::OR,    3},
-	{opcode::XOR,   4},
-	{opcode::SHFTL, 5},
-	{opcode::SHFTR, 5},
-	{opcode::LOAD,  6},
-	{opcode::STORE, 7},
-	{opcode::MOV,   8},
-	{opcode::JMP,   9},
-	{opcode::JIFZ,  9},
-	{opcode::JINZ,  9},
-	{opcode::JGZ,   9},
-	{opcode::LOADC, 10},
-	{opcode::LOADCH,10},
-	{opcode::OUT,   11},
-	{opcode::HALT,  14},
-	{opcode::NOP,   15},
-};
+	const std::map<OPCODE, int> opcode_to_machine =
+	{
+		{OPCODE::ADD,   0},
+		{OPCODE::SUB,   1},
+		{OPCODE::AND,   2},
+		{OPCODE::OR,    3},
+		{OPCODE::XOR,   4},
+		{OPCODE::SHFTL, 5},
+		{OPCODE::SHFTR, 5},
+		{OPCODE::LOAD,  6},
+		{OPCODE::STORE, 7},
+		{OPCODE::MOV,   8},
+		{OPCODE::JMP,   9},
+		{OPCODE::LOADI, 10},
+		{OPCODE::IN,    11},
+		{OPCODE::OUT,   11},
+		{OPCODE::PUSH,  11},
+		{OPCODE::POP,   11},
+		{OPCODE::CALL,  12},
+		{OPCODE::RET,   12},
+		{OPCODE::LOADA, 13},
+		{OPCODE::HALT,  14},
+		{OPCODE::NOP,   15},
+	};
 
-std::string instruction_to_machine(const instruction_t& inst, const int instruction_number, const std::map<std::string, int>& labels) {
+	auto machine_to_string = [](std::uint16_t machine) -> std::string {
+		std::stringstream output;
+		output << std::hex << std::setfill('0') << std::setw(4) << machine;
+		std::string temp = output.str();
+		for (auto& c : temp) c = static_cast<char>(std::toupper(c));
+		return temp;
+	};
+
 	std::uint16_t machine = 0;
 
 	// Top four bits are always opcode
 	machine |= opcode_to_machine.at(inst.opcode) << 12;
 
 	// Bottom 8 bits are always constant if it exists
-	for (argument a : inst.arg) {
-		if (a.type == argument_t::CONST) {
+	for (Argument a : inst.args) {
+		if (a.type == ARG_TYPE::CONST) {
 			int const_value = 0;
-			if (a.value != CONST_LABEL_VALUE) {
+			if (!a.const_is_label) {
 				const_value = a.value;
 			} else {
 				switch (inst.opcode) {
-				case opcode::JMP:
-				case opcode::JIFZ:
-				case opcode::JINZ:
-				case opcode::JGZ:
+				case OPCODE::JMP:
+				case OPCODE::CALL:
 					// label instruction numbers should be relative to current instruction
-					const_value = labels.at(a.label_value) - instruction_number;
+					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+						const_value = labels.at(a.label_value) - instruction_number;
+					} else {
+						const_value = labels.at(a.label_value);
+					}
+					const_value &= 0xFF;
 					break;
 				default:
 				{
@@ -355,76 +463,74 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 					}
 
 					const_value = labels.at(label_str) + offset;
+					if (inst.opcode == OPCODE::LOADA) {
+						const_value >>= 8;
+					} else {
+						const_value &= 0xFF;
+					}
 				}
-					break;
+				break;
 				}
-				
+
 			}
 			machine += static_cast<std::uint8_t>(const_value);
 		}
 	}
 
 	switch (inst.opcode) {
-	case opcode::ADD:
-	case opcode::SUB:
-	case opcode::AND:
-	case opcode::OR:
-	case opcode::XOR:
+	case OPCODE::ADD:
+	case OPCODE::SUB:
+	case OPCODE::AND:
+	case OPCODE::OR:
+	case OPCODE::XOR:
 	{
 		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
-
-		int source1 = 0;
-		switch (inst.arg[1].type) {
-		case argument_t::RA: source1 = 0; break;
-		case argument_t::RC: source1 = 1; break;
-		default:
-			throw std::logic_error("Should never get here: invalid source1");
-		}
-
-		int source2 = 0;
-		switch (inst.arg[2].type) {
-		case argument_t::RB: source2 = 0; break;
-		case argument_t::CONST: source2 = 1; break;
-		default:
-			throw std::logic_error("Should never get here: invalid source2");
-		}
-
-		machine |= dest << 10;
-		machine |= source1 << 9;
-		machine |= source2 << 8;
-
-		break;
-	}
-	case opcode::SHFTL:
-	case opcode::SHFTR:
-	{
-		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
 		}
 
 		int source = 0;
-		switch (inst.arg[1].type) {
-		case argument_t::RB: source = 0; break;
-		case argument_t::CONST: source = 1; break;
+		switch (inst.args[1].type) {
+		case ARG_TYPE::RA: source = 0; break;
+		case ARG_TYPE::RB: source = 1; break;
+		case ARG_TYPE::BP: source = 2; break;
+		case ARG_TYPE::CONST: source = 3; break;
+		default:
+			throw std::logic_error("Should never get here: invalid source1");
+		}
+
+		machine |= dest << 10;
+		machine |= source << 8;
+
+		break;
+	}
+	case OPCODE::SHFTL:
+	case OPCODE::SHFTR:
+	{
+		int dest = 0;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
+		default:
+			throw std::logic_error("Should never get here: invalid dest reg");
+		}
+
+		int source = 0;
+		switch (inst.args[1].type) {
+		case ARG_TYPE::RB: source = 0; break;
+		case ARG_TYPE::CONST: source = 1; break;
 		default:
 			throw std::logic_error("Should never get here: invalid source");
 		}
 
-		int direction = (inst.opcode == opcode::SHFTR) ? 0 : 1;
+		int direction = (inst.opcode == OPCODE::SHFTR) ? 0 : 1;
 
 		machine |= dest << 10;
 		machine |= source << 9;
@@ -432,27 +538,26 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 
 		break;
 	}
-	case opcode::LOAD:
-	case opcode::STORE:
+	case OPCODE::LOAD:
+	case OPCODE::STORE:
 	{
 		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
 		}
 
-		int offset = 0;
-		switch (inst.arg[1].type) {
-		case argument_t::RA:    offset = 0; break;
-		case argument_t::RB:    offset = 1; break;
-		case argument_t::RC:    offset = 2; break;
-		case argument_t::CONST: offset = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid offset reg");
+		// NOTE: 3 is never used
+		int offset = 2; // by default relative to the address register
+		if (vector_contains(FLAGS_TYPE::BASE_POINTER, inst.flags)) {
+			offset = 0;
+		}
+		if (vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
+			offset = 1;
 		}
 
 		machine |= dest << 10;
@@ -460,24 +565,24 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 
 		break;
 	}
-	case opcode::MOV:
+	case OPCODE::MOV:
 	{
 		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
 		}
 
 		int source = 0;
-		switch (inst.arg[1].type) {
-		case argument_t::RA: source = 0; break;
-		case argument_t::RB: source = 1; break;
-		case argument_t::RC: source = 2; break;
-		case argument_t::RD: source = 3; break;
+		switch (inst.args[1].type) {
+		case ARG_TYPE::RA: source = 0; break;
+		case ARG_TYPE::RB: source = 1; break;
+		case ARG_TYPE::BP: source = 2; break;
+		case ARG_TYPE::SP: source = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid source reg");
 		}
@@ -487,86 +592,101 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 
 		break;
 	}
-	case opcode::JMP:
-	case opcode::JIFZ:
-	case opcode::JINZ:
-	case opcode::JGZ:
+	case OPCODE::JMP:
 	{
 		int type_of_jmp = 0;
-		switch (inst.opcode) {
-		case opcode::JMP:  type_of_jmp = 0; break;
-		case opcode::JIFZ: type_of_jmp = 1; break;
-		case opcode::JINZ: type_of_jmp = 2; break;
-		case opcode::JGZ:  type_of_jmp = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid jmp instruction");
+		if (vector_contains(FLAGS_TYPE::IF_ZERO, inst.flags)) {
+			type_of_jmp = 1;
+		}
+		if (vector_contains(FLAGS_TYPE::IF_NON_ZERO, inst.flags)) {
+			type_of_jmp = 2;
+		}
+		if (vector_contains(FLAGS_TYPE::IF_GREATER_ZERO, inst.flags)) {
+			type_of_jmp = 3;
 		}
 
 		int offset = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA:    offset = 0; break;
-		case argument_t::RB:    offset = 1; break;
-		case argument_t::RC:    offset = 2; break;
-		case argument_t::CONST: offset = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid offset reg");
+		if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+			offset = 0;
+		} else {
+			offset = 1;
 		}
 
 		machine |= type_of_jmp << 10;
-		machine |= offset << 8;
+		machine |= offset << 9;
 
 		break;
 	}
-	case opcode::LOADC:
+	case OPCODE::LOADI:
 	{
 		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
 		}
 
+		int high_flag = (vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) ? 1 : 0;
+
 		machine |= dest << 10;
+		machine |= high_flag << 9;
 		break;
 	}
-	case opcode::LOADCH:
+	case OPCODE::IN:
+	case OPCODE::OUT:
+	case OPCODE::PUSH:
+	case OPCODE::POP:
 	{
 		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		switch (inst.args[0].type) {
+		case ARG_TYPE::RA: dest = 0; break;
+		case ARG_TYPE::RB: dest = 1; break;
+		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
 		}
 
-		machine |= dest << 10;
-		machine |= 1 << 9; // this is what makes it the high part of reg
-
-		break;
-	}
-	case opcode::OUT:
-	{
-		int dest = 0;
-		switch (inst.arg[0].type) {
-		case argument_t::RA: dest = 0; break;
-		case argument_t::RB: dest = 1; break;
-		case argument_t::RC: dest = 2; break;
-		case argument_t::RD: dest = 3; break;
+		int type_of_operation = 0;
+		switch (inst.opcode) {
+		case OPCODE::IN: type_of_operation = 0; break;
+		case OPCODE::OUT: type_of_operation = 1; break;
+		case OPCODE::PUSH: type_of_operation = 2; break;
+		case OPCODE::POP: type_of_operation = 3; break;
 		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
+			throw std::logic_error("Should never get here: invalid opcode in,out,push,pop");
 		}
 
 		machine |= dest << 10;
+		machine |= type_of_operation << 8;
 
 		break;
 	}
-	case opcode::HALT:
-	case opcode::NOP:
+	case OPCODE::CALL:
+	case OPCODE::RET:
+	{
+		int type_of_operation = 0;
+		switch (inst.opcode) {
+		case OPCODE::CALL:
+			type_of_operation = vector_contains(FLAGS_TYPE::RELATIVE, inst.flags) ? 1 : 0;
+			break;
+		case OPCODE::RET:
+			type_of_operation = 2;
+			break;
+		default:
+			throw std::logic_error("Should never get here: invalid call/ret type");
+		}
+
+		machine |= type_of_operation << 8;
+
+		break;
+	}
+	case OPCODE::LOADA:
+	case OPCODE::HALT:
+	case OPCODE::NOP:
 	{
 		// No arguments so nothing to fill
 		break;
@@ -579,106 +699,92 @@ std::string instruction_to_machine(const instruction_t& inst, const int instruct
 	return machine_to_string(machine);
 }
 
-std::vector<std::string> assemble(std::string assembly) {
-	std::vector<line_t> lines;
-	std::map<std::string, int> labels;
-	int current_line = 0;
+static std::vector<std::string> generate_machine_code(AssemblerState* as) {
+	std::vector<std::string> str_machine_code;
 
-	std::vector<std::string> output_machine_code;
+	for (const auto& inst : as->instructions) {
+		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->label_map));
+	}
+
+	return str_machine_code;
+}
+
+std::vector<std::string> assemble(const std::string& assembly) {
+
+	const std::vector<std::string> lines = split_by_lines(assembly);
+
+	AssemblerState as;
 
 	try {
 
-		// Parse assembly into lines
-		{
-			std::stringstream asm_wrapper(assembly);
-			line_t line;
-			line.is_instruction = false; // as a default
-			int line_number = 1;
-			while (std::getline(asm_wrapper, line.line, '\n')) {
-				line.line_number = line_number++;
-				lines.push_back(line);
+		for (const auto& line : lines) {
+			++as.current_line;
+
+			const std::vector<std::string> tokens = tokenize_line(line);
+
+			// If this is an empty line
+			if (tokens.size() == 0) {
+				continue;
+			}
+
+			// If this is a compiler directive
+			if (tokens.at(0).at(0) == '.') {
+				handle_assembler_directive(tokens, &as);
+			} else {
+				// This is a code generating line
+				Instruction instruction = tokens_to_instruction(tokens);
+				instruction.number = as.next_inst_addr;
+				++as.next_inst_addr;
+				as.instructions.push_back(instruction);
 			}
 		}
 
-		// Tokenize
-		for (line_t& line : lines) {
-			current_line = line.line_number;
-
-			line.line = convert_line(line.line);
-
-			std::string temp;
-			std::stringstream input(line.line);
-			while (std::getline(input, temp, ' ')) {
-				line.tokens.push_back(temp);
-			}
-		}
-
-		// Find all labels and decide which lines are instructions
-		int instruction_number = 0;
-		int var_offset = 0;
-		for (line_t& line : lines) {
-			current_line = line.line_number;
-
-			if (line.tokens.size() != 0) {
-				if (line.tokens.at(0).at(0) == '.') {
-					// lines with a . are either goto labels when they have ":"
-					// otherwise are compiler directives.
-					auto end_of_label = line.tokens.at(0).find(':');
-					if (std::string::npos != end_of_label) {
-						std::string label = line.tokens.at(0).substr(1, (end_of_label - 1));
-						if (labels.find(label) != labels.end()) {
-							throw std::logic_error("Duplicate label found: " + label);
-						}
-						labels[label] = instruction_number;
-					} else {
-						std::string directive = line.tokens.at(0).substr(1, std::string::npos);
-						if (directive == "var") {
-							// format is
-							// .VAR int my_var
-							// .VAR int[10] my_var
-							const std::string type = line.tokens.at(1);
-							const std::string var_name = line.tokens.at(2);
-							labels[var_name] = var_offset;
-							
-							const auto beg = type.find('[');
-							const auto end = type.find(']');
-							if (beg == std::string::npos) {
-								var_offset++;
-							} else {
-								std::string var_size_str = type.substr(beg + 1, end - beg);
-								int var_size = std::stoi(var_size_str);
-								var_offset += var_size;
-							}
-							
-						} else {
-							throw std::logic_error("Unknown directive: " + directive);
-						}
-					}
-				} else {
-					line.is_instruction = true;
-					line.instruction_number = instruction_number;
-					instruction_number++;
-				}
-			}
-		}
-
-		// Parse each line
-		for (line_t& line : lines) {
-			current_line = line.line_number;
-
-			if (line.is_instruction) {
-				// parse tokens
-				line.inst = tokens_to_instruction(line.tokens);
-
-				// output to text
-				output_machine_code.push_back(instruction_to_machine(line.inst, line.instruction_number, labels));
-			}
-		}
+		return generate_machine_code(&as);
 
 	} catch (const std::logic_error& e) {
-		std::string msg = std::string("line ") + std::to_string(current_line) + ": " + e.what();
+		std::string msg = std::string("line ") + std::to_string(as.current_line) + ": " + e.what();
 		throw std::logic_error(msg);
 	}
+}
 
-	return output_machine_code;
+bool assembler_internal_test() {
+
+	int num_opcodes = 0;
+
+	// Test that every opcode has a definition
+	for (int i = static_cast<int>(OPCODE::FIRST); i < static_cast<int>(OPCODE::LAST); ++i) {
+		OPCODE op = static_cast<OPCODE>(i);
+		++num_opcodes;
+
+		if (instruction_definitions.find(op) == instruction_definitions.end()) {
+			// Entry was not found, there is no definition for this opcode
+			std::cout << "Could not find opcode # " << i << std::endl;
+			return false;
+		}
+	}
+
+	// check opcode strings
+	{
+		int size = static_cast<int>(instruction_str_map.size());
+		if (size - 1 != static_cast<int>(OPCODE::NOP)) {
+			std::cout << "Instruction map size wrong" << std::endl;
+			return false;
+		}
+	}
+
+	// future: maybe check arg str map
+
+
+	// check flags str map
+	{
+		int size = static_cast<int>(flags_str_map.size());
+		if (size - 1 != static_cast<int>(FLAGS_TYPE::STACK_POINTER)) {
+			std::cout << "Flags map size wrong" << std::endl;
+			return false;
+		}
+	}
+
+
+	// Return true if all the tests pass
+	return true;
 }

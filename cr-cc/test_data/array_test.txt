@@ -1,30 +1,32 @@
 # create array var
-.var int[2] var
-.var int second
+.static 2 var
+.static 1 second
+
+loada .var
 
 # load three numbers
-loadc ra, 10
+loadi ra, 10
 store ra, .var[0]
-loadc ra, 11
+loadi ra, 11
 store ra, .var[1]
-loadc ra, 22
+loadi ra, 22
 store ra, .second
 
 
 # sum up single number
-loadc ra, 0
+loadi ra, 0
 load rb, .second
-add rb, ra, rb
+add rb, ra
 # keep sum in rb
 
 # for loop to add up array
-loadc rc, 1
+loadi bp, 1
 .array_loop:
-load ra, rc, .var
-add rb, ra, rb
-sub rc, rc, 1
-mov ra, rc
-jgz .array_loop
+load.bp ra, .var
+add rb, ra
+sub bp, 1
+mov ra, bp
+jmp.r.igz .array_loop
 
 out rb
 halt

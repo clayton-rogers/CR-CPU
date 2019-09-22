@@ -1,7 +1,7 @@
 # start at 10 and keep counting
-loadc ra, 10
+loadi ra, 10
 
 .top_loop:
-add ra, ra, 1
+add ra, 1
 out ra
-jmp .top_loop
+jmp.r .top_loop

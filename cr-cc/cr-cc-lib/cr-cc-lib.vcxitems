@@ -17,10 +17,12 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)machine_io.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)machine_io.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h" />
   </ItemGroup>
 </Project>

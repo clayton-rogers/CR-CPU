@@ -1,16 +1,17 @@
 # create simple var
-.var int var
-.var int second
+.static 1 var
+.static 1 second
 
-loadc ra, 10
+loada .var
+loadi ra, 10
 store ra, .var
-loadc ra, 11
-loadc rb, 1
-add ra, ra, rb
+loadi ra, 11
+loadi rb, 1
+add ra, rb
 store ra .second
 load ra, .var
 load rb, .second
-add ra, ra, rb
+add ra, rb
 store ra, .var
 out ra
 halt
