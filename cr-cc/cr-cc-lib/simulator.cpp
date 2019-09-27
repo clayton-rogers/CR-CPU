@@ -172,14 +172,14 @@ void Simulator::step() {
 		switch (extra_low) {
 		case 0: get_reg(extra_high) = input; break;
 		case 1: output = get_reg(extra_high); break;
-		case 2: ram.at(--sp) = get_reg(extra_high); break;
+		case 2: ram.at(sp--) = get_reg(extra_high); break;
 		case 3:
 		{
 			--pc;
 			if (state == 1) {
 				state = 0;
 				++pc;
-				get_reg(extra_high) = ram.at(sp++);
+				get_reg(extra_high) = ram.at(++sp);
 			} else {
 				++state;
 			}
@@ -196,7 +196,7 @@ void Simulator::step() {
 		{
 			if (state == 1) {
 				state = 0;
-				ram.at(--sp) = pc;
+				ram.at(sp--) = pc;
 				pc = full_addr;
 			} else {
 				++state;
@@ -207,7 +207,7 @@ void Simulator::step() {
 		{
 			if (state == 1) {
 				state = 0;
-				ram.at(--sp) = pc;
+				ram.at(sp--) = pc;
 				pc += signed_constant;
 			} else {
 				++state;
@@ -219,7 +219,7 @@ void Simulator::step() {
 		{
 			if (state == 3) {
 				state = 0;
-				pc = ram.at(sp++)+1;
+				pc = ram.at(++sp)+1;
 			} else {
 				++state;
 			}

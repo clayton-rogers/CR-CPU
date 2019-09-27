@@ -1,8 +1,7 @@
 .static 11 rand_buffer
 .static 6 vars
 
-loadi sp 0x00
-loadi.h sp 0x01
+loadi sp 0xFF
 
 
 loadi bp .vars
@@ -48,6 +47,6 @@ halt
 #       ra
 .fn_add:
 add ra, rb
-load.sp rb, 1
+load.sp rb, 2
 add ra, rb
 ret
