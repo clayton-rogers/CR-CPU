@@ -32,7 +32,7 @@ push ra
 load.bp ra, 4
 load.bp rb, 5
 call.r .fn_add
-pop rb # extra from fx
+add sp, 1 # clean up
 pop rb # arg from first call
 add ra, rb
 out ra
@@ -41,7 +41,7 @@ halt
 
 # add three numbers
 #   INPUT
-#       ra, rb, sp+1
+#       ra, rb, sp+2
 #   OUTPUT
 #       ra
 .fn_add:
