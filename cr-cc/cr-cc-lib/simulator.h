@@ -8,10 +8,11 @@
 class Simulator {
 public:
 
-	Simulator(const std::vector<std::string>& input_instructions,
-		int size_of_ram) :
-		instructions(input_instructions)
+	Simulator(const std::vector<std::string>& input_instructions, int size_of_ram)
 	{
+		for (const auto& i_str : input_instructions) {
+			ram.push_back(to_uint(i_str));
+		}
 		ram.resize(size_of_ram, 0);
 	}
 	Simulator() = delete;
@@ -34,8 +35,6 @@ private:
 	int state = 0;
 
 	std::vector<std::uint16_t> ram;
-	const std::vector<std::string> instructions;
-
 
 	// **** FUNCTIONS **** //
 	std::uint16_t to_uint(const std::string& instruction);

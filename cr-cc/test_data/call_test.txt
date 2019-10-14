@@ -20,18 +20,17 @@ store.bp ra 5
 
 
 
-loada .vars
-load ra, 11
+load.bp ra, 0
 push ra
-load ra, 12
-load rb, 13
+load.bp ra, 1
+load.bp rb, 2
 call.r .fn_add
 pop rb # get rid of extra slot
 push ra
-load ra, 14
+load.bp ra, 3
 push ra
-load ra, 15
-load rb, 16
+load.bp ra, 4
+load.bp rb, 5
 call.r .fn_add
 pop rb # extra from fx
 pop rb # arg from first call

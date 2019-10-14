@@ -43,14 +43,8 @@ static int ALU(int opcode, int shift_dir, int data1, int data2) {
 void Simulator::step() {
 	if (is_halted) { return; }
 
-	const std::string& str_inst = instructions.at(pc);
-	inst = to_uint(str_inst);
-	if (pc + 1 < instructions.size()) {
-		auto str_next_inst = instructions.at(pc + 1);
-		next_inst = to_uint(str_next_inst);
-	} else {
-		next_inst = 0x0000;
-	}
+	inst = ram.at(pc);
+	next_inst = ram.at(static_cast<size_t>(pc) + 1);
 
 	const int opcode = (inst & 0xF000) >> 12;
 	const int extra = (inst & 0x0F00) >> 8;

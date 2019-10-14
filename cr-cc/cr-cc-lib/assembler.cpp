@@ -156,6 +156,7 @@ static std::map<OPCODE, Instruction_Info> instruction_definitions = {
 
 struct AssemblerState {
 	std::map<std::string, int> label_map;
+	std::map<std::string, int> instruction_label_map;
 	std::vector<Instruction> instructions;
 	int current_line = 0;
 
@@ -299,18 +300,23 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 	auto end_of_label = directive.find(':');
 	if (end_of_label != std::string::npos) {
 		// This is a goto label
-		std::string label = directive.substr(1, (end_of_label - 1));
-		if (as->label_map.count(label) == 1) {
+		const std::string label = directive.substr(1, (end_of_label - 1));
+		if (as->instruction_label_map.count(label) == 1) {
 			throw std::logic_error("Duplicate label: " + label);
 		}
-		as->label_map[label] = as->next_inst_addr;
+		as->instruction_label_map[label] = as->next_inst_addr;
 
 		return;
 	}
 
 	if (directive == ".static") {
+		const std::string label = tokens.at(2);
+		if (as->label_map.count(label) == 1) {
+			throw std::logic_error("Duplication variable: " + label);
+		}
+
 		const int size = std::stoi(tokens.at(1));
-		as->label_map[tokens.at(2)] = as->static_allocation_offset;
+		as->label_map[label] = as->static_allocation_offset;
 		as->static_allocation_offset += size;
 
 		return;
@@ -388,7 +394,11 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 	return output;
 }
 
-static std::string instruction_to_machine(const Instruction& inst, const int instruction_number, const std::map<std::string, int>& labels) {
+static std::string instruction_to_machine(
+	const Instruction& inst,
+	const int instruction_number,
+	const std::map<std::string, int>& label_map,
+	const std::map<std::string, int>& inst_map) {
 
 	const std::map<OPCODE, int> opcode_to_machine =
 	{
@@ -423,6 +433,18 @@ static std::string instruction_to_machine(const Instruction& inst, const int ins
 		return temp;
 	};
 
+	auto get_label = [&label_map, &inst_map](std::string label) -> int {
+		if (label_map.count(label) == 1) {
+			return label_map.at(label);
+		}
+
+		if (inst_map.count(label) == 1) {
+			return inst_map.at(label);
+		}
+
+		throw std::logic_error("Label not found: " + label);
+	};
+
 	std::uint16_t machine = 0;
 
 	// Top four bits are always opcode
@@ -440,9 +462,9 @@ static std::string instruction_to_machine(const Instruction& inst, const int ins
 				case OPCODE::CALL:
 					// label instruction numbers should be relative to current instruction
 					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
-						const_value = labels.at(a.label_value) - instruction_number;
+						const_value = get_label(a.label_value) - instruction_number;
 					} else {
-						const_value = labels.at(a.label_value);
+						const_value = get_label(a.label_value);
 					}
 					const_value &= 0xFF;
 					break;
@@ -462,7 +484,7 @@ static std::string instruction_to_machine(const Instruction& inst, const int ins
 						label_str = a.label_value;
 					}
 
-					const_value = labels.at(label_str) + offset;
+					const_value = get_label(label_str) + offset;
 					if (inst.opcode == OPCODE::LOADA) {
 						const_value >>= 8;
 					} else {
@@ -703,7 +725,7 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 	std::vector<std::string> str_machine_code;
 
 	for (const auto& inst : as->instructions) {
-		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->label_map));
+		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->label_map, as->instruction_label_map));
 	}
 
 	return str_machine_code;
@@ -737,6 +759,12 @@ std::vector<std::string> assemble(const std::string& assembly) {
 				++as.next_inst_addr;
 				as.instructions.push_back(instruction);
 			}
+		}
+
+		// Data section is placed after the text section
+		const int size_of_text = as.instructions.size();
+		for (auto& label : as.label_map) {
+			label.second += size_of_text;
 		}
 
 		return generate_machine_code(&as);
