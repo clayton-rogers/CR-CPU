@@ -1,0 +1,31 @@
+## Static data
+## sums all the staticall allocated data
+
+.static 5 data 10 22 3 0xF 5
+
+loadi sp, 0xFF
+loadi bp, .data
+loadi.h bp, .data
+
+loadi ra, 0
+push ra # sp + 2: counter
+push ra # sp + 1: sum
+
+
+# add the next data point
+.top_loop:
+load.sp ra, 1
+load.bp rb, 0
+add ra,rb
+store.sp ra, 1
+add bp, 1
+
+load.sp ra, 2
+add ra, 1
+store.sp ra, 2
+sub ra, 5 # 5 == sizeof(data)
+jmp.inz .top_loop
+
+load.sp ra, 1
+out ra
+halt
