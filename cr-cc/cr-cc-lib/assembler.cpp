@@ -153,10 +153,16 @@ static std::map<OPCODE, Instruction_Info> instruction_definitions = {
 	{OPCODE::NOP,   {NO_ARG, NO_ARG, {}}},
 };
 
+struct Data_Label {
+	int offset = 0;
+	int size = 0;
+	bool has_values = false;
+	std::vector<int> values;
+};
 
 struct AssemblerState {
-	std::map<std::string, int> label_map;
-	std::map<std::string, int> instruction_label_map;
+	std::map<std::string, Data_Label> data_label_map;
+	std::map<std::string, int> text_label_map;
 	std::vector<Instruction> instructions;
 	int current_line = 0;
 
@@ -301,23 +307,40 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 	if (end_of_label != std::string::npos) {
 		// This is a goto label
 		const std::string label = directive.substr(1, (end_of_label - 1));
-		if (as->instruction_label_map.count(label) == 1) {
+		if (as->text_label_map.count(label) == 1) {
 			throw std::logic_error("Duplicate label: " + label);
 		}
-		as->instruction_label_map[label] = as->next_inst_addr;
+		as->text_label_map[label] = as->next_inst_addr;
 
 		return;
 	}
 
 	if (directive == ".static") {
 		const std::string label = tokens.at(2);
-		if (as->label_map.count(label) == 1) {
+		if (as->data_label_map.count(label) == 1) {
 			throw std::logic_error("Duplication variable: " + label);
 		}
 
-		const int size = std::stoi(tokens.at(1));
-		as->label_map[label] = as->static_allocation_offset;
-		as->static_allocation_offset += size;
+		Data_Label vl;
+		vl.size = std::stoi(tokens.at(1));
+		if (tokens.size() != 3) {
+			if (tokens.size() != 3 + vl.size) {
+				throw std::logic_error("Incorrect number of args to static var: " + label);
+			}
+
+			vl.has_values = true;
+
+			for (int i = 0; i < vl.size; ++i) {
+				const int value = std::stoi(tokens.at(i + 3), 0, 0);
+				if (value < -32768 || value > 65535) {
+					throw std::logic_error("Constant out of range: " + label + " " + std::to_string(value));
+				}
+				vl.values.push_back(value);
+			}
+		}
+		vl.offset = as->static_allocation_offset;
+		as->data_label_map[label] = vl;
+		as->static_allocation_offset += vl.size;
 
 		return;
 	}
@@ -394,10 +417,18 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 	return output;
 }
 
+static std::string u16_to_string(std::uint16_t value) {
+	std::stringstream output;
+	output << std::hex << std::setfill('0') << std::setw(4) << value;
+	std::string temp = output.str();
+	for (auto& c : temp) c = static_cast<char>(std::toupper(c));
+	return temp;
+}
+
 static std::string instruction_to_machine(
 	const Instruction& inst,
 	const int instruction_number,
-	const std::map<std::string, int>& label_map,
+	const std::map<std::string, Data_Label>& label_map,
 	const std::map<std::string, int>& inst_map) {
 
 	const std::map<OPCODE, int> opcode_to_machine =
@@ -425,17 +456,9 @@ static std::string instruction_to_machine(
 		{OPCODE::NOP,   15},
 	};
 
-	auto machine_to_string = [](std::uint16_t machine) -> std::string {
-		std::stringstream output;
-		output << std::hex << std::setfill('0') << std::setw(4) << machine;
-		std::string temp = output.str();
-		for (auto& c : temp) c = static_cast<char>(std::toupper(c));
-		return temp;
-	};
-
 	auto get_label = [&label_map, &inst_map](std::string label) -> int {
 		if (label_map.count(label) == 1) {
-			return label_map.at(label);
+			return label_map.at(label).offset;
 		}
 
 		if (inst_map.count(label) == 1) {
@@ -479,13 +502,13 @@ static std::string instruction_to_machine(
 					if (beg != std::string::npos) {
 						label_str = a.label_value.substr(0, beg);
 						offset_str = a.label_value.substr(beg + 1, end - beg - 1);
-						offset = std::stoi(offset_str);
+						offset = std::stoi(offset_str, 0, 0);
 					} else {
 						label_str = a.label_value;
 					}
 
 					const_value = get_label(label_str) + offset;
-					if (inst.opcode == OPCODE::LOADA) {
+					if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
 						const_value >>= 8;
 					} else {
 						const_value &= 0xFF;
@@ -718,14 +741,35 @@ static std::string instruction_to_machine(
 		throw std::logic_error("Should never get here: uninplemented instruction");
 	}
 
-	return machine_to_string(machine);
+	return u16_to_string(machine);
 }
 
 static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 	std::vector<std::string> str_machine_code;
 
 	for (const auto& inst : as->instructions) {
-		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->label_map, as->instruction_label_map));
+		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map));
+	}
+
+	const int size_of_data = [&as]() -> int {
+		int size = 0;
+		for (const auto& label : as->data_label_map) {
+			size += label.second.size;
+		}
+		return size;
+	}();
+
+	str_machine_code.resize(str_machine_code.size() + size_of_data);
+	for (const auto& var : as->data_label_map) {
+		Data_Label label = var.second;
+
+		for (int i = 0; i < label.size; ++i) {
+			int value = 0;
+			if (label.has_values) {
+				value = label.values.at(i);
+			}
+			str_machine_code.at(label.offset + i) = u16_to_string(static_cast<uint16_t>(value));
+		}
 	}
 
 	return str_machine_code;
@@ -762,9 +806,9 @@ std::vector<std::string> assemble(const std::string& assembly) {
 		}
 
 		// Data section is placed after the text section
-		const int size_of_text = as.instructions.size();
-		for (auto& label : as.label_map) {
-			label.second += size_of_text;
+		const int size_of_text = static_cast<int>(as.instructions.size());
+		for (auto& label : as.data_label_map) {
+			label.second.offset += size_of_text;
 		}
 
 		return generate_machine_code(&as);

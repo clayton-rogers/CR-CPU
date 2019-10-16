@@ -61,6 +61,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadi rb, 0xFF", "A4FF "},
 		{"loadi bp 32",    "A820 "},
 		{"loadi.h sp 0xEE", "AEEE "},
+		{".static 1 buf \n .static 1 a \n .static 2 b \n loadi ra, .a \n loadi.h ra, .a \n loadi rb,.b[1]", "A004 A200 A406 0000 0000 0000 0000 "},
+		{".static 256 buf \n .static 1 a \n loadi ra, .a \n loadi.h ra,.a", "A002 A201 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 " },
 		{"in rb", "B400 "},
 		{"out ra", "B100 "},
 		{"push bp", "BA00 "},
@@ -75,7 +77,12 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"halt", "E000 "},
 		{"nop", "F000 "},
 		{"jmp 0xFF", "92FF "},
-		{".static 1 buf \n .static 3 abc \n loadi ra, 10 \n store ra, .abc[2]","A00A 7205 "},
+		{".static 1 buf \n .static 3 abc \n loadi ra, 10 \n store ra, .abc[2]","A00A 7205 0000 0000 0000 0000 "},
+		{".static 1 var", "0000 "},
+		{".static 1 var 0xff", "00FF "},
+		{".static 1 var 1024", "0400 "},
+		{".static 2 var 0xfafe 255", "FAFE 00FF "},
+		{".static 1 bb 0xff \n .static 1 aa 0xaa", "00FF 00AA "}, // check that variables are stored in order declared
 	};
 
 	for (const auto& test_point : test_points) {
@@ -112,6 +119,9 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"nop 0x10", // does not allow constants
 		"nop \n nop \n jmp .top", // jump to label that doesn't exist
 		".top: \n nop \n .top: \n nop \n jmp .top", // cannot define duplicate label
+		".static 2 my_var 12", // must specify none or all parameters
+		".static 1 my_var -32769", // constant out of range
+		".static 1 var 65536", // constant out of range
 	};
 
 	for (const auto& test_point : test_points) {
@@ -147,6 +157,8 @@ static const std::vector<Test_Program> test_programs = {
 	{"flash.txt", false, 0x0000},
 	// Sums the numbers in an array using function calls, should output 0x0051
 	{"call_test.txt", true, 0x0051},
+	// Sums a few numbers stored in the data segment
+	{"static_data.txt", true, 55}
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
