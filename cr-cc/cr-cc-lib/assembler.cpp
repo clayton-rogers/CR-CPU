@@ -324,14 +324,14 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		Data_Label vl;
 		vl.size = std::stoi(tokens.at(1));
 		if (tokens.size() != 3) {
-			if (tokens.size() != 3 + vl.size) {
+			if (tokens.size() != static_cast<size_t>(3) + vl.size) {
 				throw std::logic_error("Incorrect number of args to static var: " + label);
 			}
 
 			vl.has_values = true;
 
 			for (int i = 0; i < vl.size; ++i) {
-				const int value = std::stoi(tokens.at(i + 3), 0, 0);
+				const int value = std::stoi(tokens.at(static_cast<size_t>(i) + 3), 0, 0);
 				if (value < -32768 || value > 65535) {
 					throw std::logic_error("Constant out of range: " + label + " " + std::to_string(value));
 				}
@@ -768,7 +768,7 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 			if (label.has_values) {
 				value = label.values.at(i);
 			}
-			str_machine_code.at(label.offset + i) = u16_to_string(static_cast<uint16_t>(value));
+			str_machine_code.at(static_cast<size_t>(label.offset) + i) = u16_to_string(static_cast<uint16_t>(value));
 		}
 	}
 
@@ -844,8 +844,14 @@ bool assembler_internal_test() {
 		}
 	}
 
-	// future: maybe check arg str map
-
+	// check arg str map
+	{
+		int size = static_cast<int>(argument_str_map.size());
+		if (size - 1 != static_cast<int>(ARG_TYPE::SP)) {
+			std::cout << "Argument map size wrong" << std::endl;
+			return false;
+		}
+	}
 
 	// check flags str map
 	{
