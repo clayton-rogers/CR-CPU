@@ -43,17 +43,45 @@ static int ALU(int opcode, int shift_dir, int data1, int data2) {
 void Simulator::step() {
 	if (is_halted) { return; }
 
-	inst = ram.at(pc);
-	next_inst = ram.at(static_cast<size_t>(pc) + 1);
+	bus->write_strobe = false; // will be overwritten if an actual write occurs
 
-	const int opcode = (inst & 0xF000) >> 12;
-	const int extra = (inst & 0x0F00) >> 8;
-	const int extra_high = (inst & 0x0C00) >> 10;
-	const int extra_low = (inst & 0x0300) >> 8;
-	const int constant = (inst & 0x00FF) >> 0;
+	const std::uint16_t inst = (state == 0) ? bus->read_data : cached_ins;
+	const std::uint16_t next_cached_inst = bus->read_data;
 
-	const std::uint16_t signed_constant = static_cast<std::uint16_t>((constant & 0x80) ? constant - 256 : constant);
+	const std::uint16_t opcode = (inst & 0xF000) >> 12;
+	const std::uint16_t extra = (inst & 0x0F00) >> 8;
+	const std::uint16_t extra_high = (inst & 0x0C00) >> 10;
+	const std::uint16_t extra_low = (inst & 0x0300) >> 8;
+	const std::uint16_t constant = (inst & 0x00FF) >> 0;
+
+	const std::uint16_t signed_constant = static_cast<std::uint16_t>((constant & 0x80) ? constant | 0xFF00 : constant);
 	const std::uint16_t full_addr = static_cast<std::uint16_t>((addr << 8) + constant);
+
+	const bool is_rel = !(extra_low & 0x02);
+
+	// Calculate CJ address (call/jump)
+	const std::uint16_t rel_cj_addr = pc + signed_constant;
+	const std::uint16_t cj_addr = is_rel ? rel_cj_addr : full_addr;
+
+	// Popped addr for ret inst
+	const std::uint16_t popped_addr = bus->read_data + 1;
+
+	// Calculate new PC's
+	const std::uint16_t calced_pc = (opcode == CALL_RET && (extra_low & 0x01)) ? popped_addr : cj_addr;
+	const std::uint16_t inc_pc = pc + 1;
+
+	// Calculate load address
+	std::uint16_t load_addr = 0;
+	{
+		const std::uint16_t ret_addr = sp + 1;
+
+		const std::uint16_t base_addr = (extra_low & 0x01) ? sp : bp;
+		const std::uint16_t offset_addr = base_addr + signed_constant;
+		const std::uint16_t load_inst_addr = (extra_low & 0x02) ? full_addr : offset_addr;
+
+		load_addr = (opcode == CALL_RET || (opcode == IN_OUT_PUSH_POP && extra_low == 0x03)) ?
+			ret_addr : load_inst_addr;
+	}
 
 	const int input1 = (opcode == MOV) ? get_reg(extra_low) : get_reg(extra_high);
 	int input2 = 0;
@@ -88,17 +116,14 @@ void Simulator::step() {
 
 	std::uint16_t& dest_reg = get_reg(extra_high);
 
-	int ram_addr = 0;
-	switch (extra_low) {
-	case 0: ram_addr = signed_constant + bp; break;
-	case 1: ram_addr = signed_constant + sp; break;
-	case 2: ram_addr = full_addr; break;
-	case 3: ram_addr = constant; break;
-	default: throw std::out_of_range("Simulator::step(): ram_addr extra low must be in range 0 .. 3");
+	bool should_jump = false;
+	switch (extra_high) {
+		case 0: should_jump = true; break;
+		case 1: should_jump = ra == 0; break;
+		case 2: should_jump = ra != 0; break;
+		case 3: should_jump = !(ra & 0x8000); break;
+		default: throw std::out_of_range("Simulator::step(): type of jump, extra high must be in range 0 .. 3");
 	}
-
-	const std::uint16_t jmp_location = static_cast<std::uint16_t>((extra_low & 0x2) ? full_addr : pc + signed_constant);
-
 
 	switch (opcode) {
 	case ADD:
@@ -108,46 +133,27 @@ void Simulator::step() {
 	case XOR:
 	case SHIFT:
 		dest_reg = ALU_OUT;
-		pc++;
 		break;
 	case LOAD:
 	{
-		if (state == 1) {
-			state = 0;
-			++pc;
-			dest_reg = ram.at(ram_addr);
-		} else {
-			++state;
+		if (state == 0) {
+			// do nothing, read address will automatically be ram addr
+		} else { // state == 1
+			dest_reg = bus->read_data; // retrieve the data that was previously requested
 		}
 		break;
 	}
 	case STORE:
-		ram.at(ram_addr) = get_reg(extra_high);
-		++pc;
+		bus->write_addr = load_addr;
+		bus->write_data = get_reg(extra_high);
+		bus->write_strobe = true;
 		break;
 	case MOV:
 		dest_reg = get_reg(extra_low);
-		++pc;
 		break;
 	case JMP:
 	{
-		if (state == 1) {
-			state = 0;
-			++pc;
-			bool jump = false;
-			switch (extra_high) {
-			case 0: jump = true; break;
-			case 1: jump = ra == 0; break;
-			case 2: jump = ra != 0; break;
-			case 3: jump = !(ra & 0x8000); break;
-			default: throw std::out_of_range("Simulator::step(): type of jump, extra high must be in range 0 .. 3");
-			}
-			if (jump) {
-				pc = jmp_location;
-			}
-		} else {
-			++state;
-		}
+		// Handled by combinatoric logic
 		break;
 	}
 	case LOADI:
@@ -157,25 +163,26 @@ void Simulator::step() {
 		} else {
 			get_reg(extra_high) = static_cast<std::uint16_t>(constant);
 		}
-		++pc;
 		break;
 	}
 	case IN_OUT_PUSH_POP:
 	{
-		++pc;
 		switch (extra_low) {
 		case 0: get_reg(extra_high) = input; break;
 		case 1: output = get_reg(extra_high); break;
-		case 2: ram.at(sp--) = get_reg(extra_high); break;
+		case 2:
+		{
+			bus->write_addr = sp--;
+			bus->write_data = get_reg(extra_high);
+			bus->write_strobe = true;
+		}
+		break;
 		case 3:
 		{
-			--pc;
-			if (state == 1) {
-				state = 0;
-				++pc;
-				get_reg(extra_high) = ram.at(++sp);
+			if (state == 0) {
+				// address to load from is combinatoric
 			} else {
-				++state;
+				get_reg(extra_high) = bus->read_data;
 			}
 			break;
 		}
@@ -185,64 +192,62 @@ void Simulator::step() {
 	}
 	case CALL_RET:
 	{
-		switch (extra_low) {
-		case 0: // call
-		{
+		if (extra_low & 0x01) {
 			if (state == 1) {
-				state = 0;
-				ram.at(sp--) = pc;
-				pc = full_addr;
-			} else {
-				++state;
+				++sp;
 			}
-			break;
-		}
-		case 1: // rcall
-		{
-			if (state == 1) {
-				state = 0;
-				ram.at(sp--) = pc;
-				pc += signed_constant;
-			} else {
-				++state;
-			}
-			break;
-		}
-		case 2: // ret
-		case 3:
-		{
-			if (state == 3) {
-				state = 0;
-				pc = ram.at(++sp)+1;
-			} else {
-				++state;
-			}
-			break;
-		}
+			// Ret handled combinatoric
+		} else {
+			// Update of pc is combinatoric
+			bus->write_addr = sp--;
+			bus->write_data = pc;
+			bus->write_strobe = true;
 		}
 		break;
-	}
+	} // end CALL_RET
 	case LOADA:
 		addr = static_cast<std::uint8_t>(constant);
-		++pc;
 		break;
 	case HALT:
 		is_halted = true;
 		break;
 	case NOP:
-		++pc;
 		break;
 	default:
 		throw std::out_of_range("Simulator::step(): Got unknown opcode: " + opcode);
 	}
 
-}
+	// Calculate next PC
+	std::uint16_t next_pc = 0;
+	int next_state = 0;
+	if ((opcode == JMP && should_jump) ||  // jmp == true
+		(opcode == CALL_RET && (extra_low & 0x01) == 0) || // call
+		(opcode == CALL_RET && extra_low & 0x01 && state == 1) // ret
+	) {
+		next_pc = calced_pc;
+	} else if ((opcode == LOAD && state == 0) || // Load first cycle
+		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // Ret first cycle
+		(opcode == IN_OUT_PUSH_POP && extra_low == 0x03 && state == 0) // Pop first cycle
+	) {
+		next_pc = pc;
+		next_state = 1;
+	} else {
+		next_pc = pc + 1;
+	}
 
-std::uint16_t Simulator::to_uint(const std::string& instruction)
-{
-	const int value = std::stoi(instruction, 0, 16);
+	// Calculate read address
+	if ((opcode == LOAD && state == 0) ||  // first cycle of load
+		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // first cycle of ret
+		(opcode == IN_OUT_PUSH_POP && extra_low == 0x03 && state == 0)
+	) {
+		bus->read_addr = load_addr;
+	} else {
+		bus->read_addr = next_pc;
+	}
 
-	return static_cast<std::uint16_t>(value);
+	pc = next_pc;
+	cached_ins = next_cached_inst;
+	state = next_state;
 }
 
 std::uint16_t& Simulator::get_reg(int index)

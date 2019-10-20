@@ -1,6 +1,8 @@
 .static 11 rand_buffer
 .static 6 vars
 
+# Make assumption we have at least 256 words of ram,
+# and won't need more than that
 loadi sp 0xFF
 
 
@@ -25,14 +27,14 @@ push ra
 load.bp ra, 1
 load.bp rb, 2
 call.r .fn_add
-pop rb # get rid of extra slot
+add sp, 1 # clean up from call
 push ra
 load.bp ra, 3
 push ra
 load.bp ra, 4
 load.bp rb, 5
 call.r .fn_add
-add sp, 1 # clean up
+add sp, 1 # clean up from call
 pop rb # arg from first call
 add ra, rb
 out ra

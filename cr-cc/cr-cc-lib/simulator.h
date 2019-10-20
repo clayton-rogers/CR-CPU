@@ -1,20 +1,17 @@
 #pragma once
 
+#include "simulator_bus.h"
+
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
 
 
 class Simulator {
 public:
 
-	Simulator(const std::vector<std::string>& input_instructions, int size_of_ram)
-	{
-		for (const auto& i_str : input_instructions) {
-			ram.push_back(to_uint(i_str));
-		}
-		ram.resize(size_of_ram, 0);
-	}
+	Simulator(std::shared_ptr<Simulator_Bus> bus) : bus(bus) {}
 	Simulator() = delete;
 
 	void step();
@@ -22,21 +19,19 @@ public:
 	// **** PUBLIC DATA *** //
 	std::uint16_t output = 0;
 	std::uint16_t input = 0;
-	std::uint16_t inst = 0;
-	std::uint16_t next_inst = 0;
-	std::uint16_t pc = 0;
+	std::uint16_t pc = 0xFFFF;
 	bool is_halted = false;
 
 private:
 	// **** DATA **** //
 	std::uint16_t ra = 0, rb = 0, bp = 0, sp = 0;
 	std::uint8_t addr = 0;
+	std::uint16_t cached_ins = 0;
 
 	int state = 0;
 
-	std::vector<std::uint16_t> ram;
+	std::shared_ptr<Simulator_Bus> bus;
 
 	// **** FUNCTIONS **** //
-	std::uint16_t to_uint(const std::string& instruction);
 	std::uint16_t& get_reg(int index);
 };
