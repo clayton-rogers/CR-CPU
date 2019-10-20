@@ -1,5 +1,7 @@
 #include "assembler.h"
 
+#include "utilities.h"
+
 #include <map>
 #include <sstream>
 #include <cctype>
@@ -7,7 +9,6 @@
 #include <string>
 #include <iostream>
 #include <cstdint>
-#include <iomanip>
 
 enum class OPCODE {
 	ADD,
@@ -381,7 +382,6 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 		}
 	}
 
-
 	if (tokens.size() == 1) {
 		if (!vector_contains(ARG_TYPE::NONE, i_info.allowable_arg1)) {
 			throw std::logic_error("Fewer than required arguments found.");
@@ -415,14 +415,6 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 	output.args.push_back(arg);
 
 	return output;
-}
-
-static std::string u16_to_string(std::uint16_t value) {
-	std::stringstream output;
-	output << std::hex << std::setfill('0') << std::setw(4) << value;
-	std::string temp = output.str();
-	for (auto& c : temp) c = static_cast<char>(std::toupper(c));
-	return temp;
 }
 
 static std::string instruction_to_machine(
@@ -716,10 +708,10 @@ static std::string instruction_to_machine(
 		int type_of_operation = 0;
 		switch (inst.opcode) {
 		case OPCODE::CALL:
-			type_of_operation = vector_contains(FLAGS_TYPE::RELATIVE, inst.flags) ? 1 : 0;
+			type_of_operation = vector_contains(FLAGS_TYPE::RELATIVE, inst.flags) ? 0 : 2;
 			break;
 		case OPCODE::RET:
-			type_of_operation = 2;
+			type_of_operation = 1;
 			break;
 		default:
 			throw std::logic_error("Should never get here: invalid call/ret type");

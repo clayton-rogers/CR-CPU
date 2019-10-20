@@ -2,12 +2,16 @@
 #include "simulator.h"
 #include "file_io.h"
 #include "machine_io.h"
+#include "simulator_bus.h"
+#include "simulator_ram.h"
+
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
 
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 
 TEST_CASE("Internal assembler test", "[asm]") {
 	// Don't bother checking anything else if the internal test fails
@@ -67,11 +71,11 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"out ra", "B100 "},
 		{"push bp", "BA00 "},
 		{"pop sp", "BF00 "},
-		{"nop \n call .fn \n nop \n .fn: \n nop", "F000 C003 F000 F000 "}, // call abs
-		{".fn: \n nop \n call.r .fn \n nop", "F000 C1FF F000 "}, // call rel -1
-		{"nop \n call.r .fn \n nop \n .fn: \n nop", "F000 C102 F000 F000 "}, // call rel + 2
-		{"ret   ", "C200 "},
-		{"ret", "C200 "},
+		{"nop \n call .fn \n nop \n .fn: \n nop", "F000 C203 F000 F000 "}, // call abs
+		{".fn: \n nop \n call.r .fn \n nop", "F000 C0FF F000 "}, // call rel -1
+		{"nop \n call.r .fn \n nop \n .fn: \n nop", "F000 C002 F000 F000 "}, // call rel + 2
+		{"ret   ", "C100 "},
+		{"ret", "C100 "},
 		{"loada 0x45", "D045 "},
 		{"loada 10", "D00A "},
 		{"halt", "E000 "},
@@ -171,16 +175,21 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		REQUIRE(program.length() != 0);
 
 		auto instructions = assemble(program);
-		Simulator sim(instructions, 256);
+
+		auto bus = std::make_shared<Simulator_Bus>();
+		Simulator_Ram ram(instructions, 256, bus);
+		Simulator sim(bus);
 		int steps = 0;
 		std::cout << std::hex << std::setfill('0');
 		while (!sim.is_halted && steps < 200) {
+
 			sim.step();
+			ram.step();
 //			std::cout
 //				<< std::setw(2) << steps << " "
 //				<< std::setw(4) << sim.pc << " "
-//				<< std::setw(4)  << sim.inst << " "
-//				<< std::setw(4) << sim.next_inst << " "
+//				<< std::setw(4) << bus->read_addr << " "
+//				<< std::setw(4) << bus->read_data << " "
 //				<< std::setw(4) <<  sim.output
 //				<< std::endl;
 			++steps;

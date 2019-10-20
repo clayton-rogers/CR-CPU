@@ -1,3 +1,4 @@
+# technically this is overwriting program memory
 loada 0
 loadi ra, 10
 store ra 0
