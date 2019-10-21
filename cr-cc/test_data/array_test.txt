@@ -1,3 +1,6 @@
+# offset for io module
+.constant 0x8100 io_offset
+
 # create array var
 .static 2 var
 .static 1 second
@@ -28,6 +31,7 @@ sub bp, 1
 mov ra, bp
 jmp.r.igz .array_loop
 
-out rb
+loada .io_offset
+store rb, .io_offset[1] # output
 halt
 

@@ -1,9 +1,13 @@
+.constant 0x8100 io_offset
+
 loada 0
 
 ### all on ###
 .top:
 loadi ra, 0xff
-out ra
+loada .io_offset
+store ra, .io_offset[1] # 1 for output
+loada 0
 
 
 ### loop for 400 count ###
@@ -16,7 +20,9 @@ jmp.r.igz .top_loop
 
 ### all off ###
 loadi ra, 0x00
-out ra
+loada .io_offset
+store ra, .io_offset[1] # output
+loada 0
 
 
 ### loop for another 400 count ###

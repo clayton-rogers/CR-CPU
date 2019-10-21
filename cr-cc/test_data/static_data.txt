@@ -2,6 +2,7 @@
 ## sums all the staticall allocated data
 
 .static 5 data 10 22 3 0xF 5
+.constant 0x8100 io_offset
 
 loadi sp, 0xFF
 loadi bp, .data
@@ -27,5 +28,6 @@ sub ra, 5 # 5 == sizeof(data)
 jmp.inz .top_loop
 
 load.sp ra, 1
-out ra
+loada .io_offset
+store ra, .io_offset[1]
 halt
