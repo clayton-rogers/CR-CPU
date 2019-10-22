@@ -23,8 +23,6 @@ enum class OPCODE {
 	MOV,
 	JMP,
 	LOADI,
-	IN,
-	OUT,
 	PUSH,
 	POP,
 	CALL,
@@ -50,8 +48,6 @@ static const std::map<std::string, OPCODE> instruction_str_map = {
 	{"mov", OPCODE::MOV},
 	{"jmp", OPCODE::JMP},
 	{"loadi", OPCODE::LOADI},
-	{"in", OPCODE::IN},
-	{"out", OPCODE::OUT},
 	{"push", OPCODE::PUSH},
 	{"pop", OPCODE::POP},
 	{"call", OPCODE::CALL},
@@ -143,8 +139,6 @@ static std::map<OPCODE, Instruction_Info> instruction_definitions = {
 	{OPCODE::MOV,   {ALL_REGISTER, ALL_REGISTER, {}}},
 	{OPCODE::JMP,   {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE, FLAGS_TYPE::IF_GREATER_ZERO, FLAGS_TYPE::IF_NON_ZERO, FLAGS_TYPE::IF_ZERO}}},
 	{OPCODE::LOADI, {ALL_REGISTER, {ARG_TYPE::CONST}, {FLAGS_TYPE::HIGH_BYTE}}},
-	{OPCODE::IN,    {ALL_REGISTER, NO_ARG, {}}},
-	{OPCODE::OUT,   {ALL_REGISTER, NO_ARG, {}}},
 	{OPCODE::PUSH,  {ALL_REGISTER, NO_ARG, {}}},
 	{OPCODE::POP,   {ALL_REGISTER, NO_ARG, {}}},
 	{OPCODE::CALL,  {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE}}},
@@ -164,6 +158,7 @@ struct Data_Label {
 struct AssemblerState {
 	std::map<std::string, Data_Label> data_label_map;
 	std::map<std::string, int> text_label_map;
+	std::map<std::string, int> const_map;
 	std::vector<Instruction> instructions;
 	int current_line = 0;
 
@@ -316,6 +311,12 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		return;
 	}
 
+	// Static data
+	//   Format:
+	// .static 2 var_name
+	// # number is size in 16bit words
+	// .static 4 var_name 0xff00 12 32 44
+	// # optionally may be prefilled with data, otherwise it is zero
 	if (directive == ".static") {
 		const std::string label = tokens.at(2);
 		if (as->data_label_map.count(label) == 1) {
@@ -323,7 +324,7 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		}
 
 		Data_Label vl;
-		vl.size = std::stoi(tokens.at(1));
+		vl.size = std::stoi(tokens.at(1), 0, 0);
 		if (tokens.size() != 3) {
 			if (tokens.size() != static_cast<size_t>(3) + vl.size) {
 				throw std::logic_error("Incorrect number of args to static var: " + label);
@@ -342,6 +343,21 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		vl.offset = as->static_allocation_offset;
 		as->data_label_map[label] = vl;
 		as->static_allocation_offset += vl.size;
+
+		return;
+	}
+
+	// Named constants
+	//   Format:
+	// .constant 0xabcd my_const
+	// # all constants are 16bits
+	// # when used at the argument to an instruction, the appropriate byte is used
+	// # ex: loadi ra, .my_const # gives cd
+	// # and loadi.h ra, .my_const # gives ab
+	if (directive == ".constant") {
+		const std::string label = tokens.at(2);
+		const int size = std::stoi(tokens.at(1), 0, 0);
+		as->const_map[label] = size;
 
 		return;
 	}
@@ -420,8 +436,9 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 static std::string instruction_to_machine(
 	const Instruction& inst,
 	const int instruction_number,
-	const std::map<std::string, Data_Label>& label_map,
-	const std::map<std::string, int>& inst_map) {
+	const std::map<std::string, Data_Label>& data_label_map,
+	const std::map<std::string, int>& text_label_map,
+	const std::map<std::string, int>& const_label_map) {
 
 	const std::map<OPCODE, int> opcode_to_machine =
 	{
@@ -437,8 +454,6 @@ static std::string instruction_to_machine(
 		{OPCODE::MOV,   8},
 		{OPCODE::JMP,   9},
 		{OPCODE::LOADI, 10},
-		{OPCODE::IN,    11},
-		{OPCODE::OUT,   11},
 		{OPCODE::PUSH,  11},
 		{OPCODE::POP,   11},
 		{OPCODE::CALL,  12},
@@ -448,13 +463,17 @@ static std::string instruction_to_machine(
 		{OPCODE::NOP,   15},
 	};
 
-	auto get_label = [&label_map, &inst_map](std::string label) -> int {
-		if (label_map.count(label) == 1) {
-			return label_map.at(label).offset;
+	auto get_label = [&data_label_map, &text_label_map, &const_label_map](std::string label) -> int {
+		if (data_label_map.count(label) == 1) {
+			return data_label_map.at(label).offset;
 		}
 
-		if (inst_map.count(label) == 1) {
-			return inst_map.at(label);
+		if (text_label_map.count(label) == 1) {
+			return text_label_map.at(label);
+		}
+
+		if (const_label_map.count(label) == 1) {
+			return const_label_map.at(label);
 		}
 
 		throw std::logic_error("Label not found: " + label);
@@ -672,8 +691,6 @@ static std::string instruction_to_machine(
 		machine |= high_flag << 9;
 		break;
 	}
-	case OPCODE::IN:
-	case OPCODE::OUT:
 	case OPCODE::PUSH:
 	case OPCODE::POP:
 	{
@@ -689,12 +706,10 @@ static std::string instruction_to_machine(
 
 		int type_of_operation = 0;
 		switch (inst.opcode) {
-		case OPCODE::IN: type_of_operation = 0; break;
-		case OPCODE::OUT: type_of_operation = 1; break;
-		case OPCODE::PUSH: type_of_operation = 2; break;
-		case OPCODE::POP: type_of_operation = 3; break;
+		case OPCODE::PUSH: type_of_operation = 0; break;
+		case OPCODE::POP: type_of_operation = 1; break;
 		default:
-			throw std::logic_error("Should never get here: invalid opcode in,out,push,pop");
+			throw std::logic_error("Should never get here: invalid opcode push,pop");
 		}
 
 		machine |= dest << 10;
@@ -740,7 +755,9 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 	std::vector<std::string> str_machine_code;
 
 	for (const auto& inst : as->instructions) {
-		str_machine_code.push_back(instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map));
+		str_machine_code.push_back(
+			instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map, as->const_map)
+		);
 	}
 
 	const int size_of_data = [&as]() -> int {

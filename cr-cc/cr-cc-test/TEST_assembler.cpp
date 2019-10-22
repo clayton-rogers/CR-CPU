@@ -4,6 +4,7 @@
 #include "machine_io.h"
 #include "simulator_bus.h"
 #include "simulator_ram.h"
+#include "simulator_io.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -67,10 +68,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadi.h sp 0xEE", "AEEE "},
 		{".static 1 buf \n .static 1 a \n .static 2 b \n loadi ra, .a \n loadi.h ra, .a \n loadi rb,.b[1]", "A004 A200 A406 0000 0000 0000 0000 "},
 		{".static 256 buf \n .static 1 a \n loadi ra, .a \n loadi.h ra,.a", "A002 A201 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 " },
-		{"in rb", "B400 "},
-		{"out ra", "B100 "},
-		{"push bp", "BA00 "},
-		{"pop sp", "BF00 "},
+		{"push bp", "B800 "},
+		{"pop sp", "BD00 "},
 		{"nop \n call .fn \n nop \n .fn: \n nop", "F000 C203 F000 F000 "}, // call abs
 		{".fn: \n nop \n call.r .fn \n nop", "F000 C0FF F000 "}, // call rel -1
 		{"nop \n call.r .fn \n nop \n .fn: \n nop", "F000 C002 F000 F000 "}, // call rel + 2
@@ -87,6 +86,10 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{".static 1 var 1024", "0400 "},
 		{".static 2 var 0xfafe 255", "FAFE 00FF "},
 		{".static 1 bb 0xff \n .static 1 aa 0xaa", "00FF 00AA "}, // check that variables are stored in order declared
+		{".static 0x0a bb", "0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 "}, // static variables size should accept hex
+		{"loadi ra, .const \n .constant 10 const", "A00A "},
+		{"loadi ra, .const \n loadi.h ra, .const \n .constant 0xabcd const", "A0CD A2AB "},
+		{"loada .const \n .constant 0xfedc const", "D0FE "},
 	};
 
 	for (const auto& test_point : test_points) {
@@ -126,6 +129,10 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		".static 2 my_var 12", // must specify none or all parameters
 		".static 1 my_var -32769", // constant out of range
 		".static 1 var 65536", // constant out of range
+		"in ra", // In and out are no longer valid instructions
+		"out ra",
+		"in",
+		"out",
 	};
 
 	for (const auto& test_point : test_points) {
@@ -178,6 +185,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		auto bus = std::make_shared<Simulator_Bus>();
 		Simulator_Ram ram(instructions, 256, bus);
+		Simulator_IO io(bus, 0x8100); // Note: it's expected that the SPI flash will take base addr 0x8000
 		Simulator sim(bus);
 		int steps = 0;
 		std::cout << std::hex << std::setfill('0');
@@ -185,19 +193,20 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 			sim.step();
 			ram.step();
+			io.step();
 //			std::cout
 //				<< std::setw(2) << steps << " "
 //				<< std::setw(4) << sim.pc << " "
 //				<< std::setw(4) << bus->read_addr << " "
 //				<< std::setw(4) << bus->read_data << " "
-//				<< std::setw(4) <<  sim.output
+//				<< std::setw(4) << io.output
 //				<< std::endl;
 			++steps;
 		}
 
 		// Check that the simulated assembled program actually does as expected
 		if (test_point.expected_output_required) {
-			CHECK(sim.output == test_point.expected_output);
+			CHECK(io.output == test_point.expected_output);
 		}
 	}
 }

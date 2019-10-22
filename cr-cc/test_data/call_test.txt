@@ -1,6 +1,10 @@
 .static 11 rand_buffer
 .static 6 vars
 
+.constant 0x8100 io_offset
+
+loada .io_offset
+
 # Make assumption we have at least 256 words of ram,
 # and won't need more than that
 loadi sp 0xFF
@@ -37,7 +41,7 @@ call.r .fn_add
 add sp, 1 # clean up from call
 pop rb # arg from first call
 add ra, rb
-out ra
+store ra, .io_offset[1] # output
 halt
 
 

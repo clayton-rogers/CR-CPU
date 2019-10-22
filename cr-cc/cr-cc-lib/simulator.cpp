@@ -15,7 +15,7 @@ enum SIM_OPCODES {
 	MOV,
 	JMP,
 	LOADI,
-	IN_OUT_PUSH_POP,
+	PUSH_POP,
 	CALL_RET,
 	LOADA,
 	HALT,
@@ -79,7 +79,7 @@ void Simulator::step() {
 		const std::uint16_t offset_addr = base_addr + signed_constant;
 		const std::uint16_t load_inst_addr = (extra_low & 0x02) ? full_addr : offset_addr;
 
-		load_addr = (opcode == CALL_RET || (opcode == IN_OUT_PUSH_POP && extra_low == 0x03)) ?
+		load_addr = (opcode == CALL_RET || (opcode == PUSH_POP && extra_low == 0x01)) ?
 			ret_addr : load_inst_addr;
 	}
 
@@ -165,19 +165,17 @@ void Simulator::step() {
 		}
 		break;
 	}
-	case IN_OUT_PUSH_POP:
+	case PUSH_POP:
 	{
 		switch (extra_low) {
-		case 0: get_reg(extra_high) = input; break;
-		case 1: output = get_reg(extra_high); break;
-		case 2:
+		case 0:
 		{
 			bus->write_addr = sp--;
 			bus->write_data = get_reg(extra_high);
 			bus->write_strobe = true;
 		}
 		break;
-		case 3:
+		case 1:
 		{
 			if (state == 0) {
 				// address to load from is combinatoric
@@ -227,7 +225,7 @@ void Simulator::step() {
 		next_pc = calced_pc;
 	} else if ((opcode == LOAD && state == 0) || // Load first cycle
 		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // Ret first cycle
-		(opcode == IN_OUT_PUSH_POP && extra_low == 0x03 && state == 0) // Pop first cycle
+		(opcode == PUSH_POP && extra_low == 0x01 && state == 0) // Pop first cycle
 	) {
 		next_pc = pc;
 		next_state = 1;
@@ -238,7 +236,7 @@ void Simulator::step() {
 	// Calculate read address
 	if ((opcode == LOAD && state == 0) ||  // first cycle of load
 		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // first cycle of ret
-		(opcode == IN_OUT_PUSH_POP && extra_low == 0x03 && state == 0)
+		(opcode == PUSH_POP && extra_low == 0x01 && state == 0)  // pop
 	) {
 		bus->read_addr = load_addr;
 	} else {

@@ -17,8 +17,6 @@ public:
 	void step();
 
 	// **** PUBLIC DATA *** //
-	std::uint16_t output = 0;
-	std::uint16_t input = 0;
 	std::uint16_t pc = 0xFFFF;
 	bool is_halted = false;
 
