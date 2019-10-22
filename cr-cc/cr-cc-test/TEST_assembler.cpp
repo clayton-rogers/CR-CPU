@@ -90,6 +90,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadi ra, .const \n .constant 10 const", "A00A "},
 		{"loadi ra, .const \n loadi.h ra, .const \n .constant 0xabcd const", "A0CD A2AB "},
 		{"loada .const \n .constant 0xfedc const", "D0FE "},
+		{".constant 123 .const", ""}, // by itself constants produce no code
 	};
 
 	for (const auto& test_point : test_points) {
@@ -133,6 +134,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"out ra",
 		"in",
 		"out",
+		".constant name 231", // order of name and number are reversed
+		".constant 65536 name", // constant is too large
 	};
 
 	for (const auto& test_point : test_points) {
