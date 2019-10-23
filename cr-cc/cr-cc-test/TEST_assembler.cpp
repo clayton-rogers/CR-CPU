@@ -91,6 +91,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadi ra, .const \n loadi.h ra, .const \n .constant 0xabcd const", "A0CD A2AB "},
 		{"loada .const \n .constant 0xfedc const", "D0FE "},
 		{".constant 123 .const", ""}, // by itself constants produce no code
+		{".constant 0x00ff const \n loadi ra, .const[1] \n loadi.h ra, .const[1]", "A000 A201 "}, // array offsets should roll over into high byte
 	};
 
 	for (const auto& test_point : test_points) {
