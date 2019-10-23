@@ -5,6 +5,7 @@
 #include "simulator_bus.h"
 #include "simulator_ram.h"
 #include "simulator_io.h"
+#include "simulator_timer.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -145,10 +146,6 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 	}
 }
 
-struct TestProgram {
-
-};
-
 struct Test_Program {
 	std::string name;
 	bool expected_output_required;
@@ -156,12 +153,8 @@ struct Test_Program {
 };
 // Used for both the assembler tests and benchmarks
 static const std::vector<Test_Program> test_programs = {
-	// Should flash alternating 0x55 and 0xAA
-	{"flasher_program.txt", false, 0x0000},
-	// Should output the fibonacci sequence
-	{"fib_program.txt", false, 0x0000},
-	// Tests using labels and relative jumps. Should just count up
-	{"label.txt", false, 0x0000},
+	// Tries to implement usleep using bogomips
+	{"bogomips.txt", true, 105}, // 50 iterations are performed, 2 clocks per iteration, 2 clocks for ret, 2 clocks to read timer, 1 clock for call
 	// Note this program should produce the output 0x003C when run
 	{"sum.txt", true, 0x003C},
 	// Should produce 0x0016 output
@@ -173,7 +166,13 @@ static const std::vector<Test_Program> test_programs = {
 	// Sums the numbers in an array using function calls, should output 0x0051
 	{"call_test.txt", true, 0x0051},
 	// Sums a few numbers stored in the data segment
-	{"static_data.txt", true, 55}
+	{"static_data.txt", true, 55},
+	// Should flash alternating 0x55 and 0xAA
+	{ "flasher_program.txt", false, 0x0000 },
+	// Should output the fibonacci sequence
+	{"fib_program.txt", false, 0x0000},
+	// Tests using labels and relative jumps. Should just count up
+	{"label.txt", false, 0x0000},
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
@@ -190,6 +189,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		auto bus = std::make_shared<Simulator_Bus>();
 		Simulator_Ram ram(instructions, 256, bus);
 		Simulator_IO io(bus, 0x8100); // Note: it's expected that the SPI flash will take base addr 0x8000
+		Simulator_Timer timer(bus, 0x8200);
 		Simulator sim(bus);
 		int steps = 0;
 		std::cout << std::hex << std::setfill('0');
@@ -198,6 +198,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 			sim.step();
 			ram.step();
 			io.step();
+			timer.step();
 //			std::cout
 //				<< std::setw(2) << steps << " "
 //				<< std::setw(4) << sim.pc << " "
