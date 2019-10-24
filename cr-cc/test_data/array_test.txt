@@ -23,13 +23,13 @@ add rb, ra
 # keep sum in rb
 
 # for loop to add up array
-loadi bp, 1
+loadi rp, 1
 .array_loop:
-load.bp ra, .var
+load.rp ra, .var
 add rb, ra
-sub bp, 1
-mov ra, bp
-jmp.r.igz .array_loop
+sub rp, 1
+mov ra, rp
+jmp.r.gz .array_loop
 
 loada .io_offset
 store rb, .io_offset[1] # output

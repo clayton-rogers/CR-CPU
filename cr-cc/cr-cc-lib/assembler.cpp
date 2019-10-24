@@ -61,7 +61,7 @@ static const std::map<std::string, OPCODE> instruction_str_map = {
 enum class ARG_TYPE {
 	RA,
 	RB,
-	BP,
+	RP,
 	SP,
 	CONST,
 	NONE,
@@ -70,7 +70,7 @@ enum class ARG_TYPE {
 static const std::map<std::string, ARG_TYPE> argument_str_map = {
 	{"ra", ARG_TYPE::RA},
 	{"rb", ARG_TYPE::RB},
-	{"bp", ARG_TYPE::BP},
+	{"rp", ARG_TYPE::RP},
 	{"sp", ARG_TYPE::SP},
 };
 
@@ -80,17 +80,17 @@ enum class FLAGS_TYPE {
 	IF_NON_ZERO, // "
 	IF_GREATER_ZERO, // "
 	HIGH_BYTE, // For load immediate
-	BASE_POINTER, // For load/store
+	POINTER_REGISTER, // For load/store
 	STACK_POINTER, // "
 };
 
 static const std::map<std::string, FLAGS_TYPE> flags_str_map = {
 	{"r", FLAGS_TYPE::RELATIVE},
-	{"ifz", FLAGS_TYPE::IF_ZERO},
-	{"inz", FLAGS_TYPE::IF_NON_ZERO},
-	{"igz", FLAGS_TYPE::IF_GREATER_ZERO},
+	{"z", FLAGS_TYPE::IF_ZERO},
+	{"nz", FLAGS_TYPE::IF_NON_ZERO},
+	{"gz", FLAGS_TYPE::IF_GREATER_ZERO},
 	{"h", FLAGS_TYPE::HIGH_BYTE},
-	{"bp", FLAGS_TYPE::BASE_POINTER},
+	{"rp", FLAGS_TYPE::POINTER_REGISTER},
 	{"sp", FLAGS_TYPE::STACK_POINTER},
 };
 
@@ -115,9 +115,9 @@ struct Instruction_Info {
 	std::vector<FLAGS_TYPE> allowable_flags = {};
 };
 
-static const std::vector<ARG_TYPE> ALL_REGISTER = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::BP, ARG_TYPE::SP };
-static const std::vector<ARG_TYPE> REGULAR_REGISTER_OR_CONSTANT = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::BP, ARG_TYPE::CONST };
-static const std::vector<ARG_TYPE> ADDRESS_OFFSET = { ARG_TYPE::BP, ARG_TYPE::SP, ARG_TYPE::CONST };
+static const std::vector<ARG_TYPE> ALL_REGISTER = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::RP, ARG_TYPE::SP };
+static const std::vector<ARG_TYPE> REGULAR_REGISTER_OR_CONSTANT = { ARG_TYPE::RA, ARG_TYPE::RB, ARG_TYPE::RP, ARG_TYPE::CONST };
+static const std::vector<ARG_TYPE> ADDRESS_OFFSET = { ARG_TYPE::RP, ARG_TYPE::SP, ARG_TYPE::CONST };
 static const std::vector<ARG_TYPE> NO_ARG = { ARG_TYPE::NONE };
 
 static const Instruction_Info STANDARD_ARITHMETIC = {
@@ -134,8 +134,8 @@ static std::map<OPCODE, Instruction_Info> instruction_definitions = {
 	{OPCODE::XOR,  STANDARD_ARITHMETIC},
 	{OPCODE::SHFTL, {ALL_REGISTER, {ARG_TYPE::RB, ARG_TYPE::CONST},{}}},
 	{OPCODE::SHFTR, {ALL_REGISTER, {ARG_TYPE::RB, ARG_TYPE::CONST},{}}},
-	{OPCODE::LOAD,  {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::BASE_POINTER, FLAGS_TYPE::STACK_POINTER}}},
-	{OPCODE::STORE, {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::BASE_POINTER, FLAGS_TYPE::STACK_POINTER}}},
+	{OPCODE::LOAD,  {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::POINTER_REGISTER, FLAGS_TYPE::STACK_POINTER}}},
+	{OPCODE::STORE, {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::POINTER_REGISTER, FLAGS_TYPE::STACK_POINTER}}},
 	{OPCODE::MOV,   {ALL_REGISTER, ALL_REGISTER, {}}},
 	{OPCODE::JMP,   {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE, FLAGS_TYPE::IF_GREATER_ZERO, FLAGS_TYPE::IF_NON_ZERO, FLAGS_TYPE::IF_ZERO}}},
 	{OPCODE::LOADI, {ALL_REGISTER, {ARG_TYPE::CONST}, {FLAGS_TYPE::HIGH_BYTE}}},
@@ -199,8 +199,8 @@ static std::string to_string(ARG_TYPE t) {
 		return "ra";
 	case ARG_TYPE::RB:
 		return "rb";
-	case ARG_TYPE::BP:
-		return "bp";
+	case ARG_TYPE::RP:
+		return "rp";
 	case ARG_TYPE::SP:
 		return "sp";
 	case ARG_TYPE::NONE:
@@ -547,7 +547,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
@@ -557,7 +557,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[1].type) {
 		case ARG_TYPE::RA: source = 0; break;
 		case ARG_TYPE::RB: source = 1; break;
-		case ARG_TYPE::BP: source = 2; break;
+		case ARG_TYPE::RP: source = 2; break;
 		case ARG_TYPE::CONST: source = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid source1");
@@ -575,7 +575,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
@@ -587,6 +587,10 @@ static std::string instruction_to_machine(
 		case ARG_TYPE::CONST: source = 1; break;
 		default:
 			throw std::logic_error("Should never get here: invalid source");
+		}
+		if (inst.args[1].type == ARG_TYPE::CONST &&
+			(machine & 0xFF) > 0x000F) {
+			throw std::logic_error("Constant for shift should be 0 .. 15");
 		}
 
 		int direction = (inst.opcode == OPCODE::SHFTR) ? 0 : 1;
@@ -604,7 +608,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
@@ -612,11 +616,15 @@ static std::string instruction_to_machine(
 
 		// NOTE: 3 is never used
 		int offset = 2; // by default relative to the address register
-		if (vector_contains(FLAGS_TYPE::BASE_POINTER, inst.flags)) {
+		if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags)) {
 			offset = 0;
 		}
 		if (vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
 			offset = 1;
+		}
+		if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags) &&
+			vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
+			throw std::logic_error("Cannot have both rp and sp offset flags");
 		}
 
 		machine |= dest << 10;
@@ -630,7 +638,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
@@ -640,7 +648,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[1].type) {
 		case ARG_TYPE::RA: source = 0; break;
 		case ARG_TYPE::RB: source = 1; break;
-		case ARG_TYPE::BP: source = 2; break;
+		case ARG_TYPE::RP: source = 2; break;
 		case ARG_TYPE::SP: source = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid source reg");
@@ -667,8 +675,16 @@ static std::string instruction_to_machine(
 		int offset = 0;
 		if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
 			offset = 0;
+
+			if (inst.flags.size() > 2) {
+				throw std::logic_error("Too many jump condition flags specified");
+			}
 		} else {
 			offset = 1;
+
+			if (inst.flags.size() > 1) {
+				throw std::logic_error("Too many jump condition flags specified");
+			}
 		}
 
 		machine |= type_of_jmp << 10;
@@ -682,7 +698,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");
@@ -701,7 +717,7 @@ static std::string instruction_to_machine(
 		switch (inst.args[0].type) {
 		case ARG_TYPE::RA: dest = 0; break;
 		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::BP: dest = 2; break;
+		case ARG_TYPE::RP: dest = 2; break;
 		case ARG_TYPE::SP: dest = 3; break;
 		default:
 			throw std::logic_error("Should never get here: invalid dest reg");

@@ -32,5 +32,5 @@ halt
 #   none
 .usleep:
 sub ra, 1
-jmp.inz.r .usleep
+jmp.nz.r .usleep
 ret

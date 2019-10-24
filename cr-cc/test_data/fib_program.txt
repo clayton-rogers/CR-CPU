@@ -9,7 +9,7 @@ loadi RB, 1
 # add and slide over results
 store ra, .io_offset[1] # output
 add ra, rb
-mov bp, ra
+mov rp, ra
 mov ra, rb
-mov rb, bp
+mov rb, rp
 jmp 2

@@ -10,33 +10,33 @@ loada .io_offset
 loadi sp 0xFF
 
 
-loadi bp .vars
+loadi rp .vars
 loadi ra 11
-store.bp ra 0
+store.rp ra 0
 loadi ra 12
-store.bp ra 1
+store.rp ra 1
 loadi ra 13
-store.bp ra 2
+store.rp ra 2
 loadi ra 14
-store.bp ra 3
+store.rp ra 3
 loadi ra 15
-store.bp ra 4
+store.rp ra 4
 loadi ra 16
-store.bp ra 5
+store.rp ra 5
 
 
 
-load.bp ra, 0
+load.rp ra, 0
 push ra
-load.bp ra, 1
-load.bp rb, 2
+load.rp ra, 1
+load.rp rb, 2
 call.r .fn_add
 add sp, 1 # clean up from call
 push ra
-load.bp ra, 3
+load.rp ra, 3
 push ra
-load.bp ra, 4
-load.bp rb, 5
+load.rp ra, 4
+load.rp rb, 5
 call.r .fn_add
 add sp, 1 # clean up from call
 pop rb # arg from first call

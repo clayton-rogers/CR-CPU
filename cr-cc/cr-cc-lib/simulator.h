@@ -22,7 +22,7 @@ public:
 
 private:
 	// **** DATA **** //
-	std::uint16_t ra = 0, rb = 0, bp = 0, sp = 0;
+	std::uint16_t ra = 0, rb = 0, rp = 0, sp = 0;
 	std::uint8_t addr = 0;
 	std::uint16_t cached_ins = 0;
 
