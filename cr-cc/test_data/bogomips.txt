@@ -7,6 +7,8 @@
 loadi ra, .num_loops
 loadi.h ra, .num_loops
 
+loadi sp, 0x00
+loadi.h sp, 0x01
 
 # The actual testing part:
 loada .timer_addr
