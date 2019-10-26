@@ -64,7 +64,7 @@ void Simulator::step() {
 	const std::uint16_t cj_addr = is_rel ? rel_cj_addr : full_addr;
 
 	// Popped addr for ret inst
-	const std::uint16_t popped_addr = bus->read_data + 1;
+	const std::uint16_t popped_addr = bus->read_data;
 
 	// Calculate new PC's
 	const std::uint16_t calced_pc = (opcode == CALL_RET && (extra_low & 0x01)) ? popped_addr : cj_addr;
@@ -73,7 +73,7 @@ void Simulator::step() {
 	// Calculate load address
 	std::uint16_t load_addr = 0;
 	{
-		const std::uint16_t ret_addr = sp + 1;
+		const std::uint16_t ret_addr = sp;
 
 		const std::uint16_t base_addr = (extra_low & 0x01) ? sp : rp;
 		const std::uint16_t offset_addr = base_addr + signed_constant;
@@ -170,7 +170,7 @@ void Simulator::step() {
 		switch (extra_low) {
 		case 0:
 		{
-			bus->write_addr = sp--;
+			bus->write_addr = --sp;
 			bus->write_data = get_reg(extra_high);
 			bus->write_strobe = true;
 		}
@@ -191,14 +191,15 @@ void Simulator::step() {
 	case CALL_RET:
 	{
 		if (extra_low & 0x01) {
+			// RET handled combinatoric
 			if (state == 1) {
-				++sp;
+				sp++;
 			}
-			// Ret handled combinatoric
 		} else {
+			// Call
 			// Update of pc is combinatoric
-			bus->write_addr = sp--;
-			bus->write_data = pc;
+			bus->write_addr = --sp;
+			bus->write_data = inc_pc;
 			bus->write_strobe = true;
 		}
 		break;
