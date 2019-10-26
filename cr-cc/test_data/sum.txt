@@ -14,27 +14,27 @@ store ra 3
 loadi ra, 3
 store ra 4
 
-loadi bp 4
+loadi rp 4
 
 .add_loop:
-load.bp ra, 0
+load.rp ra, 0
 add ra, 1
-store.bp ra, 0
-sub bp, 1
-mov ra, bp
-jmp.igz.r .add_loop
+store.rp ra, 0
+sub rp, 1
+mov ra, rp
+jmp.gz.r .add_loop
 
-loadi bp 4
+loadi rp 4
 xor rb, rb
 
 .sum_loop:
 mov ra, rb
-load.bp rb, 0
+load.rp rb, 0
 add ra, rb
-sub bp, 1
+sub rp, 1
 mov rb, ra
-mov ra, bp
-jmp.igz.r .sum_loop
+mov ra, rp
+jmp.gz.r .sum_loop
 
 loada .io_offset
 store rb, .io_offset[1]

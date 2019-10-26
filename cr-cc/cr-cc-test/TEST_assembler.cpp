@@ -35,41 +35,41 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"ADD RA, 10", "030A "},
 		{"add ra, ra", "0000 "},
 		{"sub ra, rb", "1100 "},
-		{"and ra, bp", "2200 "},
+		{"and ra, rp", "2200 "},
 		{"or ra, ra",  "3000 "},
 		{"xor ra, ra", "4000 "},
 		{"shftl rb, rb", "5500 "},
-		{"shftl rb, 0x16", "5716 "},
-		{"shftr bp, 0xA1", "5AA1 "},
+		{"shftl rb, 0x0F", "570F "},
+		{"shftr rp, 1", "5A01 "},
 		{"load sp, 10", "6E0A "},
 		{"load ra, 0x10", "6210 "},
-		{"load.bp rb, 10", "640A "},
+		{"load.rp rb, 10", "640A "},
 		{"load.sp ra, -5", "61FB "},
 		{"store sp, 10", "7E0A "},
 		{"store ra, 0x10", "7210 "},
-		{"store.bp rb, 10", "740A "},
+		{"store.rp rb, 10", "740A "},
 		{"store.sp ra, -5", "71FB "},
 		{"store sp, 10", "7E0A "},
 		{"mov ra, rb", "8100 "},
 		{"mov ra, sp", "8300 "},
-		{"mov bp, sp", "8B00 "},
+		{"mov rp, sp", "8B00 "},
 		{"jmp .end \n .end: \n nop", "9201 F000 "}, // jmp abs 1
 		{"nop \n jmp.r .end \n nop \n .end: \n nop", "F000 9002 F000 F000 "}, // jmp rel +2
 		{".beg: \n nop \n jmp.r .beg", "F000 90FF "}, // jmp rel -1
 		{"jmp 1", "9201 "},
 		{"jmp 0", "9200 "},
-		{"jmp.ifz 0x10", "9610 "},
-		{".beg: \n jmp.inz .beg", "9A00 "},
-		{"jmp.inz .beg \n .beg: \n nop", "9A01 F000 "},
-		{"nop \n jmp.igz.r .beg \n .beg: \n nop", "F000 9C01 F000 "},
-		{"nop \n jmp.igz .beg \n .beg: \n nop", "F000 9E02 F000 "},
+		{"jmp.z 0x10", "9610 "},
+		{".beg: \n jmp.nz .beg", "9A00 "},
+		{"jmp.nz .beg \n .beg: \n nop", "9A01 F000 "},
+		{"nop \n jmp.gz.r .beg \n .beg: \n nop", "F000 9C01 F000 "},
+		{"nop \n jmp.gz .beg \n .beg: \n nop", "F000 9E02 F000 "},
 		{"loadi ra, 0x30", "A030 "},
 		{"loadi rb, 0xFF", "A4FF "},
-		{"loadi bp 32",    "A820 "},
+		{"loadi rp 32",    "A820 "},
 		{"loadi.h sp 0xEE", "AEEE "},
 		{".static 1 buf \n .static 1 a \n .static 2 b \n loadi ra, .a \n loadi.h ra, .a \n loadi rb,.b[1]", "A004 A200 A406 0000 0000 0000 0000 "},
 		{".static 256 buf \n .static 1 a \n loadi ra, .a \n loadi.h ra,.a", "A002 A201 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 " },
-		{"push bp", "B800 "},
+		{"push rp", "B800 "},
 		{"pop sp", "BD00 "},
 		{"nop \n call .fn \n nop \n .fn: \n nop", "F000 C203 F000 F000 "}, // call abs
 		{".fn: \n nop \n call.r .fn \n nop", "F000 C0FF F000 "}, // call rel -1
@@ -78,6 +78,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"ret", "C100 "},
 		{"loada 0x45", "D045 "},
 		{"loada 10", "D00A "},
+		{"loada .const \n .constant 0xFEAB const", "D0FE "},
 		{"halt", "E000 "},
 		{"nop", "F000 "},
 		{"jmp 0xFF", "92FF "},
@@ -116,8 +117,11 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"add 32, rb", // invalid constant location
 		"add ra, sp", // input 2 cannot be sp
 		"move ra, rb", // invalid opcode
-		"jmp.inz.bp 0x10", // bp flag is not valid for jmp
-		"jmp.inz 0x10, 0x10", // only one constant allowed
+		"load.rp.sp ra, 0x10", // two opposite flags are not allowed
+		"jmp.nz.rp 0x10", // rp flag is not valid for jmp
+		"jmp.nz 0x10, 0x10", // only one constant allowed
+		"jmp.nz.z 0x10", // two oposite flags are not allowed
+		"jmp.nz.z.r 0x10", // two oposite flags are not allowed
 		"call.rp 0x01", // rp is not valid for call
 		"call .fn", // call a label that doesn't exists
 		"out 0x10", // in/out/push/pop cannot have immediate
@@ -138,6 +142,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"out",
 		".constant name 231", // order of name and number are reversed
 		".constant 65536 name", // constant is too large
+		"shftl ra, 0x10", // constant must be 0 .. 15
+		"shftr rb, -1", // constant must be 0 .. 15
 	};
 
 	for (const auto& test_point : test_points) {

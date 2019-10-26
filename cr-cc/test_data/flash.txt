@@ -15,7 +15,7 @@ loadi ra, 0x90  #0x190 == 400
 loadi.h ra, 0x01
 .top_loop:
 sub ra, 1
-jmp.r.igz .top_loop
+jmp.r.gz .top_loop
 
 
 ### all off ###
@@ -30,7 +30,7 @@ loadi ra, 0x90  #0x190 == 400
 loadi.h ra, 0x01
 .top_loop2:
 sub ra, 1
-jmp.igz.r .top_loop2
+jmp.gz.r .top_loop2
 
 ### start the whole thing again
 jmp .top

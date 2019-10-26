@@ -75,7 +75,7 @@ void Simulator::step() {
 	{
 		const std::uint16_t ret_addr = sp + 1;
 
-		const std::uint16_t base_addr = (extra_low & 0x01) ? sp : bp;
+		const std::uint16_t base_addr = (extra_low & 0x01) ? sp : rp;
 		const std::uint16_t offset_addr = base_addr + signed_constant;
 		const std::uint16_t load_inst_addr = (extra_low & 0x02) ? full_addr : offset_addr;
 
@@ -253,7 +253,7 @@ std::uint16_t& Simulator::get_reg(int index)
 	switch (index) {
 	case 0: return ra;
 	case 1: return rb;
-	case 2: return bp;
+	case 2: return rp;
 	case 3: return sp;
 	default: throw std::out_of_range("Simulator::get_reg(): reg index must be 0 .. 3, actual: " + index);
 	}
