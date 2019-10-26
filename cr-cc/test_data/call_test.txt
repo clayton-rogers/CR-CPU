@@ -47,11 +47,11 @@ halt
 
 # add three numbers
 #   INPUT
-#       ra, rb, sp+2
+#       ra, rb, sp+1
 #   OUTPUT
 #       ra
 .fn_add:
 add ra, rb
-load.sp rb, 2
+load.sp rb, 1
 add ra, rb
 ret
