@@ -4,7 +4,6 @@
 
 `include "ALU.test"
 `include "cpu.test"
-`include "top.test"
 
 module top_tb ();
 
@@ -20,12 +19,8 @@ wire cpu_result;
 wire cpu_done;
 cpu_test cpu(.clk(clk), .result_out(cpu_result), .done(cpu_done));
 
-wire top_result;
-wire top_done;
-top_test top(.clk(clk), .result_out(top_result), .done(top_done));
-
-wire result = alu_result | cpu_result | top_result;
-wire done =  alu_done & cpu_done & top_done;
+wire result = alu_result | cpu_result;
+wire done =  alu_done & cpu_done;
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));

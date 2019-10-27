@@ -17,7 +17,7 @@ module top (
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
-    localparam OUTPUT_CLOCK    = 100;
+    localparam OUTPUT_CLOCK    = 10;
 
     // drive USB pull-up resistor to '0' to disable USB
     assign USBPU = 0;
@@ -41,7 +41,6 @@ module top (
     // instantiate CPU
     wire [7:0] core_output;
     assign {PIN_13, PIN_12, PIN_11, PIN_10, PIN_1, PIN_3, PIN_5, PIN_7} = core_output;
-    cpu #(.FILENAME("call_test.hex"))
-    cpu (.i_clk(CLK), .cpu_output(core_output));
+    cpu cpu (.i_clk(CLK), .cpu_output(core_output));
 
 endmodule

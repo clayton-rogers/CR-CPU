@@ -4,7 +4,7 @@ module cpu (
   input i_clk,
   output [7:0] cpu_output
   );
-  parameter FILENAME = "empty.hex";
+  parameter FILENAME = "top.hex";
 
   // main bus of cpu
   wire [15:0] read_addr;
@@ -35,7 +35,8 @@ module cpu (
     );
 
  // IO pins
- gpio gpio(
+ gpio #(.OFFSET(16'h8100))
+ gpio(
    .i_clk(i_clk),
    .read_addr(read_addr),
    .read_data(read_data),

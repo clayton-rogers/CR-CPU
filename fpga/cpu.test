@@ -7,8 +7,7 @@ module cpu_test(
   );
 
 
-cpu #(.FILENAME("call_test.hex"))
-cpu (
+cpu cpu (
   .i_clk(clk),
   .cpu_output(out_data));
 
