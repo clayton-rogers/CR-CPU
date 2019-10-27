@@ -46,4 +46,15 @@ module cpu (
    .output_pins(cpu_output)
    );
 
+  // 32bit timer
+  timer #(.OFFSET(16'h8200))
+  timer(
+    .i_clk(i_clk),
+    .read_addr(read_addr),
+    .read_data(read_data),
+    .write_addr(write_addr),
+    .write_data(write_data),
+    .write_strobe(write_strobe)
+    );
+
 endmodule
