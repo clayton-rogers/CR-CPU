@@ -21,6 +21,8 @@ module top (
 
     // drive USB pull-up resistor to '0' to disable USB
     assign USBPU = 0;
+    // turn on LED
+    assign LED = 1'b1;
 
     // Setup clock
     reg real_clock = 0;
@@ -36,11 +38,10 @@ module top (
       end
     end
 
-    /* verilator lint_off UNUSED */
-    wire [15:0] core_output; // some bits are unused
-    /* verilator lint_on UNUSED */
-    core core (.i_clk(real_clock), .o_out(core_output));
+    // instantiate CPU
+    wire [7:0] core_output;
+    assign {PIN_13, PIN_12, PIN_11, PIN_10, PIN_1, PIN_3, PIN_5, PIN_7} = core_output;
+    cpu #(.FILENAME("call_test.hex"))
+    cpu (.i_clk(CLK), .cpu_output(core_output));
 
-    assign {PIN_13, PIN_12, PIN_11, PIN_10, PIN_1, PIN_3, PIN_5, PIN_7} = core_output[7:0];
-    assign LED = 1'b1;
 endmodule

@@ -1,0 +1,43 @@
+`default_nettype none
+
+module top_test(
+  input wire clk,
+  output wire result_out,
+  output reg done
+  );
+
+  wire LED;
+  wire USBPU;
+
+  top top (
+      .CLK(clk),
+      .LED(LED),
+      .USBPU(USBPU),
+
+      .PIN_1 (out_data[0]),
+      .PIN_3 (out_data[1]),
+      .PIN_5 (out_data[2]),
+      .PIN_7 (out_data[3]),
+      .PIN_10(out_data[4]),
+      .PIN_11(out_data[5]),
+      .PIN_12(out_data[6]),
+      .PIN_13(out_data[7])
+      );
+
+wire [7:0] out_data;
+reg [7:0] expected = 8'h51;
+
+wire [31:0] result = out_data - expected;
+reg output_valid = 1'b1;
+assign result_out = 1'b0; // |result & output_valid;
+
+initial begin
+done = 1'b0;
+output_valid = 0;
+
+#100
+output_valid = 1'b0;
+done = 1'b1;
+end
+
+endmodule

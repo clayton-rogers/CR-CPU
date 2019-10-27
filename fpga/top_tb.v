@@ -2,11 +2,9 @@
 `define DUMPSTR(x) `"x.vcd`"
 `timescale 100 ns / 10 ns
 
-`include "register.test"
-`include "ram.test"
-`include "program_counter.test"
-`include "core.test"
 `include "ALU.test"
+`include "cpu.test"
+`include "top.test"
 
 module top_tb ();
 
@@ -14,28 +12,20 @@ reg clk = 1'b0;
 reg start = 1'b0;
 always #0.5 clk = ~clk & start;
 
-wire reg_result;
-wire reg_done;
-register_test register (.clk(clk), .result_out(reg_result), .done(reg_done));
-
-wire ram_result;
-wire ram_done;
-ram_test ram(.clk(clk), .result_out(ram_result), .done(ram_done));
-
-wire pc_result;
-wire pc_done;
-program_counter_test program_counter(.clk(clk), .result_out(pc_result), .done(pc_done));
-
-wire core_result;
-wire core_done;
-core_test core(.clk(clk), .result_out(core_result), .done(core_done));
-
 wire alu_result;
 wire alu_done;
 alu_test alu(.clk(clk), .result_out(alu_result), .done(alu_done));
 
-wire result = reg_result | ram_result | pc_result | core_result | alu_result;
-wire done = reg_done & ram_done & pc_done & core_done & alu_done;
+wire cpu_result;
+wire cpu_done;
+cpu_test cpu(.clk(clk), .result_out(cpu_result), .done(cpu_done));
+
+wire top_result;
+wire top_done;
+top_test top(.clk(clk), .result_out(top_result), .done(top_done));
+
+wire result = alu_result | cpu_result | top_result;
+wire done =  alu_done & cpu_done & top_done;
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));

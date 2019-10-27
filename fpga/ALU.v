@@ -26,11 +26,11 @@ module ALU (i_opcode, i_shift_dir, i_data1, i_data2, o_data);
         end
       LOAD   : o_data = 16'h0000; // ALU is unused
       STORE  : o_data = 16'h0000; // ALU is unused
-      MOVE   : o_data = i_data1;
+      MOV    : o_data = i_data2;
       JUMP   : o_data = 16'h0000; // ALU is unused
       LOADI  : o_data = 16'h0000; // ALU is unused
-      IN_OUT_PUSH_POP : o_data = 16'h0000; // ALU is unused
-      CALL_RCALL_RET  : o_data = 16'h0000; // ALU is unused
+      PUSH_POP : o_data = 16'h0000; // ALU is unused
+      CALL_RET : o_data = 16'h0000; // ALU is unused
       LOADA  : o_data = 16'h0000; // ALU is unused
       HALT   : o_data = 16'h0000; // ALU is unused
       NOP    : o_data = 16'h0000; // ALU is unused

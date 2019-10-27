@@ -35,7 +35,7 @@ static int ALU(int opcode, int shift_dir, int data1, int data2) {
 		case 1: return data1 << data2;
 		default: throw std::out_of_range("Simulator::ALU: Shift dir must be 0 or 1");
 		}
-	case MOV: return data1;
+	case MOV: return data2;
 	default: return 0;
 	}
 }
@@ -83,7 +83,7 @@ void Simulator::step() {
 			ret_addr : load_inst_addr;
 	}
 
-	const int input1 = (opcode == MOV) ? get_reg(extra_low) : get_reg(extra_high);
+	const int input1 = get_reg(extra_high);
 	int input2 = 0;
 	switch (opcode) {
 	case ADD:
@@ -108,6 +108,11 @@ void Simulator::step() {
 		}
 		break;
 	}
+	case MOV:
+	{
+		input2 = get_reg(extra_low);
+		break;
+	}
 	default:
 		break;
 	}
@@ -118,10 +123,10 @@ void Simulator::step() {
 
 	bool should_jump = false;
 	switch (extra_high) {
-		case 0: should_jump = true; break;
-		case 1: should_jump = ra == 0; break;
-		case 2: should_jump = ra != 0; break;
-		case 3: should_jump = !(ra & 0x8000); break;
+		case 0: should_jump = true; break;          // jmp
+		case 1: should_jump = ra == 0; break;       // jmp z
+		case 2: should_jump = ra != 0; break;       // jmp nz
+		case 3: should_jump = !(ra & 0x8000); break;// jmp gz (positive)
 		default: throw std::out_of_range("Simulator::step(): type of jump, extra high must be in range 0 .. 3");
 	}
 
@@ -132,6 +137,7 @@ void Simulator::step() {
 	case OR:
 	case XOR:
 	case SHIFT:
+	case MOV:
 		dest_reg = ALU_OUT;
 		break;
 	case LOAD:
@@ -147,9 +153,6 @@ void Simulator::step() {
 		bus->write_addr = load_addr;
 		bus->write_data = get_reg(extra_high);
 		bus->write_strobe = true;
-		break;
-	case MOV:
-		dest_reg = get_reg(extra_low);
 		break;
 	case JMP:
 	{
@@ -231,7 +234,7 @@ void Simulator::step() {
 		next_pc = pc;
 		next_state = 1;
 	} else {
-		next_pc = pc + 1;
+		next_pc = inc_pc;
 	}
 
 	// Calculate read address
