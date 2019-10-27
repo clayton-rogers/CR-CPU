@@ -532,6 +532,20 @@ static std::string instruction_to_machine(
 				}
 
 			}
+			if (const_value < 0) {
+				switch (inst.opcode) {
+				case OPCODE::ADD:
+				case OPCODE::SUB:
+				case OPCODE::AND:
+				case OPCODE::OR:
+				case OPCODE::XOR:
+				case OPCODE::SHFTL:
+				case OPCODE::SHFTR:
+					throw std::logic_error("Arithmetic instruction cannot have negative constant");
+				default:
+					break; // nop
+				}
+			}
 			machine += static_cast<std::uint8_t>(const_value);
 		}
 	}

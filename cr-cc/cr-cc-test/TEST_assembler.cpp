@@ -116,6 +116,7 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"add ra, ra, 23", // too many arguments (constant)
 		"add 32, rb", // invalid constant location
 		"add ra, sp", // input 2 cannot be sp
+		"add ra, -1", // immediate for arithmetic cannot be negative (because it is not sign extended
 		"move ra, rb", // invalid opcode
 		"load.rp.sp ra, 0x10", // two opposite flags are not allowed
 		"jmp.nz.rp 0x10", // rp flag is not valid for jmp
