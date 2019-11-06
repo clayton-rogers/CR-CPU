@@ -163,25 +163,25 @@ static const std::vector<Test_Program> test_programs = {
 	// Simple test of push and pop
 	{"push_pop.s", true, 0xC3},
 	// Tries to implement usleep using bogomips
-	{"bogomips.txt", true, 105}, // 50 iterations are performed, 2 clocks per iteration, 2 clocks for ret, 2 clocks to read timer, 1 clock for call
+	{"bogomips.s", true, 105}, // 50 iterations are performed, 2 clocks per iteration, 2 clocks for ret, 2 clocks to read timer, 1 clock for call
 	// Note this program should produce the output 0x003C when run
-	{"sum.txt", true, 0x003C},
+	{"sum.s", true, 0x003C},
 	// Should produce 0x0016 output
-	{"var_test.txt", true, 0x0016},
+	{"var_test.s", true, 0x0016},
 	// Should produce 0x002B output
-	{"array_test.txt", true, 0x002B},
+	{"array_test.s", true, 0x002B},
 	// Alternately flashes all the LEDs on and off for 400 "counts" each (~3 * 400 clocks)
-	{"flash.txt", false, 0x0000},
+	{"flash.s", false, 0x0000},
 	// Sums the numbers in an array using function calls, should output 0x0051
-	{"call_test.txt", true, 0x0051},
+	{"call_test.s", true, 0x0051},
 	// Sums a few numbers stored in the data segment
-	{"static_data.txt", true, 55},
+	{"static_data.s", true, 55},
 	// Should flash alternating 0x55 and 0xAA
-	{ "flasher_program.txt", false, 0x0000 },
+	{ "flasher_program.s", false, 0x0000 },
 	// Should output the fibonacci sequence
-	{"fib_program.txt", false, 0x0000},
+	{"fib_program.s", false, 0x0000},
 	// Tests using labels and relative jumps. Should just count up
-	{"label.txt", false, 0x0000},
+	{"label.s", false, 0x0000},
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
