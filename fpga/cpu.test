@@ -9,8 +9,13 @@ module cpu_test(
 
 cpu cpu (
   .i_clk(clk),
-  .cpu_output(out_data));
+  .cpu_output(out_data),
+  .uart_rx_unsafe(uart_rx),
+  .uart_tx(uart_tx)
+);
 
+wire uart_tx;
+reg  uart_rx = 1'b1;
 wire [7:0] out_data;
 reg [7:0] expected = 8'h00;
 
@@ -22,7 +27,7 @@ initial begin
 done = 1'b0;
 output_valid = 0;
 
-#100
+#5000
 output_valid = 1'b0;
 done = 1'b1;
 end

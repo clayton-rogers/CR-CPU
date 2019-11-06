@@ -13,11 +13,11 @@ always #0.5 clk = ~clk & start;
 
 wire alu_result;
 wire alu_done;
-alu_test alu(.clk(clk), .result_out(alu_result), .done(alu_done));
+alu_test alu_test(.clk(clk), .result_out(alu_result), .done(alu_done));
 
 wire cpu_result;
 wire cpu_done;
-cpu_test cpu(.clk(clk), .result_out(cpu_result), .done(cpu_done));
+cpu_test cpu_test(.clk(clk), .result_out(cpu_result), .done(cpu_done));
 
 wire result = alu_result | cpu_result;
 wire done =  alu_done & cpu_done;

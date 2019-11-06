@@ -327,7 +327,10 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		vl.size = std::stoi(tokens.at(1), 0, 0);
 		if (tokens.size() != 3) {
 			if (tokens.size() != static_cast<size_t>(3) + vl.size) {
-				throw std::logic_error("Incorrect number of args to static var: " + label);
+				throw std::logic_error(
+					"Incorrect number of args to static var: " + label +
+					" Expected: " + std::to_string(vl.size) +
+					" Actual: " + std::to_string(tokens.size() - 3));
 			}
 
 			vl.has_values = true;
