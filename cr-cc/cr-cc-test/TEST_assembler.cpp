@@ -160,6 +160,8 @@ struct Test_Program {
 };
 // Used for both the assembler tests and benchmarks
 static const std::vector<Test_Program> test_programs = {
+	// Simple test of push and pop
+	{"push_pop.s", true, 0xC3},
 	// Tries to implement usleep using bogomips
 	{"bogomips.txt", true, 105}, // 50 iterations are performed, 2 clocks per iteration, 2 clocks for ret, 2 clocks to read timer, 1 clock for call
 	// Note this program should produce the output 0x003C when run

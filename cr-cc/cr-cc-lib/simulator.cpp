@@ -184,6 +184,7 @@ void Simulator::step() {
 				// address to load from is combinatoric
 			} else {
 				get_reg(extra_high) = bus->read_data;
+				++sp;
 			}
 			break;
 		}

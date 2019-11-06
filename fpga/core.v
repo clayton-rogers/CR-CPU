@@ -289,6 +289,7 @@ module core (
             2'b10: rp <= read_data;
             2'b11: sp <= read_data;
             endcase
+            sp <= sp + 1;
           end
         end else begin // push
           sp <= sp - 1;
