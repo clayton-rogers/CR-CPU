@@ -6,14 +6,17 @@ module top (
     output LED,   // User/boot LED next to power LED
     output USBPU,  // USB pull-up resistor
 
-    output PIN_1,
-    output PIN_3,
+    output PIN_1, // GPIO output pins
+    output PIN_3, // each has an LED
     output PIN_5,
     output PIN_7,
     output PIN_10,
     output PIN_11,
     output PIN_12,
-    output PIN_13
+    output PIN_13,
+
+    output PIN_14, // uart tx
+    input  PIN_15  // uart rx
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
@@ -21,8 +24,8 @@ module top (
 
     // drive USB pull-up resistor to '0' to disable USB
     assign USBPU = 0;
-    // turn on LED
-    assign LED = 1'b1;
+    // turn off LED
+    assign LED = 1'b0;
 
     // Setup clock
     reg real_clock = 0;
@@ -41,6 +44,11 @@ module top (
     // instantiate CPU
     wire [7:0] core_output;
     assign {PIN_13, PIN_12, PIN_11, PIN_10, PIN_1, PIN_3, PIN_5, PIN_7} = core_output;
-    cpu cpu (.i_clk(CLK), .cpu_output(core_output));
+    cpu cpu (
+      .i_clk(CLK),
+      .cpu_output(core_output),
+      .uart_rx_unsafe(PIN_15),
+      .uart_tx(PIN_14)
+    );
 
 endmodule
