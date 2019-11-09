@@ -48,6 +48,14 @@ ret
 	store ra .UART_OFFSET[2]
 ret
 
+# read_uart_tx_size - reads the number of characters waiting in tx
+# OUTPUT
+#   ra - number of characters
+.read_uart_tx_size:
+	loada .UART_OFFSET[0]
+	load ra, .UART_OFFSET[0]
+ret
+
 # read uart rx - reads a character
 # OUTPUT
 #   ra - character
