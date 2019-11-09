@@ -249,7 +249,7 @@ module core (
   // ==========================================================================
   always @ ( posedge i_clk ) begin
     case (opcode)
-      ADD, SUB, AND, OR, XOR, MOV:
+      ADD, SUB, AND, OR, XOR, SHIFT, MOV:
         case (extra_high)
         2'b00: ra <= alu_output;
         2'b01: rb <= alu_output;
