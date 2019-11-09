@@ -95,7 +95,7 @@ uart_ram_multiplexer multiplexer (
   .o_b_r_data(tx_data),
   .i_b_re(tx_we),
   .o_b_ack_r(tx_enable),
-  .i_b_w_addr(uart_read_addr),
+  .i_b_w_addr(uart_write_addr),
   .i_b_w_data(rx_data),
   .i_b_we(rx_new_data),
   .o_b_ack_w(rx_ack)

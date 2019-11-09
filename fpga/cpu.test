@@ -27,6 +27,94 @@ initial begin
 done = 1'b0;
 output_valid = 0;
 
+uart_rx = 0;
+#139 // start
+// 00101010 0x54 'T'
+uart_rx = 0;
+#139 // LSB
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139 // MSB
+uart_rx = 1;
+#139 // stop bit
+
+uart_rx = 0;
+#139 // start
+// 00101010 0x54 'T'
+uart_rx = 0;
+#139 // LSB
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139 // MSB
+uart_rx = 1;
+#139 // stop bit
+
+uart_rx = 0;
+#139 // start
+// 00101010 0x54 'T'
+uart_rx = 0;
+#139 // LSB
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139 // MSB
+uart_rx = 1;
+#139 // stop bit
+
+uart_rx = 0;
+#139 // start
+// 00101010 0x54 'T'
+uart_rx = 0;
+#139 // LSB
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139
+uart_rx = 1;
+#139
+uart_rx = 0;
+#139 // MSB
+uart_rx = 1;
+#139 // stop bit
+
 #5000
 output_valid = 1'b0;
 done = 1'b1;
