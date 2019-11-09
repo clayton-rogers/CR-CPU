@@ -115,7 +115,7 @@ uart_rx = 0;
 uart_rx = 1;
 #139 // stop bit
 
-#5000
+#1000
 output_valid = 1'b0;
 done = 1'b1;
 end

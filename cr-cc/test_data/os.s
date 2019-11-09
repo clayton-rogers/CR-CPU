@@ -2,6 +2,7 @@
 .constant 0x8200 TIMER_OFFSET
 .constant 0x8300 UART_OFFSET
 .constant 0x0100 RAM_SIZE
+.constant     16 CLOCKS_PER_MICRO
 
 # Preamble to setup stack pointer
 loadi sp .RAM_SIZE
@@ -15,7 +16,9 @@ call .main
 halt
 
 
-
+# ====================================================================
+# YOUR MAIN GOES HERE
+# ====================================================================
 .static 0x0D HELLO_STR 0x68 0x65 0x6C 0x6C 0x6F 0x20 0x77 0x6F 0x72 0x6C 0x64 0x21 0x00
 .constant 10 NUM_CHAR_TO_WAIT
 .main:
@@ -32,6 +35,15 @@ halt
 	jmp.r .main
 ret
 
+# ====================================================================
+# END MAIN
+# ====================================================================
+
+
+
+# ====================================================================
+# OS Library code
+# ====================================================================
 # set_led - sets the led states
 # INPUT
 #   ra - low 8 bits set leds
@@ -70,6 +82,40 @@ ret
 .read_uart_rx_size:
 	loada   .UART_OFFSET[1]
 	load ra .UART_OFFSET[1]
+ret
+
+# sleep_micro - busy waits the given number of microseconds
+# INPUT
+#   ra - number of microseconds (max 8000)
+.sleep_micro:
+	jmp.r.z .sleep_micro_done
+	shftl ra, 3 # multiply by 8
+	sub ra, 6 # 1 call, 1 jmp, 1 shft, 1 sub, 2 ret
+	# this will sleep for 16 cycles per loop
+	.sleep_micro_top:
+		sub ra, 1
+	jmp.r.nz .sleep_micro_top
+.sleep_micro_done:
+ret
+
+# sleep_milli - busy waits for the given number of milliseconds
+# INPUT
+#   ra - number of milliseconds
+.sleep_milli:
+	push rb
+	jmp.r.z .sleep_milli_done
+
+	.sleep_milli_top:
+	mov rb, ra
+	loadi ra, 0xE8
+	loadi.h ra, 0x03 # 1000 in ra
+	call.r .sleep_micro
+	mov ra, rb
+	sub ra, 1
+	jmp.r.nz .sleep_milli_top
+
+	.sleep_milli_done:
+	pop rb
 ret
 
 # put_string
