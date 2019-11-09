@@ -39,10 +39,8 @@ always @ ( posedge i_clk ) begin
     counter <= 1;
     // stop bit, data (MSB .. LSB), start bit
     internal_data <= {1'b1, data, 1'b0};
-    // technically we only need ~10 states to transfer the data,
-    // but having more causes us to idle between characters which
-    // could help syncing.
-    state <= 15;
+    // 10 states (10 = start bit, 1 = stop bit, 0 = idle)
+    state <= 10;
   end
 
 end
