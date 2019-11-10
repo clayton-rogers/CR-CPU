@@ -164,6 +164,7 @@ struct AssemblerState {
 
 	int static_allocation_offset = 0;
 	int next_inst_addr = 0;
+	int text_offset = 0;
 };
 
 static std::vector<std::string> split_by_lines(const std::string& assembly) {
@@ -418,6 +419,19 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 			throw std::logic_error("Constant out of range: " + label + " " + std::to_string(size));
 		}
 		as->const_map[label] = size;
+
+		return;
+	}
+
+	// Text offset
+	//   Format:
+	// .text_offset 0xabcdB
+	// # offsets the text (and data) sections by the given amount
+	if (directive == ".text_offset") {
+		if (tokens.size() != 2) {
+			throw std::logic_error("Text offset requires one argument");
+		}
+		as->text_offset = std::stoi(tokens.at(1), 0, 0);
 
 		return;
 	}
@@ -904,8 +918,12 @@ std::vector<std::string> assemble(const std::string& assembly) {
 			}
 		}
 
+		// Handle text offset
+		for (auto& label : as.text_label_map) {
+			label.second += as.text_offset;
+		}
 		// Data section is placed after the text section
-		const int size_of_text = static_cast<int>(as.instructions.size());
+		const int size_of_text = static_cast<int>(as.instructions.size()) + as.text_offset;
 		for (auto& label : as.data_label_map) {
 			label.second.offset += size_of_text;
 		}

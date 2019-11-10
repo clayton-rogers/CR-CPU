@@ -98,6 +98,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loada .const \n .constant 0xfedc const", "D0FE "},
 		{".constant 123 .const", ""}, // by itself constants produce no code
 		{".constant 0x00ff const \n loadi ra, .const[1] \n loadi.h ra, .const[1]", "A000 A201 "}, // array offsets should roll over into high byte
+		{".label: \n loadi ra, .label \n loadi.h ra .label \n  .text_offset 0x0102", "A002 A201 "},
 	};
 
 	for (const auto& test_point : test_points) {
@@ -151,6 +152,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		".constant 65536 name", // constant is too large
 		"shftl ra, 0x10", // constant must be 0 .. 15
 		"shftr rb, -1", // constant must be 0 .. 15
+		".text_offset 0x1020 013", // text offset only takes one argument
+		".text_offset ", // text offset must take an argument
 	};
 
 	for (const auto& test_point : test_points) {
