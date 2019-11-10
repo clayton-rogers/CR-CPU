@@ -160,6 +160,8 @@ struct Test_Program {
 };
 // Used for both the assembler tests and benchmarks
 static const std::vector<Test_Program> test_programs = {
+	// Test of using the stack for call argument. Is sensitive to wether SP is top or top+1 of the stack
+	{"call_test_2.s", true, 0x82},
 	// Simple test of push and pop
 	{"push_pop.s", true, 0xC3},
 	// Tries to implement usleep using bogomips
