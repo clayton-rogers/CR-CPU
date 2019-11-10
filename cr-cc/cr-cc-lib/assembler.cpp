@@ -326,21 +326,68 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		Data_Label vl;
 		vl.size = std::stoi(tokens.at(1), 0, 0);
 		if (tokens.size() != 3) {
-			if (tokens.size() != static_cast<size_t>(3) + vl.size) {
-				throw std::logic_error(
-					"Incorrect number of args to static var: " + label +
-					" Expected: " + std::to_string(vl.size) +
-					" Actual: " + std::to_string(tokens.size() - 3));
-			}
-
-			vl.has_values = true;
-
-			for (int i = 0; i < vl.size; ++i) {
-				const int value = std::stoi(tokens.at(static_cast<size_t>(i) + 3), 0, 0);
-				if (value < -32768 || value > 65535) {
-					throw std::logic_error("Constant out of range: " + label + " " + std::to_string(value));
+			// supplied values might be a list of numbers or a string
+			if (tokens.at(3).at(0) == '"') {
+				// this is a string
+				std::string supplied_string;
+				bool found_open_quote = false;
+				bool found_close_quote = false;
+				for (int i = 3; i < tokens.size(); ++i) {
+					if (found_open_quote) {
+						supplied_string += ' ';
+					}
+					std::string current_token = tokens.at(i);
+					for (int j = 0; j < current_token.size(); ++j) {
+						char c = current_token.at(j);
+						if (!found_open_quote && c == '"') {
+							found_open_quote = true;
+							continue;
+						}
+						if (c == '"') {
+							found_close_quote = true;
+							break;
+						}
+						supplied_string += c;
+					}
+					if (found_close_quote) { break; }
 				}
-				vl.values.push_back(value);
+
+				if (!found_close_quote) {
+					throw std::logic_error("Missing closing quote for var: " + label);
+				}
+
+				if (supplied_string.size() + 1 != vl.size) {
+					throw std::logic_error("Incorrect size string: " + label +
+						" Expected: " + std::to_string(vl.size) +
+						" Actual: " + std::to_string(supplied_string.size() + 1));
+				}
+
+				vl.has_values = true;
+
+				for (int i = 0; i < supplied_string.size(); ++i) {
+					char c = supplied_string.at(i);
+					vl.values.push_back(c);
+				}
+				vl.values.push_back(0); // null terminator
+
+			} else {
+				// this is a list of numbers
+				if (tokens.size() != static_cast<size_t>(3) + vl.size) {
+					throw std::logic_error(
+						"Incorrect number of args to static var: " + label +
+						" Expected: " + std::to_string(vl.size) +
+						" Actual: " + std::to_string(tokens.size() - 3));
+				}
+
+				vl.has_values = true;
+
+				for (int i = 0; i < vl.size; ++i) {
+					const int value = std::stoi(tokens.at(static_cast<size_t>(i) + 3), 0, 0);
+					if (value < -32768 || value > 65535) {
+						throw std::logic_error("Constant out of range: " + label + " " + std::to_string(value));
+					}
+					vl.values.push_back(value);
+				}
 			}
 		}
 		vl.offset = as->static_allocation_offset;

@@ -19,7 +19,7 @@ halt
 # ====================================================================
 # YOUR MAIN GOES HERE
 # ====================================================================
-.static 0x0D HELLO_STR 0x68 0x65 0x6C 0x6C 0x6F 0x20 0x77 0x6F 0x72 0x6C 0x64 0x21 0x00
+.static 0x0D HELLO_STR "hello world!"
 .constant 10 NUM_CHAR_TO_WAIT
 .main:
 	call.r .read_uart_rx_size

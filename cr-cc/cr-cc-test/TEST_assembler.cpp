@@ -89,6 +89,9 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{".static 2 var 0xfafe 255", "FAFE 00FF "},
 		{".static 1 bb 0xff \n .static 1 aa 0xaa", "00FF 00AA "}, // check that variables are stored in order declared
 		{".static 0x0a bb", "0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 "}, // static variables size should accept hex
+		{".static 6 text \"hello\"", "0068 0065 006C 006C 006F 0000 "}, // handling simple string
+		{".static 6 text \"ab ab\"", "0061 0062 0020 0061 0062 0000 "}, // handling embeded space in string
+		{".static 9 text \"ab ab ab\"", "0061 0062 0020 0061 0062 0020 0061 0062 0000 "}, // handling two spaces
 		{"loadi ra, .const \n .constant 10 const", "A00A "},
 		{"loadi ra, .const \n loadi.h ra, .const \n .constant 0xabcd const", "A0CD A2AB "},
 		{"loada .const \n .constant 0xfedc const", "D0FE "},
@@ -137,6 +140,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		".static 2 my_var 12", // must specify none or all parameters
 		".static 1 my_var -32769", // constant out of range
 		".static 1 var 65536", // constant out of range
+		".static 2 text \"a", // missing closing quote
+		".static 4 text \"ad\"", // incorrect length, should be 3
 		"in ra", // In and out are no longer valid instructions
 		"out ra",
 		"in",
