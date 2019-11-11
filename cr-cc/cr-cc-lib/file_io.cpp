@@ -26,7 +26,29 @@ std::string read_file(std::string filename) {
 }
 
 void write_file(std::string filename, std::string data) {
-	std::ofstream file(filename);
+	std::ofstream file(filename, std::ios::binary);
 
 	file << data;
+}
+
+std::vector<std::uint16_t> read_bin_file(std::string filename) {
+	std::ifstream file(filename, std::ios::binary);
+
+	std::vector<std::uint16_t> output;
+
+	file.seekg(0, std::ios::end);
+	// Get file size in bytes, then allocate half as uin16_t
+	const unsigned int file_size_bytes = static_cast<unsigned int>(file.tellg());
+	output.resize(file_size_bytes/2);
+
+	file.seekg(0, std::ios::beg);
+
+	file.read(reinterpret_cast<char*>(output.data()), file_size_bytes);
+
+	return output;
+}
+
+void write_bin_file(std::string filename, std::vector<std::uint16_t> data) {
+	std::ofstream file(filename, std::ios::binary);
+	file.write(reinterpret_cast<char*>(data.data()), data.size() * 2); // each element is 16 bits
 }

@@ -1,7 +1,7 @@
 #include "assembler.h"
 #include "simulator.h"
 #include "file_io.h"
-#include "machine_io.h"
+#include "utilities.h"
 #include "simulator_bus.h"
 #include "simulator_ram.h"
 #include "simulator_io.h"
@@ -104,7 +104,7 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 	for (const auto& test_point : test_points) {
 		INFO(test_point.input);
 
-		std::string output = machine_inst_to_unformatted(assemble(test_point.input));
+		std::string output = machine_inst_to_simple_hex(assemble(test_point.input));
 
 		CHECK(output == test_point.expected_out);
 	}

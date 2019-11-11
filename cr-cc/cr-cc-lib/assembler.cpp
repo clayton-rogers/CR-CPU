@@ -507,7 +507,7 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 	return output;
 }
 
-static std::string instruction_to_machine(
+static std::uint16_t instruction_to_machine(
 	const Instruction& inst,
 	const int instruction_number,
 	const std::map<std::string, Data_Label>& data_label_map,
@@ -852,14 +852,14 @@ static std::string instruction_to_machine(
 		throw std::logic_error("Should never get here: uninplemented instruction");
 	}
 
-	return u16_to_string(machine);
+	return machine;
 }
 
-static std::vector<std::string> generate_machine_code(AssemblerState* as) {
-	std::vector<std::string> str_machine_code;
+static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
+	std::vector<std::uint16_t> machine_code;
 
 	for (const auto& inst : as->instructions) {
-		str_machine_code.push_back(
+		machine_code.push_back(
 			instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map, as->const_map)
 		);
 	}
@@ -872,7 +872,7 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 		return size;
 	}();
 
-	str_machine_code.resize(str_machine_code.size() + size_of_data);
+	machine_code.resize(machine_code.size() + size_of_data);
 	for (const auto& var : as->data_label_map) {
 		Data_Label label = var.second;
 
@@ -881,14 +881,14 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 			if (label.has_values) {
 				value = label.values.at(i);
 			}
-			str_machine_code.at(static_cast<size_t>(label.offset) + i) = u16_to_string(static_cast<uint16_t>(value));
+			machine_code.at(static_cast<size_t>(label.offset) - as->text_offset + i) = static_cast<uint16_t>(value);
 		}
 	}
 
-	return str_machine_code;
+	return machine_code;
 }
 
-std::vector<std::string> assemble(const std::string& assembly) {
+std::vector<std::uint16_t> assemble(const std::string& assembly) {
 
 	const std::vector<std::string> lines = split_by_lines(assembly);
 
