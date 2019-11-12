@@ -3,10 +3,12 @@
 #include "utilities.h"
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 
 const std::string DEFAULT_OUTPUT_FILENAME("out.");
+const int RAM_SIZE_WORDS = 4096;
 
 int main(int argc, char **argv) {
 	
@@ -25,6 +27,10 @@ int main(int argc, char **argv) {
 
 	try {
 		const auto machine_code = assemble(file_contents);
+		std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
+			<< " (" << std::fixed << std::setprecision(2)
+			<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
+			<< std::endl;
 
 		std::string hex = machine_inst_to_hex(machine_code);
 		write_file(DEFAULT_OUTPUT_FILENAME + "hex", hex);

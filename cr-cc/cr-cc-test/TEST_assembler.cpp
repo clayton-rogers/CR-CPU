@@ -195,6 +195,8 @@ static const std::vector<Test_Program> test_programs = {
 	{"label.s", false, 0x0000},
 	// Test that compiling the os works and it runs, but don't test output.
 	{"os.s", false, 0x0000},
+	// Test that compiling hello world at offset 0x100 work, but don't test output
+	{"hello_world.s", false, 0x0000},
 };
 
 TEST_CASE("Test assembler programs", "[asm]") {
