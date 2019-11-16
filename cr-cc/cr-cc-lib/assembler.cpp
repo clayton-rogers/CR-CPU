@@ -251,7 +251,7 @@ static const Argument parse_token_for_arg(std::string token) {
 }
 
 // This function makes lines more uniform for easier parsing. It:
-// - converts to lowercase
+// - converts to lowercase (except string literals)
 // - strips comments ("#")
 // - converts punctuation to space
 // - strips extra space
@@ -262,10 +262,13 @@ static std::vector<std::string> tokenize_line(const std::string& input) {
 
 	// Perform transform
 	char last = ' ';
+	bool in_string = false;
 	for (int i = 0; i < input.size(); ++i) {
 		char current = input.at(i);
 
-		current = static_cast<char>(std::tolower(current));
+		if (!in_string) {
+			current = static_cast<char>(std::tolower(current));
+		}
 		if (current == '#') {
 			break;
 		}
@@ -277,6 +280,10 @@ static std::vector<std::string> tokenize_line(const std::string& input) {
 			// don't add
 		} else {
 			converted.append(&current, 1);
+		}
+
+		if (current == '"') {
+			in_string = !in_string;
 		}
 
 		last = current;
