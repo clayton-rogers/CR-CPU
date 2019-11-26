@@ -164,6 +164,7 @@ struct AssemblerState {
 
 	int static_allocation_offset = 0;
 	int next_inst_addr = 0;
+	int text_offset = 0;
 };
 
 static std::vector<std::string> split_by_lines(const std::string& assembly) {
@@ -422,6 +423,19 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		return;
 	}
 
+	// Text offset
+	//   Format:
+	// .text_offset 0xabcdB
+	// # offsets the text (and data) sections by the given amount
+	if (directive == ".text_offset") {
+		if (tokens.size() != 2) {
+			throw std::logic_error("Text offset requires one argument");
+		}
+		as->text_offset = std::stoi(tokens.at(1), 0, 0);
+
+		return;
+	}
+
 	// If we didn't hit any of the ifs, then the directive is unknown
 	throw std::logic_error("Encountered unknown assembler directive: " + tokens.at(0));
 }
@@ -493,7 +507,7 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 	return output;
 }
 
-static std::string instruction_to_machine(
+static std::uint16_t instruction_to_machine(
 	const Instruction& inst,
 	const int instruction_number,
 	const std::map<std::string, Data_Label>& data_label_map,
@@ -838,14 +852,14 @@ static std::string instruction_to_machine(
 		throw std::logic_error("Should never get here: uninplemented instruction");
 	}
 
-	return u16_to_string(machine);
+	return machine;
 }
 
-static std::vector<std::string> generate_machine_code(AssemblerState* as) {
-	std::vector<std::string> str_machine_code;
+static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
+	std::vector<std::uint16_t> machine_code;
 
 	for (const auto& inst : as->instructions) {
-		str_machine_code.push_back(
+		machine_code.push_back(
 			instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map, as->const_map)
 		);
 	}
@@ -858,7 +872,7 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 		return size;
 	}();
 
-	str_machine_code.resize(str_machine_code.size() + size_of_data);
+	machine_code.resize(machine_code.size() + size_of_data);
 	for (const auto& var : as->data_label_map) {
 		Data_Label label = var.second;
 
@@ -867,14 +881,14 @@ static std::vector<std::string> generate_machine_code(AssemblerState* as) {
 			if (label.has_values) {
 				value = label.values.at(i);
 			}
-			str_machine_code.at(static_cast<size_t>(label.offset) + i) = u16_to_string(static_cast<uint16_t>(value));
+			machine_code.at(static_cast<size_t>(label.offset) - as->text_offset + i) = static_cast<uint16_t>(value);
 		}
 	}
 
-	return str_machine_code;
+	return machine_code;
 }
 
-std::vector<std::string> assemble(const std::string& assembly) {
+std::vector<std::uint16_t> assemble(const std::string& assembly) {
 
 	const std::vector<std::string> lines = split_by_lines(assembly);
 
@@ -904,8 +918,12 @@ std::vector<std::string> assemble(const std::string& assembly) {
 			}
 		}
 
+		// Handle text offset
+		for (auto& label : as.text_label_map) {
+			label.second += as.text_offset;
+		}
 		// Data section is placed after the text section
-		const int size_of_text = static_cast<int>(as.instructions.size());
+		const int size_of_text = static_cast<int>(as.instructions.size()) + as.text_offset;
 		for (auto& label : as.data_label_map) {
 			label.second.offset += size_of_text;
 		}

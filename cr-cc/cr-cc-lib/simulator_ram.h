@@ -10,15 +10,15 @@
 class Simulator_Ram {
 public:
 	Simulator_Ram(
-		const std::vector<std::string>& input_instructions,
+		const std::vector<std::uint16_t>& input_instructions,
 		std::uint16_t size_of_ram,
 		std::shared_ptr<Simulator_Bus> bus) :
 
 		ram_size(size_of_ram),
 		bus(bus)
 	{
-		for (const auto& i_str : input_instructions) {
-			ram.push_back(to_uint(i_str));
+		for (const auto& instruction : input_instructions) {
+			ram.push_back(instruction);
 		}
 		ram.resize(size_of_ram, 0);
 	}

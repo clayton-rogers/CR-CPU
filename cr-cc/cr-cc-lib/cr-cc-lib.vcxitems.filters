@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)utilities.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_ram.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_timer.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)utilities.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_bus.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_io.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_ram.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Simulator">
+      <UniqueIdentifier>{3f0e8bef-e3a7-4b66-9dea-cde4957f3221}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
