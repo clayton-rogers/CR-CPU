@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)utilities.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp">
@@ -16,9 +15,12 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_timer.cpp">
       <Filter>Simulator</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp">
+      <Filter>Assembler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)utilities.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h">
@@ -36,10 +38,22 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h">
       <Filter>Simulator</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h">
+      <Filter>Assembler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">
       <UniqueIdentifier>{3f0e8bef-e3a7-4b66-9dea-cde4957f3221}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler">
+      <UniqueIdentifier>{5bb6c5e0-9239-4209-b2d5-9aed037b5f98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assembler">
+      <UniqueIdentifier>{fbc0af6c-95cd-4c75-8e4b-a0e1c91b360b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

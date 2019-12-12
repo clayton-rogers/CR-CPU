@@ -8,8 +8,7 @@ std::string read_file(std::string filename) {
 	std::ifstream file(filename);
 
 	if (!file) {
-		std::cout << "Error opening file: " << filename << std::endl;
-		return "";
+		throw std::logic_error("Error opening file: " + filename);
 	}
 
 	std::string output;
