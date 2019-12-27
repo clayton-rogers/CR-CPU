@@ -13,7 +13,7 @@
 	loadi ra 0x0D
 	call.r ._write_uart
 
-	loadi ra 30
+	loadi ra 20
 	push ra
 	.main_top_loop:
 		loadi ra, .HELLO_STR

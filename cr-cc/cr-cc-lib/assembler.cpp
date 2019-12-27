@@ -888,7 +888,7 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 	return machine_code;
 }
 
-std::vector<std::uint16_t> assemble(const std::string& assembly) {
+std::vector<std::uint16_t> assemble(const std::string& assembly, std::uint16_t* offset) {
 
 	const std::vector<std::string> lines = split_by_lines(assembly);
 
@@ -927,6 +927,8 @@ std::vector<std::uint16_t> assemble(const std::string& assembly) {
 		for (auto& label : as.data_label_map) {
 			label.second.offset += size_of_text;
 		}
+
+		*offset = static_cast<std::uint16_t>(as.text_offset * 2); // TODO only *2 for now.
 
 		return generate_machine_code(&as);
 

@@ -104,7 +104,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 	for (const auto& test_point : test_points) {
 		INFO(test_point.input);
 
-		std::string output = machine_inst_to_simple_hex(assemble(test_point.input));
+		std::uint16_t unused;
+		std::string output = machine_inst_to_simple_hex(assemble(test_point.input, &unused));
 
 		CHECK(output == test_point.expected_out);
 	}
@@ -158,7 +159,8 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 
 	for (const auto& test_point : test_points) {
 		INFO(test_point);
-		CHECK_THROWS(assemble(test_point));
+		std::uint16_t unused;
+		CHECK_THROWS(assemble(test_point, &unused));
 	}
 }
 
@@ -208,7 +210,8 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		REQUIRE(program.length() != 0);
 
-		auto instructions = assemble(program);
+		std::uint16_t offset;
+		auto instructions = assemble(program, &offset);
 
 		auto bus = std::make_shared<Simulator_Bus>();
 		Simulator_Ram ram(instructions, 256, bus);
@@ -243,11 +246,12 @@ TEST_CASE("Test assembler programs", "[asm]") {
 TEST_CASE("Benchmarks", "[bench]") {
 	for (const auto& test_point : test_programs) {
 		std::string program = read_file(std::string("./test_data/") + test_point.name);
+		std::uint16_t unused;
 
 		REQUIRE(program.length() != 0);
 
 		BENCHMARK(std::string("Benchmark: ") + test_point.name) {
-			return assemble(program);
+			return assemble(program, &unused);
 		};
 	}
 }
