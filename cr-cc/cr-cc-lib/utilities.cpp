@@ -104,10 +104,10 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 	ss << write_line(0, 0, { 0x43,0x52,0x2D,0x43,0x50,0x55,0x00 }) << '\n'; // "CR-CPU"
 
 	// Length
-	const int length = static_cast<int>(machine_instructions.size() / 16 + 1); // 32 bytes per line, 16 words
+	const int number_of_data_lines = static_cast<int>((machine_instructions.size()-1) / 16 + 1); // 32 bytes per line, 16 words
 
 	// Data
-	for (int i = 0; i < length; ++i) {
+	for (int i = 0; i < number_of_data_lines; ++i) {
 		std::vector<std::uint8_t> data;
 		for (int j = 0; j < 16; ++j) {
 			int offset = i * 16 + j;
@@ -121,7 +121,7 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 	}
 
 	// Length
-	ss << write_line(5, static_cast<std::uint16_t>(length), {}) << '\n';
+	ss << write_line(5, static_cast<std::uint16_t>(number_of_data_lines), {}) << '\n';
 	// Finish
 	ss << write_line(9, 0, {}) << '\n';
 
