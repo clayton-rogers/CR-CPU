@@ -4,7 +4,7 @@
 
 .text_offset 0x200
 
-.static 13 HELLO_STR "HELLO world!"
+.static 13 HELLO_STR "Hello world!"
 
 # must be the first instruction of the program
 .main:

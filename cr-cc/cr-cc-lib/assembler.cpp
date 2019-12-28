@@ -928,7 +928,7 @@ std::vector<std::uint16_t> assemble(const std::string& assembly, std::uint16_t* 
 			label.second.offset += size_of_text;
 		}
 
-		*offset = static_cast<std::uint16_t>(as.text_offset * 2); // TODO only *2 for now.
+		*offset = static_cast<std::uint16_t>(as.text_offset);
 
 		return generate_machine_code(&as);
 

@@ -117,7 +117,7 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 			data.push_back(machine_instructions.at(offset) >> 8);
 			data.push_back(machine_instructions.at(offset) & 0xFF);
 		}
-		ss << write_line(1, static_cast<uint16_t>(i * 32 + address), data) << '\n';
+		ss << write_line(1, static_cast<uint16_t>(i * 16 + address), data) << '\n';
 	}
 
 	// Length

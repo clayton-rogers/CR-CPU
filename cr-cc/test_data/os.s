@@ -274,7 +274,6 @@ push ra
 
 	call.r ._read_hex_byte  # low byte of address
 	or rp ra
-	shftr rp 1 # divide rp by 2 since we're using 16 bit words
 	# add to the cksum total
 	load.sp rb 2
 	add ra rb
