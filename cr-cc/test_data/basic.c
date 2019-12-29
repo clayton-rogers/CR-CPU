@@ -6,14 +6,14 @@ int main() {
 	// Comment
 	int a = 0;
 	int b = 0;
-	a = 1;
-	b = 3;
+	a = 11;
+	b = 3534;
 	/*
 	another commment
 	fdafdsafdsa
 	*/
 	int c = a + b;
 	/* block 2 */
-	return c
+	return c;
 }
 // comment on last line

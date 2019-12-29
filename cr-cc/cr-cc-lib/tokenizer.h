@@ -6,9 +6,23 @@
 enum class TokenType {
 	unk,
 
+	user,
+
 	key_struct,
 	key_char,
 	key_int,
+	key_void,
+	key_return,
+
+	key_const,
+
+	equals,
+	add,
+	sub,
+	star,
+	div,
+	comma,
+	semi_colon,
 
 	open_bracket,
 	close_bracket,
@@ -24,3 +38,5 @@ struct Token {
 using TokenList = std::vector<Token>;
 
 TokenList tokenize(const std::string& code);
+
+std::string print_tokens(TokenList tl);
