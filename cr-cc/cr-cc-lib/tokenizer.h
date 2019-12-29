@@ -21,6 +21,11 @@ enum class TokenType {
 	sub,
 	star,
 	div,
+	percent,
+	ampersand,
+	pipe,
+	hat,
+	period,
 	comma,
 	semi_colon,
 	less_than,
@@ -30,6 +35,8 @@ enum class TokenType {
 	close_bracket,
 	open_parenth,
 	close_parenth,
+	open_square_bracket,
+	close_square_bracket,
 };
 
 struct Token {

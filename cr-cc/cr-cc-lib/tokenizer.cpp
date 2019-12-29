@@ -19,6 +19,11 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 	{"-", TokenType::sub},
 	{"*", TokenType::star},
 	{"/", TokenType::div},
+	{"%", TokenType::percent},
+	{"&", TokenType::ampersand},
+	{"|", TokenType::pipe},
+	{"^", TokenType::hat},
+	{".", TokenType::period},
 	{",", TokenType::comma},
 	{";", TokenType::semi_colon},
 	{"<", TokenType::less_than},
@@ -27,6 +32,8 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 	{"}", TokenType::close_bracket},
 	{"(", TokenType::open_parenth},
 	{")", TokenType::close_parenth},
+	{"[", TokenType::open_square_bracket},
+	{"]", TokenType::close_square_bracket},
 };
 
 static bool is_known_token(std::string token) {
@@ -97,6 +104,11 @@ std::string print_tokens(TokenList tl) {
 		{TokenType::sub, "sub"},
 		{TokenType::star, "star"},
 		{TokenType::div, "div"},
+		{TokenType::percent, "percent"},
+		{TokenType::ampersand, "ampersand"},
+		{TokenType::pipe, "pipe"},
+		{TokenType::hat, "hat"},
+		{TokenType::period, "period"},
 		{TokenType::comma, "comma"},
 		{TokenType::semi_colon, "semi_colon"},
 		{TokenType::less_than, "less_than"},
@@ -105,6 +117,8 @@ std::string print_tokens(TokenList tl) {
 		{TokenType::close_bracket, "close_bracket"},
 		{TokenType::open_parenth, "open_parenth"},
 		{TokenType::close_parenth, "close_parenth"},
+		{TokenType::open_square_bracket, "open_square_bracket"},
+		{TokenType::close_square_bracket, "close_square_bracket"},
 	};
 
 	std::stringstream ss;
