@@ -13,6 +13,7 @@ int main() {
 	fdafdsafdsa
 	*/
 	int c = a + b;
+
 	/* block 2 */
 	return c;
 }

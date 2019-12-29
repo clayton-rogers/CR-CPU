@@ -23,6 +23,8 @@ enum class TokenType {
 	div,
 	comma,
 	semi_colon,
+	less_than,
+	greater_than,
 
 	open_bracket,
 	close_bracket,
