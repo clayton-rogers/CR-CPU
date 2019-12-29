@@ -24,6 +24,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)tokenizer.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -50,6 +53,9 @@
       <Filter>Assembler</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)tokenizer.h">
       <Filter>Compiler</Filter>
     </ClInclude>
   </ItemGroup>
