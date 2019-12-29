@@ -51,3 +51,23 @@ void write_bin_file(std::string filename, std::vector<std::uint16_t> data) {
 	std::ofstream file(filename, std::ios::binary);
 	file.write(reinterpret_cast<char*>(data.data()), data.size() * 2); // each element is 16 bits
 }
+
+void FileReader::add_directory(const std::string& directory)
+{
+	directories.push_back(directory);
+}
+
+std::string FileReader::read_file_from_directories(std::string filename)
+{
+	std::string result;
+	for (const auto& directory : directories) {
+		try {
+			result = read_file(directory + "/" + filename);
+			break;
+		} catch (std::logic_error e) {
+			continue;
+		}
+	}
+
+	return result;
+}

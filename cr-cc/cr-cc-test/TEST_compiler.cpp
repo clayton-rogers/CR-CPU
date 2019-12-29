@@ -1,7 +1,6 @@
 
 #include "compiler.h"
-
-
+#include "file_io.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -10,9 +9,12 @@
 #include <iostream>
 
 TEST_CASE("Test basic function of compiler", "[c]") {
-	std::string test_filename = "./test_data/basic.c";
+	FileReader fr;
+	fr.add_directory("./test_data");
 
-	std::string result = compile(test_filename);
+	std::string test_filename = "basic.c";
+
+	std::string result = compile(test_filename, fr);
 
 	std::cout << result << std::endl;
 

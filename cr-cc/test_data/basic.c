@@ -1,4 +1,6 @@
+// begin comment
 #include "basic.h"
+// end comment
 
 int main() {
 	// Comment
@@ -11,6 +13,7 @@ int main() {
 	fdafdsafdsa
 	*/
 	int c = a + b;
-
+	/* block 2 */
 	return c
 }
+// comment on last line
