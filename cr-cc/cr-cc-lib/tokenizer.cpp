@@ -6,13 +6,21 @@
 #include <map>
 
 
+// For simple terminal tokens we recognize them immediately here.
+// Composite or complicated tokens are matched in the parser.
 static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 {
 	{"struct", TokenType::key_struct},
-	{"char", TokenType::key_char},
-	{"int", TokenType::key_int},
-	{"const", TokenType::key_const},
+	{"union", TokenType::key_union},
 	{"void", TokenType::key_void},
+	{"char", TokenType::key_char},
+	{"short", TokenType::key_short},
+	{"int", TokenType::key_int},
+	{"long", TokenType::key_long},
+	{"float", TokenType::key_float},
+	{"double", TokenType::key_double},
+	{"signed", TokenType::key_signed},
+	{"unsigned", TokenType::key_unsigned},
 	{"return", TokenType::key_return},
 	{"case", TokenType::key_case},
 	{"break", TokenType::key_break},
@@ -26,18 +34,29 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 	{"if", TokenType::key_if},
 	{"switch", TokenType::key_switch},
 	{"while", TokenType::key_while},
+	{"const", TokenType::key_const},
+	{"volatile", TokenType::key_volatile},
+	{"typedef", TokenType::key_typedef},
+	{"extern", TokenType::key_extern},
+	{"static", TokenType::key_extern},
+	{"auto", TokenType::key_auto},
+	{"register", TokenType::key_register},
 	{"=", TokenType::equals},
 	{"+", TokenType::add},
 	{"-", TokenType::sub},
 	{"*", TokenType::star},
+	{"~", TokenType::tilda},
+	{"!", TokenType::exclam},
 	{"/", TokenType::div},
 	{"%", TokenType::percent},
 	{"&", TokenType::ampersand},
 	{"|", TokenType::pipe},
+	{"?", TokenType::question},
 	{"^", TokenType::hat},
 	{".", TokenType::period},
 	{",", TokenType::comma},
 	{";", TokenType::semi_colon},
+	{":", TokenType::colon},
 	{"<", TokenType::less_than},
 	{">", TokenType::greater_than},
 	{"{", TokenType::open_bracket},
@@ -145,54 +164,10 @@ TokenList tokenize(const std::string& code) {
 	return tl;
 }
 
-std::string print_tokens(TokenList tl) {
-	const std::map<TokenType, std::string> token_strings =
-	{
-		{TokenType::unk, "unk"},
-		{TokenType::user, "user"},
-		{TokenType::key_struct, "key_struct"},
-		{TokenType::key_char, "key_char"},
-		{TokenType::key_int, "key_int"},
-		{TokenType::key_void, "key_void"},
-		{TokenType::key_return, "key_return"},
-		{TokenType::key_case, "key_case"},
-		{TokenType::key_break, "key_break"},
-		{TokenType::key_continue, "key_continue"},
-		{TokenType::key_default, "key_default"},
-		{TokenType::key_do, "key_do"},
-		{TokenType::key_else, "key_else"},
-		{TokenType::key_enum, "key_enum"},
-		{TokenType::key_for, "key_for"},
-		{TokenType::key_goto, "key_goto"},
-		{TokenType::key_if, "key_if"},
-		{TokenType::key_switch, "key_switch"},
-		{TokenType::key_while, "key_while"},
-		{TokenType::key_const, "key_const"},
-		{TokenType::equals, "equals"},
-		{TokenType::add, "add"},
-		{TokenType::sub, "sub"},
-		{TokenType::star, "star"},
-		{TokenType::div, "div"},
-		{TokenType::percent, "percent"},
-		{TokenType::ampersand, "ampersand"},
-		{TokenType::pipe, "pipe"},
-		{TokenType::hat, "hat"},
-		{TokenType::period, "period"},
-		{TokenType::comma, "comma"},
-		{TokenType::semi_colon, "semi_colon"},
-		{TokenType::less_than, "less_than"},
-		{TokenType::greater_than, "greater_than"},
-		{TokenType::open_bracket, "open_bracket"},
-		{TokenType::close_bracket, "close_bracket"},
-		{TokenType::open_parenth, "open_parenth"},
-		{TokenType::close_parenth, "close_parenth"},
-		{TokenType::open_square_bracket, "open_square_bracket"},
-		{TokenType::close_square_bracket, "close_square_bracket"},
-	};
-
+std::string print_token_list(TokenList tl) {
 	std::stringstream ss;
 	for (const auto& token : tl) {
-		ss << token.value << "\t\t" << token_strings.at(token.token_type) << std::endl;
+		ss << token.value << "\t\t" << token_to_string(token.token_type) << std::endl;
 	}
 
 	return ss.str();

@@ -2,6 +2,7 @@
 
 #include "preprocessor.h"
 #include "tokenizer.h"
+#include "parser.h"
 
 #include <iostream>
 
@@ -13,6 +14,7 @@ public:
 
 	TokenList token_list;
 	std::string printed_tokens;
+	ParseTree parse_tree;
 };
 
 
@@ -23,7 +25,8 @@ std::string compile(const std::string& tu_filename, FileReader fr) {
 	cs.code_preprocessed = preprocess(cs.code_original, fr);
 	cs.code_stripped = strip_comments(cs.code_preprocessed);
 	cs.token_list = tokenize(cs.code_stripped);
-	cs.printed_tokens = print_tokens(cs.token_list);
+	cs.printed_tokens = print_token_list(cs.token_list);
+	cs.parse_tree = parse(cs.token_list);
 
 	return cs.printed_tokens;
 }
