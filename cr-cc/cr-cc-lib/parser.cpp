@@ -165,7 +165,7 @@ static const std::map<TokenType, TokenGrammar> C_GRAMMAR = {
 	{TokenType::key_unsigned},
 	{TokenType::struct_or_union_specifier},
 	{TokenType::enum_specifier},
-	{TokenType::type_name},
+	{TokenType::identifier}, // TYPE_NAME as per standard
 	}},
 {TokenType::struct_or_union_specifier, {
 	{TokenType::struct_or_union, TokenType::identifier, TokenType::open_bracket, TokenType::struct_declaration_list, TokenType::close_bracket},
@@ -414,6 +414,58 @@ static const std::map<TokenType, TokenGrammar> C_GRAMMAR = {
 	}},
 };
 
+struct ParserNode {
+	TokenType token_type = TokenType::unk;
+	Token token;
+	std::vector<ParserNode> children;
+};
+
+static bool is_token_terminal(TokenType token) {
+	// A token is terminal when it can no longer be broken into more tokens,
+	// in this case the token will not appear in the grammar and will have been
+	// recognized by the tokenizer.
+	return C_GRAMMAR.count(token) != 1;
+}
+
+// Returns the number of tokens consumed
+static int parse_node(ParserNode* node, TokenList token_list, int offset) {
+	if (is_token_terminal(node->token_type)) {
+		if (node->token_type == token_list.at(offset).token_type) {
+			node->token = token_list.at(offset);
+			return 1; // parse was successful
+		} else {
+			return 0; // no match
+		}
+	} else {
+		TokenGrammar g = C_GRAMMAR.at(node->token_type);
+
+		// Each grammar rule has potentially multiple patterns that will satisfy it
+		for (const auto& option : g) {
+			// In a given pattern there may be one or more tokens
+			int count_of_consumed_tokens = 0;
+			for (const auto& token_type : option) {
+				ParserNode p;
+				p.token_type = token_type;
+				int ret = parse_node(&p, token_list, offset + count_of_consumed_tokens);
+				if (ret == 0) {
+					count_of_consumed_tokens = 0;
+					node->children.clear();
+					break;
+				} else {
+					node->children.push_back(p);
+					count_of_consumed_tokens += ret;
+				}
+			}
+			// If we pass all the tokens in a given option, then we are good
+			if (count_of_consumed_tokens != 0) {
+				return count_of_consumed_tokens;
+			}
+		}
+
+		// If we've exhausted all the options and not found a match then this branch is dead
+		return 0;
+	}
+}
 
 ParseTree parse(TokenList token_list) {
 
@@ -425,5 +477,13 @@ ParseTree parse(TokenList token_list) {
 		}
 	}
 
+	ParserNode top;
+	top.token_type = TokenType::translation_unit;
+	int tokens_parsed = parse_node(&top, token_list, 0);
+	if (tokens_parsed == 0) {
+		throw std::logic_error("Failed to parse");
+	} else {
+		std::cout << "Parsed " << tokens_parsed << " tokens!!!" << std::endl;
+	}
 	return ParseTree();
 }
