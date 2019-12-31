@@ -14,6 +14,8 @@ int main() {
 	*/
 	int c = a + b;
 
+	char my_char = "f fdafd fdsafds % ! ";
+
 	/* block 2 */
 	return c;
 }

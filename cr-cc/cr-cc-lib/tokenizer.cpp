@@ -48,6 +48,8 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 	{"]", TokenType::close_square_bracket},
 };
 
+static const std::locale LOCALE("en_US.UTF-8");
+
 static bool is_known_token(std::string token) {
 	return STR_TOKEN_MAP.count(token) == 1;
 }
@@ -60,15 +62,46 @@ static TokenType get_token_type(std::string token) {
 	}
 }
 
+// TODO better checking for string and identifiers
+static bool is_string_literal(std::string s) {
+	return s.at(0) == '"';
+}
+
+static bool is_identifier(std::string s) {
+	return std::isalpha(s.at(0), LOCALE);
+}
+
+// For now numeral literals (constants) must be all numbers
+static bool is_constant(std::string s) {
+	for (const auto& letter : s) {
+		if (!std::isdigit(letter, LOCALE)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 TokenList tokenize(const std::string& code) {
-	const std::locale locale("en_US.UTF-8");
+	
 	TokenList tl;
 
 	Token current_token;
 	bool is_in_middle_of_token = false;
+	bool is_in_string_literal = false;
 
 	auto end_current_token = [&]() {
 		current_token.token_type = get_token_type(current_token.value);
+		if (current_token.token_type == TokenType::unk) {
+			if (is_string_literal(current_token.value)) {
+				current_token.token_type = TokenType::string_literal;
+			} else if (is_identifier(current_token.value)) {
+				current_token.token_type = TokenType::identifier;
+			} else if (is_constant(current_token.value)) {
+				current_token.token_type = TokenType::constant;
+			} else {
+				throw std::logic_error("Could not determine token type: " + current_token.value);
+			}
+		}
 		tl.push_back(current_token);
 		current_token = Token();// reset current token
 		is_in_middle_of_token = false;
@@ -78,22 +111,34 @@ TokenList tokenize(const std::string& code) {
 		const char current_char = code.at(i);
 		const std::string current_char_str(1, current_char);
 
-		if (std::isspace(current_char, locale)) {
-			if (is_in_middle_of_token) {
+		if (std::isspace(current_char, LOCALE) && !is_in_string_literal) {
+				if (is_in_middle_of_token) {
+					end_current_token();
+				} else {
+					// ignore
+				}
+		} else if (is_known_token(current_char_str) && !is_in_string_literal) {
+			if (!is_in_string_literal) {
+				if (is_in_middle_of_token) {
+					end_current_token();
+				}
+				current_token.value = current_char_str;
 				end_current_token();
-			} else {
-				// ignore
 			}
-		} else if (is_known_token(current_char_str)) {
-			if (is_in_middle_of_token) {
-				end_current_token();
-			}
-			current_token.value = current_char_str;
-			end_current_token();
 		} else {
 			// add the current character to the current token
 			current_token.value.append(1, current_char);
-			is_in_middle_of_token = true;
+			if (!is_in_middle_of_token) {
+				is_in_middle_of_token = true;
+				if (current_char == '"') {
+					is_in_string_literal = true;
+				}
+			} else {
+				if (is_in_string_literal && current_char == '"') {
+					is_in_string_literal = false;
+					//end_current_token(); // Not sure if this is required. For now will leave it out.
+				}
+			}
 		}
 	}
 
