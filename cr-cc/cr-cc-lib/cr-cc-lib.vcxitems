@@ -31,6 +31,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)old_parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h" />
