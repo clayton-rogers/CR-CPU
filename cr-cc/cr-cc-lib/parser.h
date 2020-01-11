@@ -5,5 +5,9 @@
 #include <string>
 
 
+struct ParseNode {
+	Token token;
+	TokenList children;
+};
 
-//ParseTree parse(TokenList token_list);
+ParseNode parse(TokenList token_list);

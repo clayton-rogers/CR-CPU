@@ -100,6 +100,149 @@ static bool is_constant(std::string s) {
 	return true;
 }
 
+static const std::map<TokenType, std::string> COMPOUND_TOKENS{
+	{TokenType::inc_op, "++"},
+	{TokenType::ptr_op, "->"},
+	{TokenType::left_op, "<<"},
+	{TokenType::right_op, ">>"},
+	{TokenType::le_op, "<="},
+	{TokenType::ge_op, ">="},
+	{TokenType::eq_op, "=="},
+	{TokenType::ne_op, "!="},
+	{TokenType::and_op, "&&"},
+	{TokenType::or_op, "||"},
+	{TokenType::mul_assign, "*="},
+	{TokenType::div_assign, "/="},
+	{TokenType::mod_assign, "%="},
+	{TokenType::add_assign, "+="},
+	{TokenType::sub_assign, "-="},
+	{TokenType::and_assign, "&="},
+	{TokenType::or_assign,  "|="},
+	{TokenType::xor_assign, "^="},
+};
+
+static TokenList colate_multi_op(const TokenList& tl) {
+	TokenList ret;
+	int i = 0;
+
+	auto add_compound_token = [&ret, &i](TokenType tt) {
+		Token t;
+		t.token_type = tt;
+		t.value = COMPOUND_TOKENS.at(tt);
+		ret.push_back(t);
+		++i;
+	};
+
+	for (i = 0; i < tl.size()-1; ++i) {
+		const Token& cur = tl.at(i);
+		const TokenType& next = tl.at(i + 1).token_type;
+		switch (cur.token_type) {
+		case TokenType::add:
+			if (next == TokenType::add) {
+				add_compound_token(TokenType::inc_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::add_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::sub:
+			if (next == TokenType::greater_than) {
+				add_compound_token(TokenType::ptr_op);
+			} else if (next == TokenType::sub) {
+				add_compound_token(TokenType::dec_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::sub_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::less_than:
+			if (next == TokenType::less_than) {
+				add_compound_token(TokenType::left_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::le_op);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::greater_than:
+			if (next == TokenType::greater_than) {
+				add_compound_token(TokenType::right_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::ge_op);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::equals:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::eq_op);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::exclam:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::ne_op);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::ampersand:
+			if (next == TokenType::ampersand) {
+				add_compound_token(TokenType::and_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::and_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::pipe:
+			if (next == TokenType::pipe) {
+				add_compound_token(TokenType::or_op);
+			} else if (next == TokenType::equals) {
+				add_compound_token(TokenType::or_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::star:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::mul_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::div:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::div_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::percent:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::mod_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		case TokenType::hat:
+			if (next == TokenType::equals) {
+				add_compound_token(TokenType::xor_assign);
+			} else {
+				ret.push_back(cur);
+			}
+			break;
+		default:
+			ret.push_back(cur);
+		}
+	}
+
+	return ret;
+}
+
 TokenList tokenize(const std::string& code) {
 	
 	TokenList tl;
@@ -161,7 +304,7 @@ TokenList tokenize(const std::string& code) {
 		}
 	}
 
-	return tl;
+	return colate_multi_op(tl);
 }
 
 std::string print_token_list(TokenList tl) {

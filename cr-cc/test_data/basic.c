@@ -8,6 +8,7 @@ int main() {
 	int b = 0;
 	a = 11;
 	b = 3534;
+	++i;
 	/*
 	another commment
 	fdafdsafdsa
