@@ -4,7 +4,7 @@
 
 enum class TokenType {
 	// The default
-	unk,
+	NONE,
 
 	// Tokens recognized by the tokenizer
 	key_struct,
@@ -95,11 +95,15 @@ enum class TokenType {
 	// Tokens recognized by the parser
 	translation_unit,
 	function_definition,
-
 	type_specifier,
 	compound_statement,
+	statement_list,
+	statement,
+	statement_tail,
+	jump_statement,
+	expression,
 
 	last_token,
 };
 
-std::string token_to_string(TokenType token);
+std::string tokenType_to_string(TokenType token);

@@ -3,11 +3,12 @@
 #include "tokenizer.h"
 
 #include <string>
+#include <vector>
 
 
 struct ParseNode {
 	Token token;
-	TokenList children;
+	std::vector<ParseNode> children;
 };
 
 ParseNode parse(TokenList token_list);

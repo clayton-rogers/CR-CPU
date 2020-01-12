@@ -77,7 +77,7 @@ static TokenType get_token_type(std::string token) {
 	try {
 		return STR_TOKEN_MAP.at(token);
 	} catch (std::out_of_range e) {
-		return TokenType::unk;
+		return TokenType::NONE;
 	}
 }
 
@@ -122,6 +122,10 @@ static const std::map<TokenType, std::string> COMPOUND_TOKENS{
 };
 
 static TokenList colate_multi_op(const TokenList& tl) {
+	if (tl.size() == 0) {
+		return tl;
+	}
+
 	TokenList ret;
 	int i = 0;
 
@@ -239,6 +243,12 @@ static TokenList colate_multi_op(const TokenList& tl) {
 			ret.push_back(cur);
 		}
 	}
+	// The loop above ends one early to prevent reading off the end of the array,
+	// so we have to add that last token to the output here.
+	// TODO technically there is a bug here if the last two characters of a token
+	// list are a dual token, but that should never happen since the last should
+	// always be '}'
+	ret.push_back(tl.at(tl.size() - 1));
 
 	return ret;
 }
@@ -253,7 +263,7 @@ TokenList tokenize(const std::string& code) {
 
 	auto end_current_token = [&]() {
 		current_token.token_type = get_token_type(current_token.value);
-		if (current_token.token_type == TokenType::unk) {
+		if (current_token.token_type == TokenType::NONE) {
 			if (is_string_literal(current_token.value)) {
 				current_token.token_type = TokenType::string_literal;
 			} else if (is_identifier(current_token.value)) {
@@ -310,7 +320,7 @@ TokenList tokenize(const std::string& code) {
 std::string print_token_list(TokenList tl) {
 	std::stringstream ss;
 	for (const auto& token : tl) {
-		ss << token.value << "\t\t" << token_to_string(token.token_type) << std::endl;
+		ss << token.value << "\t\t" << tokenType_to_string(token.token_type) << std::endl;
 	}
 
 	return ss.str();

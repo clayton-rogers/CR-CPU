@@ -4,7 +4,7 @@
 
 static const std::map<TokenType, std::string> TOKEN_STRINGS =
 {
-	{TokenType::unk, "unk"},
+	{TokenType::NONE, "NONE"},
 	{TokenType::key_struct, "key_struct"},
 	{TokenType::key_union, "key_union"},
 	{TokenType::key_void, "key_void"},
@@ -85,10 +85,18 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::and_assign, "and_assign"},
 	{TokenType::xor_assign, "xor_assign"},
 	{TokenType::or_assign, "or_assign"},
+	{TokenType::translation_unit, "translation_unit"},
+	{TokenType::function_definition, "function_definition"},
+	{TokenType::type_specifier, "type_specifier"},
+	{TokenType::compound_statement, "compound_statement"},
+	{TokenType::statement_list, "statement_list"},
+	{TokenType::statement, "statement"},
+	{TokenType::jump_statement, "jump_statement"},
+	{TokenType::expression, "expression"},
 	{TokenType::last_token, "last_token"},
 };
 
-std::string token_to_string(TokenType token) {
+std::string tokenType_to_string(TokenType token) {
 	return TOKEN_STRINGS.at(token);
 }
 

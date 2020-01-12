@@ -7,8 +7,8 @@
 
 
 struct Token {
+	TokenType token_type = TokenType::NONE;
 	std::string value;
-	TokenType token_type = TokenType::unk;
 };
 
 using TokenList = std::vector<Token>;

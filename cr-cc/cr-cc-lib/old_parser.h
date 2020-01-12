@@ -459,7 +459,7 @@ static const std::map<TokenType, TokenGrammar> C_GRAMMAR = {
 };
 
 struct ParserNode {
-	TokenType token_type = TokenType::unk;
+	TokenType token_type = TokenType::NONE;
 	Token token;
 	std::vector<ParserNode> children;
 };
@@ -517,7 +517,7 @@ ParseTree parse(TokenList token_list) {
 	for (int i = 0; i < (int)TokenType::last_token; ++i) {
 		TokenType token_type = (TokenType)i;
 		if (C_GRAMMAR.count(token_type) != 1) {
-			std::cout << token_to_string(token_type) << std::endl;
+			std::cout << tokenType_to_string(token_type) << std::endl;
 		}
 	}
 

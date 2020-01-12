@@ -1,4 +1,3 @@
-
 #include "compiler.h"
 #include "file_io.h"
 
@@ -13,9 +12,11 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	fr.add_directory("./test_data");
 
 	std::string test_filename = "basic.c";
-
 	std::string result = compile(test_filename, fr);
+	//std::cout << result << std::endl;
 
-	std::cout << result << std::endl;
+	test_filename = "first.c";
+	result = compile(test_filename, fr);
+	//std::cout << result << std::endl;
 
 }
