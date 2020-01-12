@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iomanip>
 
-std::uint16_t to_uint(const std::string& instruction)
+std::uint16_t string_to_u16(const std::string& instruction)
 {
 	const int value = std::stoi(instruction, 0, 16);
 

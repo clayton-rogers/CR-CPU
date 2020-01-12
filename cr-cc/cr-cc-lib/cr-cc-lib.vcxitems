@@ -15,21 +15,32 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_ram.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_timer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)tokenizer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)tokens.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)old_parser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)parser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_bus.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_ram.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)tokenizer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)tokens.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)utilities.h" />
   </ItemGroup>
 </Project>

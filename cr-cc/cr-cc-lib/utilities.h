@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-std::uint16_t to_uint(const std::string& instruction);
+std::uint16_t string_to_u16(const std::string& instruction);
 
 std::string u16_to_string(std::uint16_t value);
 
