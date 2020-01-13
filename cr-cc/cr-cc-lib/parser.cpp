@@ -38,7 +38,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::statement_list,
 		{
-			{{TokenType::statement}, {TokenType::statement_tail}},
+			{{TokenType::statement}, TokenType::statement_tail},
 		}
 	},
 	{TokenType::statement,
