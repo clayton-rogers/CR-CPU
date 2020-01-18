@@ -67,7 +67,7 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 	{"]", TokenType::close_square_bracket},
 };
 
-static const std::locale LOCALE("en_US.UTF-8");
+static const std::locale LOCALE("");
 
 static bool is_known_token(std::string token) {
 	return STR_TOKEN_MAP.count(token) == 1;
