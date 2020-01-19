@@ -9,34 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Build CR-CC-LIB
+    - name: Build
       run: |
         cd cr-cc
-
-        cd cr-cc-lib
-        g++ -Os -Wall -Wextra -std=c++17 -c *.cpp
-
-    - name: Build CR-CC
-      run: |
-        cd cr-cc
-
-        cd cr-cc
-        g++ -Os -Wall -Wextra -std=c++17 -I../cr-cc-lib -c *.cpp
-        
-    - name: Build CR-CC-TEST
-      run: |
-        cd cr-cc
-        cd cr-cc-test
         wget https://raw.githubusercontent.com/catchorg/Catch2/master/single_include/catch2/catch.hpp
-        mv catch.hpp catch.h
-        g++ -Os -Wall -Wextra -std=c++17 -I../cr-cc-lib -c *.cpp
-
-    - name: Link CR-CC
-      run: |
-        cd cr-cc
-
-        g++ -Os -Wall -Wextra -std=c++17 ./cr-cc-lib/*.o ./cr-cc-test/*.o -o test
-        g++ -Os -Wall -Wextra -std=c++17 ./cr-cc-lib/*.o ./cr-cc/*.o -o cc
+        mv catch.hpp cr-cc-test/catch.h
+        make
         
     - name: Run unit test
       run: |
