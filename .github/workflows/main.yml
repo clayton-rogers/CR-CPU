@@ -20,3 +20,10 @@ jobs:
       run: |
         cd cr-cc
         ./test  --benchmark-no-analysis
+    - uses: actions/upload-artifact@v1
+      name: cr-cc
+      path: cr-cc/cc
+
+    - uses: actions/upload-artifact@v1
+      name: cr-cc-test
+      path: cr-cc/test
