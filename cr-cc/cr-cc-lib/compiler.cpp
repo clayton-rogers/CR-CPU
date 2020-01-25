@@ -3,6 +3,7 @@
 #include "preprocessor.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "AST.h"
 
 #include <iostream>
 
@@ -15,6 +16,7 @@ public:
 	TokenList token_list;
 	std::string printed_tokens;
 	ParseNode parse_tree;
+
 };
 
 
@@ -27,6 +29,7 @@ std::string compile(const std::string& tu_filename, FileReader fr) {
 	cs.token_list = tokenize(cs.code_stripped);
 	cs.printed_tokens = print_token_list(cs.token_list);
 	cs.parse_tree = parse(cs.token_list);
+	AST::AST ast(cs.parse_tree);
 
-	return cs.printed_tokens;
+	return ast.generate_code();
 }

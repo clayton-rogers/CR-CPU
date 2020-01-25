@@ -15,8 +15,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)AST.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)AST_code_gen.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)AST_expressions.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)AST_statements.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)label_maker.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
@@ -29,8 +34,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)AST.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)label_maker.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)old_parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h" />
