@@ -1,4 +1,4 @@
-CXXFLAGS=-Wall -Wextra -Wno-psabi -std=c++17
+# no extra CXXFLAGS required
 
 SRCS=$(shell find . -name "*.cpp")
 OBJS=$(subst .cpp,.o,$(SRCS))
