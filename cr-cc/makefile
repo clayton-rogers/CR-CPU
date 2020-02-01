@@ -1,4 +1,5 @@
 CXXFLAGS=-Wall -Wextra -Wno-psabi -std=c++17
+export CXXFLAGS # export to each of the sub-makes
 
 CR-LIB=cr-cc-lib/cr-cc-lib.a
 CR-CC=cr-cc/cr-cc.a
