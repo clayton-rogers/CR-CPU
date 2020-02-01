@@ -1,4 +1,4 @@
-CXXFLAGS=-Wall -Wextra -std=c++17
+CXXFLAGS=-Wall -Wextra -Wno-psabi -std=c++17
 
 CR-LIB=cr-cc-lib/cr-cc-lib.a
 CR-CC=cr-cc/cr-cc.a
