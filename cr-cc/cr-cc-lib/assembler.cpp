@@ -264,7 +264,7 @@ static std::vector<std::string> tokenize_line(const std::string& input) {
 	// Perform transform
 	char last = ' ';
 	bool in_string = false;
-	for (int i = 0; i < input.size(); ++i) {
+	for (int i = 0; i < static_cast<int>(input.size()); ++i) {
 		char current = input.at(i);
 
 		if (!in_string) {
@@ -340,12 +340,12 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 				std::string supplied_string;
 				bool found_open_quote = false;
 				bool found_close_quote = false;
-				for (int i = 3; i < tokens.size(); ++i) {
+				for (int i = 3; i < static_cast<int>(tokens.size()); ++i) {
 					if (found_open_quote) {
 						supplied_string += ' ';
 					}
 					std::string current_token = tokens.at(i);
-					for (int j = 0; j < current_token.size(); ++j) {
+					for (int j = 0; j < static_cast<int>(current_token.size()); ++j) {
 						char c = current_token.at(j);
 						if (!found_open_quote && c == '"') {
 							found_open_quote = true;
@@ -364,7 +364,7 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 					throw std::logic_error("Missing closing quote for var: " + label);
 				}
 
-				if (supplied_string.size() + 1 != vl.size) {
+				if (static_cast<int>(supplied_string.size()) + 1 != vl.size) {
 					throw std::logic_error("Incorrect size string: " + label +
 						" Expected: " + std::to_string(vl.size) +
 						" Actual: " + std::to_string(supplied_string.size() + 1));
@@ -372,7 +372,7 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 
 				vl.has_values = true;
 
-				for (int i = 0; i < supplied_string.size(); ++i) {
+				for (int i = 0; i < static_cast<int>(supplied_string.size()); ++i) {
 					char c = supplied_string.at(i);
 					vl.values.push_back(c);
 				}

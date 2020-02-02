@@ -20,6 +20,6 @@ public:
 	void step();
 
 private:
-	std::uint16_t base_addr;
 	std::shared_ptr<Simulator_Bus> bus;
+	std::uint16_t base_addr;
 };

@@ -87,7 +87,7 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 		output << u8_to_string(low_addr);
 		sum += low_addr;
 
-		for (int i = 0; i < data.size(); ++i) {
+		for (int i = 0; i < static_cast<int>(data.size()); ++i) {
 			output << u8_to_string(data.at(i));
 			sum += data.at(i);
 		}
@@ -111,7 +111,7 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 		std::vector<std::uint8_t> data;
 		for (int j = 0; j < 16; ++j) {
 			int offset = i * 16 + j;
-			if (offset == machine_instructions.size()) {
+			if (offset == static_cast<int>(machine_instructions.size())) {
 				break;
 			}
 			data.push_back(machine_instructions.at(offset) >> 8);

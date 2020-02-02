@@ -49,7 +49,6 @@ void Simulator::step() {
 	const std::uint16_t next_cached_inst = bus->read_data;
 
 	const std::uint16_t opcode = (inst & 0xF000) >> 12;
-	const std::uint16_t extra = (inst & 0x0F00) >> 8;
 	const std::uint16_t extra_high = (inst & 0x0C00) >> 10;
 	const std::uint16_t extra_low = (inst & 0x0300) >> 8;
 	const std::uint16_t constant = (inst & 0x00FF) >> 0;
