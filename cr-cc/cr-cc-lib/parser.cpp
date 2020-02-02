@@ -76,7 +76,7 @@ static bool is_token_terminal(TokenType token) {
 
 static int parse_node(ParseNode* node, const TokenList& token_list, int offset) {
 	if (is_token_terminal(node->token.token_type)) {
-		if (offset < token_list.size() && node->token.token_type == token_list.at(offset).token_type) {
+		if (offset < static_cast<int>(token_list.size()) && node->token.token_type == token_list.at(offset).token_type) {
 			node->token = token_list.at(offset);
 			return 1; // Consume one token
 		} else {
@@ -151,7 +151,7 @@ ParseNode parse(TokenList token_list) {
 	if (tokens_parsed == 0) {
 		//throw std::logic_error("Failed to parse");
 		std::cout << "FAILED TO PARSE" << std::endl;
-	} else if (tokens_parsed != token_list.size()) {
+	} else if (tokens_parsed != static_cast<int>(token_list.size())) {
 		std::cout << "Parsed, but leftover tokens..." << std::endl;
 	} else {
 		std::cout << "Parsed " << tokens_parsed << " tokens!!" << std::endl;

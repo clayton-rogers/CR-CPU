@@ -137,7 +137,7 @@ static TokenList colate_multi_op(const TokenList& tl) {
 		++i;
 	};
 
-	for (i = 0; i < tl.size()-1; ++i) {
+	for (i = 0; i < static_cast<int>(tl.size())-1; ++i) {
 		const Token& cur = tl.at(i);
 		const TokenType& next = tl.at(i + 1).token_type;
 		switch (cur.token_type) {
@@ -279,7 +279,7 @@ TokenList tokenize(const std::string& code) {
 		is_in_middle_of_token = false;
 	};
 
-	for (int i = 0; i < code.length(); ++i) {
+	for (int i = 0; i < static_cast<int>(code.length()); ++i) {
 		const char current_char = code.at(i);
 		const std::string current_char_str(1, current_char);
 
