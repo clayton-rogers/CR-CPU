@@ -35,6 +35,9 @@ int main(int argc, char **argv) {
 
 		write_file(DEFAULT_OUTPUT_FILENAME + "srec", machine_inst_to_srec(machine_code, offset));
 
+		std::cout << "\n"
+			<< machine_inst_to_srec(machine_code, offset);
+
 	} catch (std::logic_error& e) {
 		std::cout << "ASSEMBLY ERROR: \n";
 		std::cout << e.what() << std::endl;
