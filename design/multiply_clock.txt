@@ -1,0 +1,71 @@
+Multiplication of two numbers takes a different number of clocks depending on
+whether the large or small number comes first. The numbers can be order smaller
+to large, but this takes additional clocks. The experiment below suggests that
+this trade off is a good one, assuming you can spare the 11 instructions to
+implement the swap. It is likely possible to implement the swap in fewer
+instructions as well.
+
+With swapping:
+A1 x 41 = 5D clk (93)
+41 x A1 = 5E clk (94)
+A1 x 0F = 44 clk (68)
+0F x A1 = 45 clk (69)
+A1 x 07 = 3A clk (58)
+07 x A1 = 3B clk (59)
+
+Without swapping:
+A1 x 41 = 5E clk (94)
+41 x A1 = 54 clk (84)
+A1 x 0F = 5E clk (94)
+0F x A1 = 3B clk (59)
+A1 x 07 = 5E clk (94)
+07 x A1 = 31 clk (49)
+
+Sumary:
+With swapping it is within one clock of each other and ~10 clocks longer than
+the non-swapped version (again subject to improvement). Without swapping it is
+significantly longer if the large number is first.
+
+
+Code used:
+# mult(ra, rb)
+#   multiplies two numbers
+#   takes up to 168 clocks
+._mult:
+push rp
+# sp + 1 = return address
+# sp + 0 = saved rp
+
+    # first make sure smaller number is in ra, since it's faster
+	loadi rp 0x00
+#	push ra
+#	push rb
+#	sub ra rb
+#	jmp.r.gz .mult_swap
+#	jmp.r .mult_no_swap # no swap
+#	.mult_swap:
+#	pop ra
+#	pop rb
+#	jmp.r .mult_top
+#	.mult_no_swap:
+#	pop rb
+#	pop ra
+#	jmp.r .mult_top
+	
+	# loop over every bit of ra
+	.mult_top:
+	jmp.r.z .mult_exit
+	push ra
+	and ra 0x01
+	jmp.r.z .mult_no_add
+		add rp rb
+	.mult_no_add:
+	pop ra
+	shftl rb 1
+	shftr ra 1
+	jmp.r .mult_top
+	
+.mult_exit:
+mov ra rp	
+pop rp
+ret
