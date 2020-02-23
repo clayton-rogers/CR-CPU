@@ -24,6 +24,9 @@ halt
 .static 0x13 WELCOME_STR "Welcome to CR-CPU!"
 .static 0x18 PROMPT_TEXT "READY. PASTE PROGRAM > "
 ._main:
+	# set LEDs to RA to display return code
+	call.r ._set_led
+
 	loadi sp .OS_RAM_SIZE
 	loadi.h sp .OS_RAM_SIZE
 	sub sp, 1

@@ -1,5 +1,5 @@
 
 // This is the first program possible
 int main () {
-	return 14;
+	return 9;
 }
