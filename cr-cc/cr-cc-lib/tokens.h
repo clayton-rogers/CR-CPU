@@ -95,6 +95,7 @@ enum class TokenType {
 	// Tokens recognized by the parser
 	translation_unit,
 	function_definition,
+	function_definition_tail,
 	type_specifier,
 	compound_statement,
 	statement_list,
@@ -102,6 +103,7 @@ enum class TokenType {
 	statement_tail,
 	jump_statement,
 	expression,
+	unary_expression,
 
 	last_token,
 };

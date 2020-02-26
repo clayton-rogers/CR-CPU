@@ -17,11 +17,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	std::string filename(argv[1]);
-	std::string file_contents = read_file(filename);
-	std::uint16_t offset = 0;
-
 	try {
+		std::string filename(argv[1]);
+		std::string file_contents = read_file(filename);
+		std::uint16_t offset = 0;
+
 		const auto machine_code = assemble(file_contents, &offset);
 		std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
 			<< " (" << std::fixed << std::setprecision(2)

@@ -16,6 +16,11 @@ using RuleList = std::vector<Rule>;
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::translation_unit,
 		{
+			{{TokenType::function_definition}, TokenType::function_definition_tail},
+		}
+	},
+	{TokenType::function_definition_tail,
+		{
 			{{TokenType::function_definition}, {}},
 		}
 	},
@@ -34,6 +39,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::open_bracket, TokenType::close_bracket}, {}},
 			{{TokenType::open_bracket, TokenType::statement_list, TokenType::close_bracket}, {}},
 			// TODO add declaration list
+
 		}
 	},
 	{TokenType::statement_list,
@@ -61,8 +67,16 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::expression,
 		{
+			{{TokenType::unary_expression}, {}},
 			// TODO only for now, expressions will get more complicated
 			{{TokenType::constant}, {}},
+		}
+	},
+	{TokenType::unary_expression,
+		{
+			{{TokenType::sub, TokenType::expression}, {}},
+			{{TokenType::tilda, TokenType::expression}, {}},
+			{{TokenType::exclam, TokenType::expression}, {}},
 		}
 	},
 };
