@@ -61,3 +61,14 @@ TEST_CASE("Test properties of cast uint16", "[c]") {
 	}
 
 }
+
+TEST_CASE("Compiler Benchmarks", "[bench]") {
+	FileReader fr;
+	fr.add_directory("./test_data");
+
+	std::string filename = "first.c";
+
+	BENCHMARK(std::string("File: ") + filename) {
+		return compile(filename, fr);
+	};
+}
