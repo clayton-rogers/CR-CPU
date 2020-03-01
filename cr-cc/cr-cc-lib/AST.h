@@ -38,8 +38,8 @@ namespace AST {
 	class Scope {
 	public:
 		Scope(std::shared_ptr<Type_Map_Type> type_map)
-			: type_map(type_map),
-		      label_maker(std::make_shared<Label_Maker>())
+			: label_maker(std::make_shared<Label_Maker>()),
+			  type_map(type_map)
 			{}
 		std::shared_ptr<Scope> create_child_scope();
 
