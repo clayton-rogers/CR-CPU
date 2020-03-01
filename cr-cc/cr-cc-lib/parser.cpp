@@ -168,7 +168,7 @@ ParseNode parse(TokenList token_list) {
 	} else if (tokens_parsed != static_cast<int>(token_list.size())) {
 		std::cout << "Parsed, but leftover tokens..." << std::endl;
 	} else {
-		std::cout << "Parsed " << tokens_parsed << " tokens!!" << std::endl;
+		//std::cout << "Parsed " << tokens_parsed << " tokens!!" << std::endl;
 	}
 
 	return root;
