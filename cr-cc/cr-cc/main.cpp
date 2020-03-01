@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
 			FileReader f;
 			// TODO if any include paths are specified add them here.
 			assembly_code = compile(filename, f);
+			write_file(DEFAULT_OUTPUT_FILENAME + "s", assembly_code);
 		} else if (file_extension == "s") {
 			assembly_code = read_file(filename);
 		} else {
