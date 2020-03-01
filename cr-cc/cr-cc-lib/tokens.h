@@ -104,6 +104,10 @@ enum class TokenType {
 	jump_statement,
 	expression,
 	unary_expression,
+	term,
+	term_tail,
+	factor,
+	factor_tail,
 
 	last_token,
 };

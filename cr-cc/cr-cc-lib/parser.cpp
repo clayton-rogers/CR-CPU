@@ -68,16 +68,38 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::expression,
 		{
-			{{TokenType::unary_expression}, {}},
-			// TODO only for now, expressions will get more complicated
-			{{TokenType::constant}, {}},
+			{{TokenType::term}, TokenType::term_tail},
+		}
+	},
+	{TokenType::term_tail,
+		{
+			{{TokenType::add, TokenType::term}, {}},
+			{{TokenType::sub, TokenType::term}, {}},
+		}
+	},
+	{TokenType::term,
+		{
+			{{TokenType::factor}, TokenType::factor_tail},
+		}
+	},
+	{TokenType::factor_tail,
+		{
+			{{TokenType::star, TokenType::factor}, {}},
+			{{TokenType::div, TokenType::factor}, {}},
+		}
+	},
+	{TokenType::factor,
+		{
+			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, },
+			{{TokenType::unary_expression}, },
+			{{TokenType::constant}, },
 		}
 	},
 	{TokenType::unary_expression,
 		{
-			{{TokenType::sub, TokenType::expression}, {}},
-			{{TokenType::tilda, TokenType::expression}, {}},
-			{{TokenType::exclam, TokenType::expression}, {}},
+			{{TokenType::sub, TokenType::factor}, {}},
+			{{TokenType::tilda, TokenType::factor}, {}},
+			{{TokenType::exclam, TokenType::factor}, {}},
 		}
 	},
 };
@@ -164,10 +186,11 @@ ParseNode parse(TokenList token_list) {
 	root.token.token_type = TokenType::translation_unit;
 	int tokens_parsed = parse_node(&root, token_list, 0);
 	if (tokens_parsed == 0) {
-		//throw std::logic_error("Failed to parse");
-		std::cout << "FAILED TO PARSE" << std::endl;
+		throw std::logic_error("Failed to parse");
+		//std::cout << "FAILED TO PARSE" << std::endl;
 	} else if (tokens_parsed != static_cast<int>(token_list.size())) {
-		std::cout << "Parsed, but leftover tokens..." << std::endl;
+		throw std::logic_error("Parsed with tokens left over");
+		//std::cout << "Parsed, but leftover tokens..." << std::endl;
 	} else {
 		//std::cout << "Parsed " << tokens_parsed << " tokens!!" << std::endl;
 	}

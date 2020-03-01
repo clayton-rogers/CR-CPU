@@ -49,11 +49,17 @@ namespace AST {
 		std::shared_ptr<Type> get_type(std::string name) const;
 		void add_type(std::shared_ptr<Type> type);
 
+		void modify_stack_offset(int amount) { stack_offset += amount; }
+
+		std::string gen_scope_entry();
+		std::string gen_scope_exit();
+
 		std::shared_ptr<Label_Maker> label_maker;
 	private:
 		const Scope* parent = nullptr;
 		std::map<std::string, std::shared_ptr<Variable>> symbol_table;
 		std::shared_ptr<Type_Map_Type> type_map;
+		int stack_offset = 0;
 	};
 	std::shared_ptr<Type> parse_type(const ParseNode& node, std::shared_ptr<Scope> scope);
 
@@ -88,6 +94,33 @@ namespace AST {
 		std::string generate_code() const override;
 	private:
 		std::uint16_t constant_value;
+	};
+
+	class Binary_Expression : public Expression {
+	public:
+		enum class Type {
+			addition,
+			subtraction,
+			multiplication,
+			division,
+		};
+		Binary_Expression(
+			TokenType type,
+			std::shared_ptr<Expression> left,
+			std::shared_ptr<Expression> right,
+			std::shared_ptr<Scope> scope)
+				: Expression(scope),
+				  type(token_to_type(type)),
+				  sub_left(left),
+				  sub_right(right)
+				  {}
+		~Binary_Expression() {}
+		std::string generate_code() const override;
+	private:
+		static Type token_to_type(TokenType type);
+		Type type;
+		std::shared_ptr<Expression> sub_left;
+		std::shared_ptr<Expression> sub_right;
 	};
 
 	class Statement : public Compilable {

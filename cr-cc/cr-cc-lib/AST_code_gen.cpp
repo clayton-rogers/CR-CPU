@@ -59,12 +59,50 @@ namespace AST {
 	std::string Constant_Expression::generate_code() const {
 		// If the constant is small, we can do it in one load, else two
 		std::stringstream ss;
-		ss << "loadi ra, " << output_byte(constant_value & 0xFF) << " # value: " << constant_value << '\n';
+		ss << "loadi ra, " << output_byte(constant_value & 0xFF) << " # load const value: " << constant_value << '\n';
 		if ((constant_value & 0x00FF) != constant_value) {
 			// If the constant isn't small, we have to do two loads
 			ss << "loadi.h ra, " << output_byte(constant_value >> 8) << '\n';
 		}
 
+		return ss.str();
+	}
+
+	std::string Binary_Expression::generate_code() const {
+		std::stringstream ss;
+
+		// Generate code for the left hand side
+		ss << sub_left->generate_code();
+
+		// Push onto stack and let the stack tracker know
+		ss << "push ra\n";
+		scope->modify_stack_offset(1);
+
+		// Generate code for the right hand side
+		ss << sub_right->generate_code();
+
+		// Move to rb and restore left hand side
+		ss << "mov rb, ra\n";
+		ss << "pop ra\n";
+		scope->modify_stack_offset(-1);
+
+		// Perform actual binary operation
+		switch (type) {
+		case Type::addition:
+			ss << "add ra, rb # binary exp add\n";
+			break;
+		case Type::subtraction:
+			ss << "sub ra, rb # binary exp sub\n";
+			break;
+		case Type::multiplication:
+			ss << "halt # binary exp mult\n"; // TODO no multiplication
+			break;
+		case Type::division:
+			ss << "halt # binary exp div\n"; // TODO no division
+			break;
+		}
+
+		// Result is now in ra
 		return ss.str();
 	}
 
@@ -80,9 +118,13 @@ namespace AST {
 	std::string Code_Block::generate_code() const {
 		std::string ret;
 
+		ret += scope->gen_scope_entry();
+
 		for (const auto& statement : statement_list) {
 			ret += statement->generate_code();
 		}
+
+		ret += scope->gen_scope_exit();
 
 		return ret;
 	}
@@ -102,11 +144,12 @@ namespace AST {
 		//ss << "push rb\n";
 		//ss << "push rp\n";
 		// Allocated space on the stack for vars in scope
-		// TODO
+		ss << scope->gen_scope_entry();
 		// Code for contents
 		ss << contents->generate_code();
 		// Exit block
 		ss << scope->label_maker->get_fn_end_label() << ":\n";
+		ss << scope->gen_scope_exit();
 		//ss << "pop rp\n";
 		//ss << "pop rb\n";
 		//ss << "pop ra\n";
@@ -134,6 +177,59 @@ namespace AST {
 		// generate code for each function
 		for (const auto& fn : functions) {
 			ss << fn->generate_code();
+		}
+
+		return ss.str();
+	}
+
+	std::string Scope::gen_scope_entry() {
+		std::stringstream ss;
+
+		int size_of_scope = 0;
+		for (const auto& var : symbol_table) {
+			size_of_scope += var.second->get_type()->get_size();
+		}
+		if (size_of_scope > 0xFF) {
+			throw std::logic_error("Scope size too large!");
+		}
+
+		// If the scope is empty then there's nothing to do
+		if (size_of_scope != 0) {
+			ss << "sub sp, "
+				<< output_byte(static_cast<std::uint16_t>(size_of_scope))
+				<< " # scope size: "
+				<< std::to_string(size_of_scope) << "\n";
+			for (const auto& var : symbol_table) {
+				size_of_scope -= var.second->get_type()->get_size();
+				ss << "# sp + " << std::to_string(size_of_scope) << " : " << var.second->get_name() << "\n";
+			}
+		}
+
+		return ss.str();
+	}
+
+	std::string Scope::gen_scope_exit() {
+		if (stack_offset != 0) {
+			throw std::logic_error("gen_scope_exit: failed to pop all temporaries off of stack, stack offset: "
+				+ std::to_string(stack_offset));
+		}
+
+		std::stringstream ss;
+
+		int size_of_scope = 0;
+		for (const auto& var : symbol_table) {
+			size_of_scope += var.second->get_type()->get_size();
+		}
+		if (size_of_scope > 0xFF) {
+			throw std::logic_error("Scope size too large!");
+		}
+
+		// If the scope is empty then there's nothing to do
+		if (size_of_scope != 0) {
+			ss << "add sp, "
+				<< output_byte(static_cast<std::uint16_t>(size_of_scope))
+				<< " # reclaiming scope: "
+				<< std::to_string(size_of_scope) << "\n";
 		}
 
 		return ss.str();

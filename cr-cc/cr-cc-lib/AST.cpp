@@ -107,8 +107,8 @@ namespace AST {
 			return nullptr;
 		}
 	}
+
 	void Scope::add_type(std::shared_ptr<Type> type) {
 		(*type_map)[type->get_name()] = type;
 	}
-
 }

@@ -93,10 +93,18 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::statement, "statement"},
 	{TokenType::jump_statement, "jump_statement"},
 	{TokenType::expression, "expression"},
+	{TokenType::unary_expression, "unary_expression"},
+	{TokenType::term, "term"},
+	{TokenType::term_tail, "term_tail"},
+	{TokenType::factor, "factor"},
+	{TokenType::factor_tail, "factor_tail"},
 	{TokenType::last_token, "last_token"},
 };
 
 std::string tokenType_to_string(TokenType token) {
-	return TOKEN_STRINGS.at(token);
+	if (TOKEN_STRINGS.count(token) == 1) {
+		return TOKEN_STRINGS.at(token);
+	} else {
+		return std::string("Unknown token: " + std::to_string(static_cast<int>(token)));
+	}
 }
-

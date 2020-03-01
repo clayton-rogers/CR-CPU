@@ -1,9 +1,6 @@
 
-int get_num() {
-	return -1;
-}
 
 // This is the first program possible
 int main () {
-	return !!~-1022;
+	return -2 + 4 - 1;
 }
