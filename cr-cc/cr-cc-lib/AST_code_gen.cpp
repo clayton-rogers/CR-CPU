@@ -70,7 +70,9 @@ namespace AST {
 
 	std::string Return_Statement::generate_code() const {
 		std::stringstream ss;
-		ss << ret_expression->generate_code();
+		if (ret_expression) {
+			ss << ret_expression->generate_code();
+		}
 		ss << "jmp.r " << scope->label_maker->get_fn_end_label() << " # return <exp>\n";
 		return ss.str();
 	}
