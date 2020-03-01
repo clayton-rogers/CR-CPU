@@ -60,7 +60,8 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::jump_statement,
 		{
-			{{TokenType::key_return, TokenType::semi_colon}, {}},
+			// TODO for now don't accept return without an expression
+			//{{TokenType::key_return, TokenType::semi_colon}, {}},
 			{{TokenType::key_return, TokenType::expression, TokenType::semi_colon}, {}},
 			// TODO add other types of jumps (break, continue, goto)
 		}
