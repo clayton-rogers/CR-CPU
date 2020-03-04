@@ -164,7 +164,7 @@ TokenList tokenize(const std::string& code) {
 
 	for (int i = 0; i < static_cast<int>(code.length()); ++i) {
 		const char current_char = code.at(i);
-		const char next_char = (i+1 < code.length()) ? code.at(i + 1) : '\0';
+		const char next_char = (i+1 < static_cast<int>(code.length())) ? code.at(i + 1) : '\0';
 		const std::string current_char_str(1, current_char);
 		const TokenType possible_compound = get_compound_token(current_char, next_char);
 

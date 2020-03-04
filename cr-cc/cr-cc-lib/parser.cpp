@@ -90,9 +90,9 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::factor,
 		{
-			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, },
-			{{TokenType::unary_expression}, },
-			{{TokenType::constant}, },
+			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, {}},
+			{{TokenType::unary_expression}, {}},
+			{{TokenType::constant}, {}},
 		}
 	},
 	{TokenType::unary_expression,

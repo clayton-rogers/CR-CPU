@@ -32,12 +32,12 @@ namespace AST {
 		}
 
 		// In the case of multiple factors, we make them left associative
-		///         /*\
+		//          /*\ <= root
 		//      /*\    factor
 		// factor  factor
 		std::vector<std::shared_ptr<Expression>> exps;
 		std::vector<TokenType> operators;
-		for (int i = 0; i < node.children.size(); i += 2) {
+		for (int i = 0; i < static_cast<int>(node.children.size()); i += 2) {
 			if (i != 0) {
 				operators.push_back(node.children.at(i - 1).token.token_type);
 			}
@@ -74,12 +74,12 @@ namespace AST {
 		}
 
 		// In the case of multiple terms, we make them left associative
-		///       /*\
+		//        /*\  <= root
 		//     /*\    term
 		// term  term
 		std::vector<std::shared_ptr<Expression>> exps;
 		std::vector<TokenType> operators;
-		for (int i = 0; i < node.children.size(); i += 2) {
+		for (int i = 0; i < static_cast<int>(node.children.size()); i += 2) {
 			if (i != 0) {
 				operators.push_back(node.children.at(i - 1).token.token_type);
 			}
