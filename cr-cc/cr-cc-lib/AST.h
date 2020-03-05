@@ -103,6 +103,14 @@ namespace AST {
 			subtraction,
 			multiplication,
 			division,
+			logical_and,
+			logical_or,
+			equal,
+			not_equal,
+			less_than,
+			less_than_or_equal,
+			greater_than,
+			greater_than_or_equal,
 		};
 		Binary_Expression(
 			TokenType type,

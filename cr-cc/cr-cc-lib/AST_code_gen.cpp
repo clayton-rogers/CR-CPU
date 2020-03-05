@@ -16,6 +16,48 @@ namespace AST {
 		return ss.str();
 	}
 
+	// returns logical not of ra
+	static std::string gen_logical_negation(std::shared_ptr<Scope> scope) {
+		std::stringstream ss;
+		std::string l_zero = scope->label_maker->get_next_label();
+		std::string l_end = scope->label_maker->get_next_label();
+		ss << "jmp.r.z " << l_zero << " # logical negation\n";
+		ss << "loadi ra, 0\n";
+		ss << "jmp.r " << l_end << "\n";
+		ss << l_zero << ":\n";
+		ss << "loadi ra, 1\n";
+		ss << l_end << ":\n";
+		return ss.str();
+	}
+
+	// return the truthiness of ra
+	static std::string gen_is_true(std::shared_ptr<Scope> scope) {
+		std::stringstream ss;
+		std::string l_false = scope->label_maker->get_next_label();
+		std::string l_end = scope->label_maker->get_next_label();
+		ss << "jmp.r.z " << l_false << " # is true\n";
+		ss << "loadi ra, 1\n";
+		ss << "jmp.r " << l_end << "\n";
+		ss << l_false << ":\n";
+		ss << "loadi ra, 0\n";
+		ss << l_end << ":\n";
+		return ss.str();
+	}
+
+	// returns 1 if ra > 0
+	static std::string gen_is_positive(std::shared_ptr<Scope> scope) {
+		std::stringstream ss;
+		std::string l_true = scope->label_maker->get_next_label();
+		std::string l_end = scope->label_maker->get_next_label();
+		ss << "jmp.r.gz " << l_true << " # is positive\n";
+		ss << "loadi ra, 0\n";
+		ss << "jmp.r " << l_end << "\n";
+		ss << l_true << ":\n";
+		ss << "loadi ra, 1\n";
+		ss << l_end << ":\n";
+		return ss.str();
+	}
+
 	std::string Unary_Expression::generate_code() const {
 		std::stringstream ss;
 
@@ -39,14 +81,7 @@ namespace AST {
 			break;
 		case Type::logical_negation:
 		{
-			std::string l_zero = scope->label_maker->get_next_label();
-			std::string l_other = scope->label_maker->get_next_label();
-			ss << "jmp.r.z " << l_zero << " # logical negation\n";
-			ss << "loadi ra, 0\n";
-			ss << "jmp.r " << l_other << "\n";
-			ss << l_zero << ":\n";
-			ss << "loadi ra, 1\n";
-			ss << l_other << ":\n";
+			ss << gen_logical_negation(scope);
 			break;
 		}
 		default:
@@ -86,6 +121,8 @@ namespace AST {
 		ss << "pop ra\n";
 		scope->modify_stack_offset(-1);
 
+		// TODO handle short circuit properly
+
 		// Perform actual binary operation
 		switch (type) {
 		case Type::addition:
@@ -100,6 +137,50 @@ namespace AST {
 		case Type::division:
 			ss << "halt # binary exp div\n"; // TODO no division
 			break;
+		case Type::logical_and:
+			ss << "and ra, rb # binary exp logical and\n";
+			break;
+		case Type::logical_or:
+			ss << "or ra, rb # binary exp logical or\n";
+			break;
+		case Type::equal:
+			// A == B is the same as !(A - B)
+			// if A == B then A-B => 0 then !0 is 1
+			ss << "sub ra, rb # binary exp logical equal\n";
+			ss << gen_logical_negation(scope);
+			break;
+		case Type::not_equal:
+			// if A == B is the same as !(A - B) from above
+			// then A != B is the same as !!(A - B) which is just (A - B)
+			ss << "sub ra, rb # binary exp logical not equal\n";
+			ss << gen_is_true(scope); // probably not required
+			break;
+		case Type::less_than:
+			// A < B is (B - A - 1) >= 0
+			ss << "sub rb, ra # binary less than\n";
+			ss << "mov ra, rb\n";
+			ss << "sub ra, 1\n";
+			ss << gen_is_positive(scope);
+			break;
+		case Type::less_than_or_equal:
+			// A <= B is (B - A) >= 0
+			ss << "sub rb, ra # binary less than equal\n";
+			ss << "mov ra, rb\n";
+			ss << gen_is_positive(scope);
+			break;
+		case Type::greater_than:
+			// A > B  is (A - B - 1) >= 0
+			ss << "sub ra, rb # binary greater than\n";
+			ss << "sub ra, 1\n";
+			ss << gen_is_positive(scope);
+			break;
+		case Type::greater_than_or_equal:
+			// A >= B is (A - B) >= 0
+			ss << "sub ra, rb # binary greater than equal\n";
+			ss << gen_is_positive(scope);
+			break;
+		default:
+			throw std::logic_error("Should never get here binary_expression::generate_code");
 		}
 
 		// Result is now in ra

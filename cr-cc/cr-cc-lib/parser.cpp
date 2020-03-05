@@ -68,6 +68,50 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::expression,
 		{
+			{{TokenType::logical_and_exp}, TokenType::logical_and_exp_tail},
+		}
+	},
+	{TokenType::logical_and_exp_tail,
+		{
+			{{TokenType::or_op, TokenType::logical_and_exp}, {}},
+		}
+	},
+	{TokenType::logical_and_exp,
+		{
+			{{TokenType::equality_exp}, TokenType::equality_exp_tail},
+		}
+	},
+	{TokenType::equality_exp_tail,
+		{
+			{{TokenType::and_op, TokenType::equality_exp}, {}},
+		}
+	},
+	{TokenType::equality_exp,
+		{
+			{{TokenType::relational_exp}, TokenType::relational_exp_tail},
+		}
+	},
+	{TokenType::relational_exp_tail,
+		{
+			{{TokenType::ne_op, TokenType::relational_exp}, {}},
+			{{TokenType::eq_op, TokenType::relational_exp}, {}},
+		}
+	},
+	{TokenType::relational_exp,
+		{
+			{{TokenType::additive_exp}, TokenType::additive_exp_tail},
+		}
+	},
+	{TokenType::additive_exp_tail,
+		{
+			{{TokenType::less_than, TokenType::additive_exp}, {}},
+			{{TokenType::greater_than, TokenType::additive_exp}, {}},
+			{{TokenType::le_op, TokenType::additive_exp}, {}},
+			{{TokenType::ge_op, TokenType::additive_exp}, {}},
+		}
+	},
+	{TokenType::additive_exp,
+		{
 			{{TokenType::term}, TokenType::term_tail},
 		}
 	},

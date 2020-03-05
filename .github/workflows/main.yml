@@ -31,5 +31,5 @@ jobs:
         git clone https://github.com/clayton-rogers/write_a_c_compiler.git
         cd write_a_c_compiler
         git checkout fix_for_non_x86_compiler
-        ./test_compiler.sh ../cc 1 2 3     # add stages as compiler gets more complete
+        ./test_compiler.sh ../cc 1 2 3 4     # add stages as compiler gets more complete
         

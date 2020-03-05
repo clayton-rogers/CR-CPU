@@ -98,6 +98,15 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::term_tail, "term_tail"},
 	{TokenType::factor, "factor"},
 	{TokenType::factor_tail, "factor_tail"},
+	{TokenType::logical_and_exp, "logical_and_exp"},
+	{TokenType::logical_and_exp_tail, "logical_and_exp_tail"},
+	{TokenType::equality_exp, "equality_exp"},
+	{TokenType::equality_exp_tail, "equality_exp_tail"},
+	{TokenType::relational_exp, "relational_exp"},
+	{TokenType::relational_exp_tail, "relational_exp_tail"},
+	{TokenType::additive_exp, "additive_exp"},
+	{TokenType::additive_exp_tail, "additive_exp_tail"},
+
 	{TokenType::last_token, "last_token"},
 };
 

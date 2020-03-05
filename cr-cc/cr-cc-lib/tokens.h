@@ -103,11 +103,20 @@ enum class TokenType {
 	statement_tail,
 	jump_statement,
 	expression,
+	logical_and_exp,
+	logical_and_exp_tail,
+	equality_exp,
+	equality_exp_tail,
+	relational_exp,
+	relational_exp_tail,
+	additive_exp,
+	additive_exp_tail,
 	unary_expression,
 	term,
 	term_tail,
 	factor,
 	factor_tail,
+
 
 	last_token,
 };

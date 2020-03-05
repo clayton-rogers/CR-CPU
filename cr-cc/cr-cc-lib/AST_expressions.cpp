@@ -20,28 +20,41 @@ namespace AST {
 		}
 	}
 
-	static std::shared_ptr<Expression> parse_term(const ParseNode& node, std::shared_ptr<Scope> scope) {
-		node.check_type(TokenType::term);
-
-		// A term may be
-		// factor
-		// factor * factor
-		// factor * factor * factor
-		if (node.children.size() % 2 != 1) {
-			throw std::logic_error("Term should always have an even number of terms");
+	static std::shared_ptr<Expression> parse_binary(const ParseNode& node, std::shared_ptr<Scope> scope) {
+		switch (node.token.token_type) {
+			// If this is one of the binary sub expressions we're good
+		case TokenType::term:
+		case TokenType::additive_exp:
+		case TokenType::relational_exp:
+		case TokenType::equality_exp:
+		case TokenType::logical_and_exp:
+		case TokenType::expression:
+			break;
+		case TokenType::factor:
+			return parse_factor(node, scope);
+		default:
+			throw std::logic_error("Tried to parse unknown token as binary exp: " + tokenType_to_string(node.token.token_type));
 		}
 
-		// In the case of multiple factors, we make them left associative
-		//          /*\ <= root
-		//      /*\    factor
-		// factor  factor
+		// A binary may be
+		// item
+		// item op item
+		// item op item op item
+		if (node.children.size() % 2 != 1) {
+			throw std::logic_error("Binary expression should always have an even number of terms");
+		}
+
+		// In the case of multiple item, we make them left associative
+		//        /*\ <= root
+		//     /*\    item
+		// item  item
 		std::vector<std::shared_ptr<Expression>> exps;
 		std::vector<TokenType> operators;
 		for (int i = 0; i < static_cast<int>(node.children.size()); i += 2) {
 			if (i != 0) {
 				operators.push_back(node.children.at(i - 1).token.token_type);
 			}
-			exps.push_back(parse_factor(node.children.at(i), scope));
+			exps.push_back(parse_binary(node.children.at(i), scope));
 		}
 
 		std::shared_ptr<Expression> left = exps.front();
@@ -62,45 +75,7 @@ namespace AST {
 	}
 
 	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<Scope> scope) {
-		node.check_type(TokenType::expression);
-
-		// An expression may be
-		// term
-		// term + term
-		// term + term + term .....
-
-		if (node.children.size() % 2 != 1) {
-			throw std::logic_error("Expression should always have an even number of terms");
-		}
-
-		// In the case of multiple terms, we make them left associative
-		//        /*\  <= root
-		//     /*\    term
-		// term  term
-		std::vector<std::shared_ptr<Expression>> exps;
-		std::vector<TokenType> operators;
-		for (int i = 0; i < static_cast<int>(node.children.size()); i += 2) {
-			if (i != 0) {
-				operators.push_back(node.children.at(i - 1).token.token_type);
-			}
-			exps.push_back(parse_term(node.children.at(i), scope));
-		}
-
-		std::shared_ptr<Expression> left = exps.front();
-		exps.erase(exps.begin());
-		while (!exps.empty()) {
-			std::shared_ptr<Expression> right = exps.front();
-			exps.erase(exps.begin());
-
-			TokenType the_operator = operators.front();
-			operators.erase(operators.begin());
-
-			std::shared_ptr<Expression> new_left =
-				std::make_shared<Binary_Expression>(the_operator, left, right, scope);
-			left = new_left;
-		}
-
-		return left;
+		return parse_binary(node, scope);
 	}
 
 	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
@@ -148,6 +123,22 @@ namespace AST {
 			return Type::multiplication;
 		case TokenType::div:
 			return Type::division;
+		case TokenType::and_op:
+			return Type::logical_and;
+		case TokenType::or_op:
+			return Type::logical_or;
+		case TokenType::eq_op:
+			return Type::equal;
+		case TokenType::ne_op:
+			return Type::not_equal;
+		case TokenType::less_than:
+			return Type::less_than;
+		case TokenType::le_op:
+			return Type::less_than_or_equal;
+		case TokenType::greater_than:
+			return Type::greater_than;
+		case TokenType::ge_op:
+			return Type::greater_than_or_equal;
 		default:
 			throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
 				+ tokenType_to_string(type));
