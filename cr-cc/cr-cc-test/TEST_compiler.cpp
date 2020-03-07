@@ -103,6 +103,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 	auto dir_list = read_directory(DIR);
 
 	for (const auto& item : dir_list) {
+		INFO(item);
 		if (item == "test_data/valid_c/program_loader.s") { continue; }
 		FileReader fr;
 		fr.add_directory(DIR);
@@ -140,6 +141,7 @@ TEST_CASE("Invalid C programs", "[c]") {
 	auto dir_list = read_directory(DIR);
 
 	for (const auto& item : dir_list) {
+		INFO(item);
 		FileReader fr;
 		fr.add_directory(DIR);
 
