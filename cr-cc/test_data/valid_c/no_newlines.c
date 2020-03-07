@@ -1,1 +1,2 @@
-int main(){return 0;}
+// ret: 4
+int main(){return 4;}

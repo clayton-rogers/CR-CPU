@@ -5,29 +5,20 @@
 
 #include <cstdint>
 #include <memory>
+#include <array>
 #include <vector>
 
 class Simulator_Ram {
 public:
-	Simulator_Ram(
-		const std::vector<std::uint16_t>& input_instructions,
-		std::uint16_t size_of_ram,
-		std::shared_ptr<Simulator_Bus> bus) :
+	Simulator_Ram(std::shared_ptr<Simulator_Bus> bus)
+		: bus(bus)
+	{}
 
-		ram_size(size_of_ram),
-		bus(bus)
-	{
-		for (const auto& instruction : input_instructions) {
-			ram.push_back(instruction);
-		}
-		ram.resize(size_of_ram, 0);
-	}
+	void load_ram(std::uint16_t addr, std::vector<std::uint16_t> machine_code);
 
 	void step();
 
 private:
-
-	std::uint16_t ram_size;
 	std::shared_ptr<Simulator_Bus> bus;
-	std::vector<std::uint16_t> ram;
+	std::array<std::uint16_t, 0x1000> ram;
 };

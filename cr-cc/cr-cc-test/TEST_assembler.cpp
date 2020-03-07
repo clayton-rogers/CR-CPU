@@ -214,7 +214,8 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		auto instructions = assemble(program, &offset);
 
 		auto bus = std::make_shared<Simulator_Bus>();
-		Simulator_Ram ram(instructions, 256, bus);
+		Simulator_Ram ram(bus);
+		ram.load_ram(0, instructions);
 		Simulator_IO io(bus, 0x8100); // Note: it's expected that the SPI flash will take base addr 0x8000
 		Simulator_Timer timer(bus, 0x8200);
 		Simulator sim(bus);

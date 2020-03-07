@@ -215,11 +215,10 @@ static std::string to_string(ARG_TYPE t) {
 static const Argument parse_token_for_arg(std::string token) {
 	Argument output;
 
-	try {
+	if (argument_str_map.count(token) == 1) {
 		output.type = argument_str_map.at(token);
 		return output;
-
-	} catch (std::out_of_range e) {
+	} else {
 		// if we failed to find a match then it must be a constant (or error);
 		output.type = ARG_TYPE::CONST;
 	}

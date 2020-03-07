@@ -14,7 +14,7 @@ Compiler_Return compile_tu(std::string filename, FileReader f) {
 		// TODO if any include paths are specified add them here.
 		ret.assembly = c_to_asm(filename, f);
 	} else if (file_extension == "s") {
-		ret.assembly = read_file(filename);
+		ret.assembly = f.read_file_from_directories(filename);
 	} else {
 		throw std::logic_error("Cannot handle file with extension: " + file_extension);
 	}

@@ -3,6 +3,8 @@
 #include "assembler.h"
 #include "compiler.h"
 #include "utilities.h"
+#include "simulator.h"
+#include "simulator_ram.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -75,19 +77,54 @@ TEST_CASE("Compiler Benchmarks", "[bench]") {
 	};
 }
 
+static int get_expected_return(std::string filename) {
+	std::string file_contents = read_file(filename);
+
+	// For each file we expect the following line to be at the top
+	// "// ret: <number>
+	const std::string MAGIC_STR = "ret:";
+	auto location = file_contents.find(MAGIC_STR);
+	if (location == std::string::npos) {
+		throw std::logic_error("Could not find magic string in test file");
+	}
+	location += MAGIC_STR.size();
+	// allow any spaces between : and number
+	while (file_contents.at(location) == ' ') {
+		++location;
+	}
+	return std::stoi(file_contents.substr(location), nullptr, 0); // get the number in any base
+}
+
 TEST_CASE("Exaustive test of Compiler", "[c]") {
 	
 	const std::string DIR = "test_data/valid_c/";
 	auto dir_list = read_directory(DIR);
 
 	for (const auto& item : dir_list) {
+		if (item == "test_data/valid_c/program_loader.s") { continue; }
 		FileReader fr;
 		fr.add_directory(DIR);
 
 		auto ret = compile_tu(item, fr);
-		auto srec = machine_inst_to_srec(ret.machine_code, ret.load_address);
+		auto program_loader = compile_tu("program_loader.s", fr);
 
 		// Load the compiled code into the simulator and see that the return is correct
+		auto bus = std::make_shared<Simulator_Bus>();
+		Simulator_Ram ram(bus);
+		ram.load_ram(ret.load_address, ret.machine_code);
+		ram.load_ram(program_loader.load_address, program_loader.machine_code);
+		Simulator sim(bus);
 
+		int steps = 0;
+		while (!sim.is_halted && steps < 2000) {
+			sim.step();
+			ram.step();
+		}
+
+		// Check that the program produced the desired result
+		const int actual_program_output = sim.get_ra();
+		const int expected_program_output = get_expected_return(item);
+
+		CHECK(actual_program_output == expected_program_output);
 	}
 }

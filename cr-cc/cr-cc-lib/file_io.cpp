@@ -31,6 +31,15 @@ std::string read_file(std::string filename) {
 	return output;
 }
 
+bool file_exists(std::string filename) {
+	std::ifstream file(filename);
+	if (!file) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 void write_file(std::string filename, std::string data) {
 	std::ofstream file(filename, std::ios::binary);
 
@@ -68,11 +77,10 @@ std::string FileReader::read_file_from_directories(std::string filename)
 {
 	std::string result;
 	for (const auto& directory : directories) {
-		try {
-			result = read_file(directory + "/" + filename);
-			break;
-		} catch (std::logic_error e) {
-			continue;
+		std::string full_filename = directory + "/" + filename;
+
+		if (file_exists(full_filename)) {
+			result = read_file(full_filename);
 		}
 	}
 
