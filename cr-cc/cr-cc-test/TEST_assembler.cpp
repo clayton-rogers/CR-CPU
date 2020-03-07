@@ -190,7 +190,7 @@ static const std::vector<Test_Program> test_programs = {
 	// Sums a few numbers stored in the data segment
 	{"static_data.s", true, 55},
 	// Should flash alternating 0x55 and 0xAA
-	{ "flasher_program.s", false, 0x0000 },
+	{"flasher_program.s", false, 0x0000 },
 	// Should output the fibonacci sequence
 	{"fib_program.s", false, 0x0000},
 	// Tests using labels and relative jumps. Should just count up
