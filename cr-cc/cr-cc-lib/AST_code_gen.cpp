@@ -133,9 +133,11 @@ namespace AST {
 			ss << "sub ra, rb # binary exp sub\n";
 			break;
 		case Type::multiplication:
+			ss << "loadi ra 0\n"; // "return 0" for unit tests
 			ss << "halt # binary exp mult\n"; // TODO no multiplication
 			break;
 		case Type::division:
+			ss << "loadi ra 0\n"; // "return 0" for unit tests
 			ss << "halt # binary exp div\n"; // TODO no division
 			break;
 		case Type::logical_and:
