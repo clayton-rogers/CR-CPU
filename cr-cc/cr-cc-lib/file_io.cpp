@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <streambuf>
+#include <filesystem>
 
 std::string read_file(std::string filename) {
 	std::ifstream file(filename);
@@ -70,4 +71,14 @@ std::string FileReader::read_file_from_directories(std::string filename)
 	}
 
 	return result;
+}
+
+std::vector<std::string> read_directory(std::string directory) {
+	std::vector<std::string> ret;
+
+	for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+		ret.push_back(entry.path().string());
+	}
+
+	return ret;
 }

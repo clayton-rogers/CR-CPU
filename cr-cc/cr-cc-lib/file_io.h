@@ -12,6 +12,8 @@ std::vector<std::uint16_t> read_bin_file(std::string filename);
 
 void write_bin_file(std::string filename, std::vector<std::uint16_t> data);
 
+std::vector<std::string> read_directory(std::string directory);
+
 
 class FileReader {
 public:
