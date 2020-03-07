@@ -19,6 +19,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)AST_code_gen.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)AST_expressions.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)AST_statements.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)c_to_asm.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)label_maker.cpp" />
@@ -35,6 +36,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)AST.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)c_to_asm.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)label_maker.h" />

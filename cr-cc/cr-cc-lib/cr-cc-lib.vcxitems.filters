@@ -48,6 +48,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)c_to_asm.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -94,6 +95,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)c_to_asm.h">
       <Filter>Compiler</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">

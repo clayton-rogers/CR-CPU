@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-class Compiler_State {
+class Front_End_State {
 public:
 	std::string code_original;
 	std::string code_preprocessed;
@@ -21,7 +21,7 @@ public:
 
 
 std::string c_to_asm(const std::string& tu_filename, FileReader fr) {
-	Compiler_State cs;
+	Front_End_State cs;
 
 	cs.code_original = fr.read_file_from_directories(tu_filename);
 	cs.code_preprocessed = preprocess(cs.code_original, fr);
