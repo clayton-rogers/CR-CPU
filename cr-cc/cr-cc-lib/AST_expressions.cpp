@@ -14,6 +14,8 @@ namespace AST {
 		case TokenType::open_parenth:
 			// ( exp )
 			return parse_expression(node.children.at(1), scope);
+		case TokenType::identifier:
+			return std::make_shared<Variable_Expression>(child, scope);
 		default:
 			throw std::logic_error("Tried to parse_factor with invalid expression type: " +
 				tokenType_to_string(child.token.token_type));
@@ -75,7 +77,22 @@ namespace AST {
 	}
 
 	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<Scope> scope) {
-		return parse_binary(node, scope);
+		node.check_type(TokenType::expression);
+
+		if (node.contains_child_with_type(TokenType::equals)) {
+			// this is an assigment
+			return std::make_shared<Assignment_Expression>(node, scope);
+		} else {
+			return parse_binary(node, scope);
+		}
+	}
+
+	Assignment_Expression::Assignment_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Expression(scope) {
+		node.check_type(TokenType::expression);
+
+		var_name = node.get_child_with_type(TokenType::identifier).token.value;
+		exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 	}
 
 	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
@@ -143,5 +160,12 @@ namespace AST {
 			throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
 				+ tokenType_to_string(type));
 		}
+	}
+
+	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Expression(scope) {
+		node.check_type(TokenType::identifier);
+
+		var_name = node.token.value;
 	}
 }

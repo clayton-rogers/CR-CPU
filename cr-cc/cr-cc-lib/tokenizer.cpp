@@ -74,9 +74,9 @@ static bool is_known_token(std::string token) {
 }
 
 static TokenType get_token_type(std::string token) {
-	try {
+	if (STR_TOKEN_MAP.count(token) == 1) {
 		return STR_TOKEN_MAP.at(token);
-	} catch (std::out_of_range e) {
+	} else {
 		return TokenType::NONE;
 	}
 }

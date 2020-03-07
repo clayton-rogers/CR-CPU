@@ -38,8 +38,8 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 		{
 			{{TokenType::open_bracket, TokenType::close_bracket}, {}},
 			{{TokenType::open_bracket, TokenType::statement_list, TokenType::close_bracket}, {}},
-			// TODO add declaration list
-
+			{{TokenType::open_bracket, TokenType::declaration_list, TokenType::statement_list, TokenType::close_bracket}, {}},
+			{{TokenType::open_bracket, TokenType::declaration_list, TokenType::close_bracket}, {}},
 		}
 	},
 	{TokenType::statement_list,
@@ -47,9 +47,42 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::statement}, TokenType::statement_tail},
 		}
 	},
+	{TokenType::declaration_list,
+		{
+			{{TokenType::declaration}, TokenType::declaration_tail},
+		}
+	},
+	{TokenType::declaration_tail,
+		{
+			{{TokenType::declaration}, {}},
+		}
+	},
+	{TokenType::declaration,
+		{
+			//{{TokenType::type_specifier, TokenType::semi_colon}, {}},// TODO for struct declaration
+			{{TokenType::type_specifier, TokenType::init_declarator_list, TokenType::semi_colon}, {}},
+		}
+	},
+	{TokenType::init_declarator_list,
+		{
+			{{TokenType::init_declarator}, TokenType::init_declarator_list_tail},
+		}
+	},
+	{TokenType::init_declarator_list_tail,
+		{
+			{{TokenType::comma, TokenType::init_declarator}, {}},
+		}
+	},
+	{TokenType::init_declarator,
+		{
+			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized
+			{{TokenType::identifier}, {}}, // non initialized
+		}
+	},
 	{TokenType::statement,
 		{
 			{{TokenType::jump_statement}, {}},
+			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements
 		}
 	},
@@ -66,8 +99,14 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			// TODO add other types of jumps (break, continue, goto)
 		}
 	},
+	{TokenType::expression_statement,
+		{
+			{{TokenType::expression, TokenType::semi_colon}, {}},
+		}
+	},
 	{TokenType::expression,
 		{
+			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}},
 			{{TokenType::logical_and_exp}, TokenType::logical_and_exp_tail},
 		}
 	},
@@ -135,6 +174,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::factor,
 		{
 			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, {}},
+			{{TokenType::identifier}, {}},
 			{{TokenType::unary_expression}, {}},
 			{{TokenType::constant}, {}},
 		}

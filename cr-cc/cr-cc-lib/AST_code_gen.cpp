@@ -5,7 +5,10 @@
 
 namespace AST {
 
-	static std::string output_byte(std::uint16_t a) {
+	static std::string output_byte(int a) {
+		if (a < 0 || a > 0xFF) {
+			throw std::logic_error("Cannot generate byte for " + a);
+		}
 		std::stringstream ss;
 		ss << "0x"
 			<< std::hex
@@ -19,8 +22,8 @@ namespace AST {
 	// returns logical not of ra
 	static std::string gen_logical_negation(std::shared_ptr<Scope> scope) {
 		std::stringstream ss;
-		std::string l_zero = scope->label_maker->get_next_label();
-		std::string l_end = scope->label_maker->get_next_label();
+		std::string l_zero = scope->env->label_maker.get_next_label();
+		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.z " << l_zero << " # logical negation\n";
 		ss << "loadi ra, 0\n";
 		ss << "jmp.r " << l_end << "\n";
@@ -33,8 +36,8 @@ namespace AST {
 	// return the truthiness of ra
 	static std::string gen_is_true(std::shared_ptr<Scope> scope) {
 		std::stringstream ss;
-		std::string l_false = scope->label_maker->get_next_label();
-		std::string l_end = scope->label_maker->get_next_label();
+		std::string l_false = scope->env->label_maker.get_next_label();
+		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.z " << l_false << " # is true\n";
 		ss << "loadi ra, 1\n";
 		ss << "jmp.r " << l_end << "\n";
@@ -47,8 +50,8 @@ namespace AST {
 	// returns 1 if ra > 0
 	static std::string gen_is_positive(std::shared_ptr<Scope> scope) {
 		std::stringstream ss;
-		std::string l_true = scope->label_maker->get_next_label();
-		std::string l_end = scope->label_maker->get_next_label();
+		std::string l_true = scope->env->label_maker.get_next_label();
+		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.gz " << l_true << " # is positive\n";
 		ss << "loadi ra, 0\n";
 		ss << "jmp.r " << l_end << "\n";
@@ -110,16 +113,14 @@ namespace AST {
 		ss << sub_left->generate_code();
 
 		// Push onto stack and let the stack tracker know
-		ss << "push ra\n";
-		scope->modify_stack_offset(1);
+		ss << scope->push_reg("ra");
 
 		// Generate code for the right hand side
 		ss << sub_right->generate_code();
 
 		// Move to rb and restore left hand side
 		ss << "mov rb, ra\n";
-		ss << "pop ra\n";
-		scope->modify_stack_offset(-1);
+		ss << scope->pop_reg("ra");
 
 		// TODO handle short circuit properly
 
@@ -192,20 +193,20 @@ namespace AST {
 		if (ret_expression) {
 			ss << ret_expression->generate_code();
 		}
-		ss << "jmp.r " << scope->label_maker->get_fn_end_label() << " # return <exp>\n";
+		ss << "jmp.r " << scope->env->label_maker.get_fn_end_label() << " # return <exp>\n";
 		return ss.str();
+	}
+
+	std::string Expression_Statement::generate_code() const {
+		return sub->generate_code();
 	}
 
 	std::string Code_Block::generate_code() const {
 		std::string ret;
 
-		ret += scope->gen_scope_entry();
-
 		for (const auto& statement : statement_list) {
 			ret += statement->generate_code();
 		}
-
-		ret += scope->gen_scope_exit();
 
 		return ret;
 	}
@@ -213,12 +214,12 @@ namespace AST {
 	std::string Function::generate_code() const {
 		std::stringstream ss;
 
-		this->scope->label_maker->set_fn_name(name);
+		this->scope->env->label_maker.set_fn_name(name);
 
 		// Function header
 		ss << "\n# " << name << '\n';
 		// ss << arguments.... TODO
-		ss << scope->label_maker->get_label_for_fn(name) << ":\n";
+		ss << scope->env->label_maker.get_label_for_fn(name) << ":\n";
 		// TODO any pushing of temp registers
 		// TODO allocate args to registers/calling stack
 		//ss << "push ra\n";
@@ -229,7 +230,7 @@ namespace AST {
 		// Code for contents
 		ss << contents->generate_code();
 		// Exit block
-		ss << scope->label_maker->get_fn_end_label() << ":\n";
+		ss << scope->env->label_maker.get_fn_end_label() << ":\n";
 		ss << scope->gen_scope_exit();
 		//ss << "pop rp\n";
 		//ss << "pop rb\n";
@@ -263,26 +264,47 @@ namespace AST {
 		return ss.str();
 	}
 
+	const Type* Environment::get_type(std::string name) const {
+		if (type_map.count(name) == 1) {
+			return type_map.at(name);
+		} else {
+			throw std::logic_error("Failed to find type: " + name);
+		}
+	}
+	void Environment::create_type(Type* type) {
+		type_map[type->get_name()] = type;
+	}
+
+	void Scope::create_stack_var(const Type* type, std::string name) {
+		int var_offset = size_of_scope;
+		size_of_scope += type->get_size();
+
+		// Double check that the var doesn't exist already
+		for (const auto& var : vars) {
+			if (var.name == name) {
+				throw std::logic_error("Duplicate var with name: " + name);
+			}
+		}
+		vars.push_back({ var_offset, name });
+	}
+
+	int Scope::get_var_offset(std::string name) {
+		for (const auto& var : vars) {
+			if (var.name == name) {
+				// The variable's offset within the frame plus any temps stored on the stack
+				return var.offset + stack_offset;
+			}
+		}
+		throw std::logic_error("Referenced unknown variable: " + name);
+	}
+
 	std::string Scope::gen_scope_entry() {
 		std::stringstream ss;
 
-		int size_of_scope = 0;
-		for (const auto& var : symbol_table) {
-			size_of_scope += var.second->get_type()->get_size();
-		}
-		if (size_of_scope > 0xFF) {
-			throw std::logic_error("Scope size too large!");
-		}
-
-		// If the scope is empty then there's nothing to do
 		if (size_of_scope != 0) {
-			ss << "sub sp, "
-				<< output_byte(static_cast<std::uint16_t>(size_of_scope))
-				<< " # scope size: "
-				<< std::to_string(size_of_scope) << "\n";
-			for (const auto& var : symbol_table) {
-				size_of_scope -= var.second->get_type()->get_size();
-				ss << "# sp + " << std::to_string(size_of_scope) << " : " << var.second->get_name() << "\n";
+			ss << "sub sp, " << output_byte(size_of_scope) << " # stack entry\n";
+			for (const auto& var : vars) {
+				ss << "# sp + " << var.offset << " = " << var.name << "\n";
 			}
 		}
 
@@ -290,28 +312,78 @@ namespace AST {
 	}
 
 	std::string Scope::gen_scope_exit() {
+		std::stringstream ss;
+
+		const int total_size = size_of_scope + stack_offset;
+
+		if (size_of_scope != 0) {
+			ss << "add sp, " << output_byte(total_size) << " # stack exit\n";
+			ss << "# locals size: " << size_of_scope << " temp size: " << stack_offset << "\n";
+
+		}
+
 		if (stack_offset != 0) {
 			throw std::logic_error("gen_scope_exit: failed to pop all temporaries off of stack, stack offset: "
 				+ std::to_string(stack_offset));
 		}
 
+		return ss.str();
+	}
+
+	std::string Scope::push_reg(std::string reg_name) {
+		stack_offset++;
+		return "push " + reg_name + "\n";
+	}
+
+	std::string Scope::pop_reg(std::string reg_name) {
+		stack_offset--;
+		return "pop " + reg_name + "\n";
+	}
+
+	//std::string Local_Variable::gen_load(int current_sp_offset) {
+	//	std::stringstream ss;
+
+	//	int var_position = current_sp_offset + sp_offset;
+	//	if (var_position > 0xff) {
+	//		throw std::logic_error("could not generate var load, offset too great");
+	//	}
+
+	//	ss << "load.sp ra, " << output_byte(var_position) << " # load " << name;
+
+	//	return ss.str();
+	//}
+
+	//std::string Local_Variable::gen_store(int current_sp_offset) {
+	//	std::stringstream ss;
+
+	//	int var_position = current_sp_offset + sp_offset;
+	//	if (var_position > 0xff) {
+	//		throw std::logic_error("could not generate var load, offset too great");
+	//	}
+
+	//	ss << "store.sp ra, " << output_byte(var_position) << " # store " << name;
+
+	//	return ss.str();
+	//}
+
+	std::string Assignment_Expression::generate_code() const {
 		std::stringstream ss;
 
-		int size_of_scope = 0;
-		for (const auto& var : symbol_table) {
-			size_of_scope += var.second->get_type()->get_size();
-		}
-		if (size_of_scope > 0xFF) {
-			throw std::logic_error("Scope size too large!");
-		}
+		// calculate the result of the sub expression
+		ss << exp->generate_code();
 
-		// If the scope is empty then there's nothing to do
-		if (size_of_scope != 0) {
-			ss << "add sp, "
-				<< output_byte(static_cast<std::uint16_t>(size_of_scope))
-				<< " # reclaiming scope: "
-				<< std::to_string(size_of_scope) << "\n";
-		}
+		// Result is now in ra, store in memory location
+		const int var_offset = scope->get_var_offset(var_name);
+		ss << "store.sp ra, " + output_byte(var_offset) << " # store " << var_name << "\n";
+
+		return ss.str();
+	}
+
+	std::string Variable_Expression::generate_code() const {
+		std::stringstream ss;
+
+		const int var_offset = scope->get_var_offset(var_name);
+		ss << "load.sp ra, " << output_byte(var_offset) << " # load " << var_name << "\n";
 
 		return ss.str();
 	}

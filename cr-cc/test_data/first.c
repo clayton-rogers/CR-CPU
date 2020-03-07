@@ -1,9 +1,34 @@
 
 int test() {
-	return 1 == 1;
+	int a = 1;
+	return 1 == a;
 }
 
 // This is the first program possible
 int main () {
-	return (6+6-1-1 >= 11-1 && 5 <= 7 && 1 != 2);
+	int a = 1;
+	int b = 1;
+	int c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	c = a + b;
+	a = b;
+	b = c;
+	return c;
 }
