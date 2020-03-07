@@ -1,5 +1,6 @@
 CXXFLAGS=-Wall -Wextra -Wpedantic -Wno-psabi -std=c++17
 export CXXFLAGS # export to each of the sub-makes
+LDFLAGS+=-lstdc++fs
 
 CR-LIB=cr-cc-lib/cr-cc-lib.a
 CR-CC=cr-cc/cr-cc.a
@@ -8,10 +9,10 @@ CR-TEST=cr-cc-test/cr-test.a
 all: test cc
 
 test: $(CR-TEST) $(CR-LIB)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ cr-cc-test/*.o $(CR-LIB)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ cr-cc-test/*.o $(CR-LIB) -lstdc++fs
 
 cc: $(CR-CC) $(CR-LIB)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ -lstdc++fs
 
 $(CR-LIB) :
 	cd cr-cc-lib && $(MAKE)

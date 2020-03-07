@@ -3,7 +3,13 @@
 #include <fstream>
 #include <iostream>
 #include <streambuf>
+#ifdef __GNUC__
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 std::string read_file(std::string filename) {
 	std::ifstream file(filename);
@@ -76,7 +82,7 @@ std::string FileReader::read_file_from_directories(std::string filename)
 std::vector<std::string> read_directory(std::string directory) {
 	std::vector<std::string> ret;
 
-	for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+	for (const auto& entry : fs::directory_iterator(directory)) {
 		ret.push_back(entry.path().string());
 	}
 
