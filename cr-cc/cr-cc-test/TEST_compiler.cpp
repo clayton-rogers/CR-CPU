@@ -97,6 +97,8 @@ static int get_expected_return(std::string filename) {
 
 TEST_CASE("Exaustive test of Compiler", "[c]") {
 	
+	// These test programs were mostly stolen and slightly modified from:
+	// https://github.com/nlsandler/write_a_c_compiler.git
 	const std::string DIR = "test_data/valid_c/";
 	auto dir_list = read_directory(DIR);
 
@@ -115,16 +117,32 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		ram.load_ram(program_loader.load_address, program_loader.machine_code);
 		Simulator sim(bus);
 
-		int steps = 0;
-		while (!sim.is_halted && steps < 2000) {
+		int step = 0;
+		const int MAX_STEPS = 2000;
+		while (!sim.is_halted && step < MAX_STEPS) {
 			sim.step();
 			ram.step();
+			++step;
 		}
+		CHECK(step != MAX_STEPS); // If program is infinite loop
 
 		// Check that the program produced the desired result
 		const int actual_program_output = sim.get_ra();
 		const int expected_program_output = get_expected_return(item);
 
 		CHECK(actual_program_output == expected_program_output);
+	}
+}
+
+TEST_CASE("Invalid C programs", "[c]") {
+
+	const std::string DIR = "test_data/invalid_c/";
+	auto dir_list = read_directory(DIR);
+
+	for (const auto& item : dir_list) {
+		FileReader fr;
+		fr.add_directory(DIR);
+
+		CHECK_THROWS(compile_tu(item, fr));
 	}
 }
