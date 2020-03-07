@@ -77,9 +77,17 @@ TEST_CASE("Compiler Benchmarks", "[bench]") {
 
 TEST_CASE("Exaustive test of Compiler", "[c]") {
 	
-	auto dir_list = read_directory("test_data/");
+	const std::string DIR = "test_data/valid_c/";
+	auto dir_list = read_directory(DIR);
 
 	for (const auto& item : dir_list) {
-		std::cout << item << std::endl;
+		FileReader fr;
+		fr.add_directory(DIR);
+
+		auto ret = compile_tu(item, fr);
+		auto srec = machine_inst_to_srec(ret.machine_code, ret.load_address);
+
+		// Load the compiled code into the simulator and see that the return is correct
+
 	}
 }
