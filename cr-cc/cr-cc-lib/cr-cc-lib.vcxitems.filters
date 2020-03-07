@@ -18,9 +18,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)assembler.cpp">
       <Filter>Assembler</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp">
-      <Filter>Compiler</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
@@ -48,6 +45,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)label_maker.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)c_to_asm.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -66,9 +66,6 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h">
       <Filter>Simulator</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h">
-      <Filter>Compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h">
       <Filter>Assembler</Filter>
@@ -92,6 +89,9 @@
       <Filter>Compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)label_maker.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)c_to_asm.h">
       <Filter>Compiler</Filter>
     </ClInclude>
   </ItemGroup>

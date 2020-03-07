@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "c_to_asm.h"
 #include "file_io.h"
 #include "assembler.h"
 #include "utilities.h"
@@ -18,7 +18,7 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	//std::cout << result << std::endl;
 
 	std::string test_filename = "first.c";
-	std::string result = compile(test_filename, fr);
+	std::string result = c_to_asm(test_filename, fr);
 	std::cout << "\n\n" << result << std::endl;
 	//std::cout << result << std::endl;
 	std::uint16_t offset;
@@ -69,6 +69,6 @@ TEST_CASE("Compiler Benchmarks", "[bench]") {
 	std::string filename = "first.c";
 
 	BENCHMARK(std::string("File: ") + filename) {
-		return compile(filename, fr);
+		return c_to_asm(filename, fr);
 	};
 }

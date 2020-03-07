@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "c_to_asm.h"
 #include "assembler.h"
 #include "file_io.h"
 #include "utilities.h"
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 		if (file_extension == "c") {
 			FileReader f;
 			// TODO if any include paths are specified add them here.
-			assembly_code = compile(filename, f);
+			assembly_code = c_to_asm(filename, f);
 			write_file(DEFAULT_OUTPUT_FILENAME + "s", assembly_code);
 		} else if (file_extension == "s") {
 			assembly_code = read_file(filename);

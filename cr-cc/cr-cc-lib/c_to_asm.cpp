@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "c_to_asm.h"
 
 #include "preprocessor.h"
 #include "tokenizer.h"
@@ -20,7 +20,7 @@ public:
 };
 
 
-std::string compile(const std::string& tu_filename, FileReader fr) {
+std::string c_to_asm(const std::string& tu_filename, FileReader fr) {
 	Compiler_State cs;
 
 	cs.code_original = fr.read_file_from_directories(tu_filename);
