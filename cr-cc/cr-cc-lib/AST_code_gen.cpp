@@ -232,6 +232,7 @@ namespace AST {
 		// Code for contents
 		ss << contents->generate_code();
 		// Exit block
+		ss << "loadi ra, 0\n"; // In case funtion runs off the end, it should return 0.
 		ss << scope->env->label_maker.get_fn_end_label() << ":\n";
 		ss << scope->gen_scope_exit();
 		//ss << "pop rp\n";
