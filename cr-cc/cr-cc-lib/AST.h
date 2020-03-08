@@ -213,11 +213,11 @@ namespace AST {
 		std::shared_ptr<Expression> sub;
 	};
 
-	class Code_Block : public Compilable {
+	class Compount_Statement : public Statement {
 	public:
-		Code_Block(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
 		//virtual std::string generate_code() const override { return ""; }; // TODO
-		virtual ~Code_Block() {};
+		virtual ~Compount_Statement() {};
 		std::string generate_code() const override;
 	private:
 		std::vector<std::shared_ptr<Statement>> statement_list;
@@ -234,7 +234,7 @@ namespace AST {
 		const Type* return_type;
 		std::string name;
 		std::vector<std::string>arguments;
-		std::shared_ptr<Code_Block> contents;
+		std::shared_ptr<Compount_Statement> contents;
 	};
 
 	class AST final : public Compilable {

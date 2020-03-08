@@ -42,7 +42,8 @@ namespace AST {
 		}
 	}
 
-	Code_Block::Code_Block(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Statement(scope) {
 		node.check_type(TokenType::compound_statement);
 
 		// Code blocks can optionally have a list of declarations
@@ -77,6 +78,6 @@ namespace AST {
 		// TODO arguments
 		// arguments = ....
 
-		contents = std::make_shared<Code_Block>(node.get_child_with_type(TokenType::compound_statement), scope);
+		contents = std::make_shared<Compount_Statement>(node.get_child_with_type(TokenType::compound_statement), scope);
 	}
 }

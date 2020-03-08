@@ -81,6 +81,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::statement,
 		{
+			{{TokenType::compound_statement}, {}},
 			{{TokenType::jump_statement}, {}},
 			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements

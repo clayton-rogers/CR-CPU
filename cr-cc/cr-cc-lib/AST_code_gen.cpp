@@ -214,7 +214,7 @@ namespace AST {
 		return sub->generate_code();
 	}
 
-	std::string Code_Block::generate_code() const {
+	std::string Compount_Statement::generate_code() const {
 		std::string ret;
 
 		for (const auto& statement : statement_list) {

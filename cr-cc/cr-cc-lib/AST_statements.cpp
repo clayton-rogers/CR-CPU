@@ -9,6 +9,8 @@ namespace AST {
 
 		// statements will only have a single child
 		switch (child.token.token_type) {
+		case TokenType::compound_statement:
+			return std::make_shared<Compount_Statement>(child, scope);
 		case TokenType::jump_statement:
 			if (child.children.at(0).token.token_type == TokenType::key_return) {
 				return std::make_shared<Return_Statement>(child, scope);
