@@ -106,22 +106,35 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		FileReader fr;
 		fr.add_directory(DIR);
 
-		auto ret = compile_tu(item, fr);
-		auto program_loader = compile_tu("program_loader.s", fr);
+		// Catching the exception in the test allows us to continue
+		// rather than stopping at the first failed compile
+		try {
 
-		// Load the compiled code into the simulator and see that the return is correct
-		Simulator sim;
-		sim.load(ret.load_address, ret.machine_code);
-		sim.load(program_loader.load_address, program_loader.machine_code);
+			auto ret = compile_tu(item, fr);
+			auto program_loader = compile_tu("program_loader.s", fr);
 
-		sim.run_until_halted(2000);
-		CHECK(sim.get_state().is_halted == true);
+			// Load the compiled code into the simulator and see that the return is correct
+			Simulator sim;
+			sim.load(ret.load_address, ret.machine_code);
+			sim.load(program_loader.load_address, program_loader.machine_code);
 
-		// Check that the program produced the desired result
-		const int actual_program_output = sim.get_state().ra;
-		const int expected_program_output = get_expected_return(item);
+			sim.run_until_halted(2000);
+			CHECK(sim.get_state().is_halted == true);
 
-		CHECK(actual_program_output == expected_program_output);
+			// Check that the program produced the desired result
+			const int actual_program_output = sim.get_state().ra;
+			const int expected_program_output = get_expected_return(item);
+
+			CHECK(actual_program_output == expected_program_output);
+
+		} catch (const std::exception & e) {
+			std::string message("Unexpected exception with message:\n");
+			message = message + e.what();
+			INFO(message);
+			CHECK(false);
+			continue;
+		}
+
 	}
 }
 
