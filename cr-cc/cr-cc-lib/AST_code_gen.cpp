@@ -112,6 +112,16 @@ namespace AST {
 		// Generate code for the left hand side
 		ss << sub_left->generate_code();
 
+		// If exp 1 is true and op is || then skip exp 2
+		// If exp 1 is false(0) and op is && then skip exp2
+		std::string label_after = scope->env->label_maker.get_next_label();
+		if (type == Type::logical_or) {
+			ss << "jmp.r.nz " << label_after << " # short circuit or\n";
+		}
+		if (type == Type::logical_and) {
+			ss << "jmp.r.z " << label_after << " # short circuit and\n";
+		}
+
 		// Push onto stack and let the stack tracker know
 		ss << scope->push_reg("ra");
 
@@ -121,8 +131,6 @@ namespace AST {
 		// Move to rb and restore left hand side
 		ss << "mov rb, ra\n";
 		ss << scope->pop_reg("ra");
-
-		// TODO handle short circuit properly
 
 		// Perform actual binary operation
 		switch (type) {
@@ -185,6 +193,9 @@ namespace AST {
 		default:
 			throw std::logic_error("Should never get here binary_expression::generate_code");
 		}
+
+		// In case of short circuit, skip the operation:
+		ss << label_after << ":\n";
 
 		// Result is now in ra
 		return ss.str();
