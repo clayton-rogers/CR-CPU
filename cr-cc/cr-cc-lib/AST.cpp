@@ -42,30 +42,6 @@ namespace AST {
 		}
 	}
 
-	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
-		: Statement(scope) {
-		node.check_type(TokenType::compound_statement);
-
-		// Code blocks can optionally have a list of declarations
-		if (node.contains_child_with_type(TokenType::declaration_list)) {
-			const auto& declarations = node.get_child_with_type(TokenType::declaration_list);
-			for (const auto& declaration_node : declarations.children) {
-				auto list_of_statements = parse_declaration(declaration_node, scope);
-				for (const auto& statement : list_of_statements) {
-					this->statement_list.push_back(statement);
-				}
-			}
-		}
-		// Code blocks can optionally have a list of statments
-		if (node.contains_child_with_type(TokenType::statement_list)) {
-			const auto& list = node.get_child_with_type(TokenType::statement_list);
-			for (const auto& statement_node : list.children) {
-				std::shared_ptr<Statement> s = parse_statement(statement_node, scope);
-				this->statement_list.push_back(s);
-			}
-		}
-	}
-
 	Function::Function(const ParseNode& node, Environment* env)
 			: env(env), scope(std::make_shared<Scope>(env)) {
 

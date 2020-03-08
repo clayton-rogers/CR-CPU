@@ -9,6 +9,8 @@ namespace AST {
 
 		// statements will only have a single child
 		switch (child.token.token_type) {
+		case TokenType::if_statement:
+			return std::make_shared<If_Statement>(child, scope);
 		case TokenType::compound_statement:
 			return std::make_shared<Compount_Statement>(child, scope);
 		case TokenType::jump_statement:
@@ -81,5 +83,46 @@ namespace AST {
 
 		// Expression statement is an expression followed by a semi colon
 		sub = parse_expression(node.children.at(0), scope);
+	}
+
+	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::compound_statement);
+
+		// Code blocks can optionally have a list of declarations
+		if (node.contains_child_with_type(TokenType::declaration_list)) {
+			const auto& declarations = node.get_child_with_type(TokenType::declaration_list);
+			for (const auto& declaration_node : declarations.children) {
+				auto list_of_statements = parse_declaration(declaration_node, scope);
+				for (const auto& statement : list_of_statements) {
+					this->statement_list.push_back(statement);
+				}
+			}
+		}
+		// Code blocks can optionally have a list of statments
+		if (node.contains_child_with_type(TokenType::statement_list)) {
+			const auto& list = node.get_child_with_type(TokenType::statement_list);
+			for (const auto& statement_node : list.children) {
+				std::shared_ptr<Statement> s = parse_statement(statement_node, scope);
+				this->statement_list.push_back(s);
+			}
+		}
+	}
+
+	If_Statement::If_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::if_statement);
+
+		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+
+		// Note: in case there are two, this will get the first
+		true_statement = parse_statement(node.get_child_with_type(TokenType::statement), scope);
+
+		if (node.contains_child_with_type(TokenType::key_else)) {
+			has_else = true;
+			false_statement = parse_statement(node.children.at(6), scope);
+		} else {
+			has_else = false;
+		}
 	}
 }

@@ -30,6 +30,7 @@ namespace AST {
 		case TokenType::relational_exp:
 		case TokenType::equality_exp:
 		case TokenType::logical_and_exp:
+		case TokenType::logical_or_exp:
 		case TokenType::expression:
 			break;
 		case TokenType::factor:
@@ -76,6 +77,17 @@ namespace AST {
 		return left;
 	}
 
+	std::shared_ptr<Expression> parse_conditional(const ParseNode& node, std::shared_ptr<Scope> scope) {
+		node.check_type(TokenType::conditional_exp);
+
+		if (node.contains_child_with_type(TokenType::question)) {
+			return std::make_shared<Conditional_Expression>(node, scope);
+		} else {
+			// Just passing through, no actual conditional
+			return parse_binary(node.children.at(0), scope);
+		}
+	}
+
 	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<Scope> scope) {
 		node.check_type(TokenType::expression);
 
@@ -83,7 +95,7 @@ namespace AST {
 			// this is an assigment
 			return std::make_shared<Assignment_Expression>(node, scope);
 		} else {
-			return parse_binary(node, scope);
+			return parse_conditional(node.get_child_with_type(TokenType::conditional_exp), scope);
 		}
 	}
 
@@ -167,5 +179,17 @@ namespace AST {
 		node.check_type(TokenType::identifier);
 
 		var_name = node.token.value;
+	}
+
+	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+		: Expression(scope) {
+		node.check_type(TokenType::conditional_exp);
+		if (!node.contains_child_with_type(TokenType::question)) {
+			throw std::logic_error("Called conditional_expression on not a real conditional");
+		}
+
+		condition = parse_binary(node.children.at(0), scope);
+		true_exp = parse_expression(node.children.at(2), scope);
+		false_exp = parse_conditional(node.children.at(4), scope);
 	}
 }
