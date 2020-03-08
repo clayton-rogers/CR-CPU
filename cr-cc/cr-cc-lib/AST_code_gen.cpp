@@ -401,4 +401,45 @@ namespace AST {
 
 		return ss.str();
 	}
+
+	std::string If_Statement::generate_code() const {
+		std::stringstream ss;
+
+		// evaluate the condition
+		ss << condition->generate_code();
+		if (has_else) {
+			auto else_label = scope->env->label_maker.get_next_label();
+			auto end_label = scope->env->label_maker.get_next_label();
+			ss << "jmp.r.z " << else_label << " # if else statement\n";
+			ss << true_statement->generate_code();
+			ss << "jmp.r " << end_label << " # skip else\n";
+			ss << else_label << ": # else\n";
+			ss << false_statement->generate_code();
+			ss << end_label << ": # end if\n";
+		} else {
+			auto end_label = scope->env->label_maker.get_next_label();
+			ss << "jmp.r.z " << end_label << " # if statement\n";
+			ss << true_statement->generate_code();
+			ss << end_label << ": # end if\n";
+		}
+
+		return ss.str();
+	}
+
+	std::string Conditional_Expression::generate_code() const {
+		std::stringstream ss;
+
+		// This should be very similar to the if statement above
+		ss << condition->generate_code();
+		auto else_label = scope->env->label_maker.get_next_label();
+		auto end_label = scope->env->label_maker.get_next_label();
+		ss << "jmp.r.z " << else_label << " # conditional expression\n";
+		ss << true_exp->generate_code();
+		ss << "jmp.r " << end_label << " # skip else\n";
+		ss << else_label << ": # else\n";
+		ss << false_exp->generate_code();
+		ss << end_label << ": # end conditional expression\n";
+
+		return ss.str();
+	}
 }

@@ -132,7 +132,6 @@ namespace AST {
 			logical_negation,
 		};
 		Unary_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
-		~Unary_Expression() {}
 		std::string generate_code() const override;
 	private:
 		Type type;
@@ -142,7 +141,6 @@ namespace AST {
 	class Constant_Expression : public Expression {
 	public:
 		Constant_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
-		~Constant_Expression() {}
 		std::string generate_code() const override;
 	private:
 		std::uint16_t constant_value;
@@ -174,7 +172,6 @@ namespace AST {
 				  sub_left(left),
 				  sub_right(right)
 				  {}
-		~Binary_Expression() {}
 		std::string generate_code() const override;
 	private:
 		static Type token_to_type(TokenType type);
@@ -183,11 +180,19 @@ namespace AST {
 		std::shared_ptr<Expression> sub_right;
 	};
 
+	class Conditional_Expression : public Expression {
+	public:
+		Conditional_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+		std::string generate_code() const override;
+	private:
+		std::shared_ptr<Expression> condition;
+		std::shared_ptr<Expression> true_exp;
+		std::shared_ptr<Expression> false_exp;
+	};
+
 	class Statement : public Compilable {
 	public:
 		Statement(std::shared_ptr<Scope> scope) : scope(scope) {}
-		//virtual std::string generate_code() const override { return ""; }; // TODO
-		virtual ~Statement() {};
 	protected:
 		std::shared_ptr<Scope> scope;
 	};
@@ -216,11 +221,20 @@ namespace AST {
 	class Compount_Statement : public Statement {
 	public:
 		Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
-		//virtual std::string generate_code() const override { return ""; }; // TODO
-		virtual ~Compount_Statement() {};
 		std::string generate_code() const override;
 	private:
 		std::vector<std::shared_ptr<Statement>> statement_list;
+	};
+
+	class If_Statement : public Statement {
+	public:
+		If_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
+		std::string generate_code() const override;
+	private:
+		std::shared_ptr<Expression> condition;
+		bool has_else;
+		std::shared_ptr<Statement> true_statement;
+		std::shared_ptr<Statement> false_statement;
 	};
 
 	class Function :public Compilable {

@@ -12,7 +12,7 @@ struct ParseNode {
 
 	void check_type(TokenType type) const {
 		if (token.token_type != type) {
-			throw std::logic_error("AST: Called handle with improper type. Expected: " +
+			throw std::logic_error("AST: Node failed check type. Expected: " +
 				tokenType_to_string(type) + " Actual: " + tokenType_to_string(token.token_type));
 		}
 	}

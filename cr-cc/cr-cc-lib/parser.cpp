@@ -83,6 +83,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 		{
 			{{TokenType::compound_statement}, {}},
 			{{TokenType::jump_statement}, {}},
+			{{TokenType::if_statement}, {}},
 			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements
 		}
@@ -100,6 +101,16 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			// TODO add other types of jumps (break, continue, goto)
 		}
 	},
+	{TokenType::if_statement,
+		{
+			// If with else
+			{{TokenType::key_if, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth,
+				TokenType::statement, TokenType::key_else, TokenType::statement}, {}},
+			// If without else
+			{{TokenType::key_if, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth,
+				TokenType::statement}, {}},
+		}
+	},
 	{TokenType::expression_statement,
 		{
 			{{TokenType::expression, TokenType::semi_colon}, {}},
@@ -108,6 +119,21 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::expression,
 		{
 			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}},
+			{{TokenType::conditional_exp}, {}},
+		}
+	},
+	{TokenType::conditional_exp,
+		{
+			{{TokenType::logical_or_exp}, TokenType::logical_or_exp_tail},
+		}
+	},
+	{TokenType::logical_or_exp_tail,
+		{
+			{{TokenType::question, TokenType::expression, TokenType::colon, TokenType::conditional_exp}, {}},
+		}
+	},
+	{TokenType::logical_or_exp,
+		{
 			{{TokenType::logical_and_exp}, TokenType::logical_and_exp_tail},
 		}
 	},

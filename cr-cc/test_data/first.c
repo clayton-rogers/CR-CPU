@@ -8,27 +8,7 @@ int test() {
 int main () {
 	int a = 1;
 	int b = 1;
-	int c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
-	c = a + b;
-	a = b;
-	b = c;
+	int c = (a == b) ? 3 : 4;
+	
 	return c;
 }
