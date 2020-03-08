@@ -26,6 +26,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_core.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_ram.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_timer.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_bus.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_core.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_ram.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h" />

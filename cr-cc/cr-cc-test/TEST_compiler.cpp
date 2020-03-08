@@ -1,10 +1,8 @@
 #include "c_to_asm.h"
 #include "file_io.h"
-#include "assembler.h"
 #include "compiler.h"
 #include "utilities.h"
 #include "simulator.h"
-#include "simulator_ram.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -112,23 +110,15 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		auto program_loader = compile_tu("program_loader.s", fr);
 
 		// Load the compiled code into the simulator and see that the return is correct
-		auto bus = std::make_shared<Simulator_Bus>();
-		Simulator_Ram ram(bus);
-		ram.load_ram(ret.load_address, ret.machine_code);
-		ram.load_ram(program_loader.load_address, program_loader.machine_code);
-		Simulator sim(bus);
+		Simulator sim;
+		sim.load(ret.load_address, ret.machine_code);
+		sim.load(program_loader.load_address, program_loader.machine_code);
 
-		int step = 0;
-		const int MAX_STEPS = 2000;
-		while (!sim.is_halted && step < MAX_STEPS) {
-			sim.step();
-			ram.step();
-			++step;
-		}
-		CHECK(step != MAX_STEPS); // If program is infinite loop
+		sim.run_until_halted(2000);
+		CHECK(sim.get_state().is_halted == true);
 
 		// Check that the program produced the desired result
-		const int actual_program_output = sim.get_ra();
+		const int actual_program_output = sim.get_state().ra;
 		const int expected_program_output = get_expected_return(item);
 
 		CHECK(actual_program_output == expected_program_output);

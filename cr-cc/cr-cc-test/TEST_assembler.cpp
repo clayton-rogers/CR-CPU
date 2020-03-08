@@ -1,11 +1,7 @@
 #include "assembler.h"
-#include "simulator.h"
 #include "file_io.h"
 #include "utilities.h"
-#include "simulator_bus.h"
-#include "simulator_ram.h"
-#include "simulator_io.h"
-#include "simulator_timer.h"
+#include "simulator.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -213,33 +209,13 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		std::uint16_t offset;
 		auto instructions = assemble(program, &offset);
 
-		auto bus = std::make_shared<Simulator_Bus>();
-		Simulator_Ram ram(bus);
-		ram.load_ram(0, instructions);
-		Simulator_IO io(bus, 0x8100); // Note: it's expected that the SPI flash will take base addr 0x8000
-		Simulator_Timer timer(bus, 0x8200);
-		Simulator sim(bus);
-		int steps = 0;
-		std::cout << std::hex << std::setfill('0');
-		while (!sim.is_halted && steps < 200) {
-
-			sim.step();
-			ram.step();
-			io.step();
-			timer.step();
-//			std::cout
-//				<< std::setw(2) << steps << " "
-//				<< std::setw(4) << sim.pc << " "
-//				<< std::setw(4) << bus->read_addr << " "
-//				<< std::setw(4) << bus->read_data << " "
-//				<< std::setw(4) << io.output
-//				<< std::endl;
-			++steps;
-		}
+		Simulator sim;
+		sim.load(0, instructions);
+		sim.run_until_halted(200);
 
 		// Check that the simulated assembled program actually does as expected
 		if (test_point.expected_output_required) {
-			CHECK(io.output == test_point.expected_output);
+			CHECK(sim.get_state().output == test_point.expected_output);
 		}
 	}
 }

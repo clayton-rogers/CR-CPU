@@ -3,9 +3,6 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)utilities.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp">
-      <Filter>Simulator</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp">
       <Filter>Simulator</Filter>
     </ClCompile>
@@ -49,13 +46,16 @@
       <Filter>Compiler</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)compiler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_core.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)utilities.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h">
-      <Filter>Simulator</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_bus.h">
       <Filter>Simulator</Filter>
     </ClInclude>
@@ -96,6 +96,12 @@
       <Filter>Compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_core.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h">
+      <Filter>Simulator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">
