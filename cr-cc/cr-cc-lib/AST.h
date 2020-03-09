@@ -67,47 +67,58 @@ namespace AST {
 	//	int sp_offset;
 	//};
 
-	class Scope {
+	class VarMap {
 	public:
-		Scope(Environment* env)
-			: env(env)
-		{}
+		using Scope_Id = std::size_t;
 
-		void create_stack_var(const Type* type, std::string name);
-		int get_var_offset(std::string name);
+		VarMap(Environment* env);
+
+		Scope_Id create_scope();
+		void close_scope();
+		void set_current_scope(Scope_Id scope);
+
+		void create_stack_var(const Type* type, const std::string& name);
+		void declare_var(const std::string& name);
+		int get_var_offset(std::string name, Scope_Id* found_id = nullptr);
+
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
-
-		//int get_current_offset() { return stack_offset; }
 
 		std::string gen_scope_entry();
 		std::string gen_scope_exit();
 
 		Environment* env;
 	private:
-		struct Var_Offset {
+		struct Var {
 			int offset = 0;
-			std::string name;
+			bool is_declared = false;
 		};
-		std::vector<Var_Offset> vars;
+		struct Scope {
+			Scope_Id parent;
+			std::map<std::string, Var> offset_map;
+		};
+		std::vector<Scope> scopes;
+		Scope_Id current_scope = 0;
+		static const Scope_Id NULL_SCOPE = static_cast<Scope_Id>(-1);
+
 		int size_of_scope = 0;
 		int stack_offset = 0;// size of temporaries
 	};
-	const Type* parse_type(const ParseNode& node, std::shared_ptr<Scope> scope);
+	const Type* parse_type(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
 	class Expression : public Compilable {
 	public:
-		Expression(std::shared_ptr<Scope> scope) : scope(scope) {}
+		Expression(std::shared_ptr<VarMap> scope) : scope(scope) {}
 		virtual ~Expression() {}
 	protected:
-		std::shared_ptr<Scope> scope;
+		std::shared_ptr<VarMap> scope;
 	};
-	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
 	class Assignment_Expression : public Expression {
 	public:
-		Assignment_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
-		Assignment_Expression(std::string name, std::shared_ptr<Expression> exp, std::shared_ptr<Scope> scope)
+		Assignment_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		Assignment_Expression(std::string name, std::shared_ptr<Expression> exp, std::shared_ptr<VarMap> scope)
 			: Expression(scope), var_name(name), exp(exp) {}
 		std::string generate_code() const override;
 	private:
@@ -118,7 +129,7 @@ namespace AST {
 	// For when a variable is referenced
 	class Variable_Expression : public Expression {
 	public:
-		Variable_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::string var_name;
@@ -131,7 +142,7 @@ namespace AST {
 			bitwise_complement,
 			logical_negation,
 		};
-		Unary_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		Type type;
@@ -140,7 +151,7 @@ namespace AST {
 
 	class Constant_Expression : public Expression {
 	public:
-		Constant_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::uint16_t constant_value;
@@ -166,7 +177,7 @@ namespace AST {
 			TokenType type,
 			std::shared_ptr<Expression> left,
 			std::shared_ptr<Expression> right,
-			std::shared_ptr<Scope> scope)
+			std::shared_ptr<VarMap> scope)
 				: Expression(scope),
 				  type(token_to_type(type)),
 				  sub_left(left),
@@ -182,7 +193,7 @@ namespace AST {
 
 	class Conditional_Expression : public Expression {
 	public:
-		Conditional_Expression(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::shared_ptr<Expression> condition;
@@ -192,17 +203,17 @@ namespace AST {
 
 	class Statement : public Compilable {
 	public:
-		Statement(std::shared_ptr<Scope> scope) : scope(scope) {}
+		Statement(std::shared_ptr<VarMap> scope) : scope(scope) {}
 	protected:
-		std::shared_ptr<Scope> scope;
+		std::shared_ptr<VarMap> scope;
 	};
-	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<Scope> scope);
+	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 	// A single declaration may generate any number of statments (and any number of variables)
-	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<Scope> scope);
+	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
 	class Return_Statement : public Statement {
 	public:
-		Return_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Return_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::shared_ptr<Expression> ret_expression;
@@ -210,8 +221,8 @@ namespace AST {
 
 	class Expression_Statement : public Statement {
 	public:
-		Expression_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
-		Expression_Statement(std::shared_ptr<Expression> sub, std::shared_ptr<Scope> scope)
+		Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		Expression_Statement(std::shared_ptr<Expression> sub, std::shared_ptr<VarMap> scope)
 			: Statement(scope), sub(sub) {}
 		std::string generate_code() const override;
 	private:
@@ -220,15 +231,24 @@ namespace AST {
 
 	class Compount_Statement : public Statement {
 	public:
-		Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
+		Compount_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::vector<std::shared_ptr<Statement>> statement_list;
+		VarMap::Scope_Id scope_id;
+	};
+
+	class Declaration_Statement : public Statement {
+	public:
+		Declaration_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::string var_name;
 	};
 
 	class If_Statement : public Statement {
 	public:
-		If_Statement(const ParseNode& node, std::shared_ptr<Scope> scope);
+		If_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::shared_ptr<Expression> condition;
@@ -244,7 +264,7 @@ namespace AST {
 		std::string generate_code() const;
 	private:
 		Environment* env;
-		std::shared_ptr<Scope> scope;
+		std::shared_ptr<VarMap> scope;
 		const Type* return_type;
 		std::string name;
 		std::vector<std::string>arguments;
@@ -257,7 +277,7 @@ namespace AST {
 		std::string generate_code() const;
 	private:
 		Environment env;
-		//std::shared_ptr<Scope> global_scope;
+		//std::shared_ptr<VarMap> global_scope;
 		std::vector<std::shared_ptr<Function>> functions;
 	};
 }

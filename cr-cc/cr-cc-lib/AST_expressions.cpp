@@ -2,7 +2,7 @@
 
 namespace AST {
 
-	static std::shared_ptr<Expression> parse_factor(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	static std::shared_ptr<Expression> parse_factor(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::factor);
 
 		auto child = node.children.at(0);
@@ -22,7 +22,7 @@ namespace AST {
 		}
 	}
 
-	static std::shared_ptr<Expression> parse_binary(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	static std::shared_ptr<Expression> parse_binary(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		switch (node.token.token_type) {
 			// If this is one of the binary sub expressions we're good
 		case TokenType::term:
@@ -77,7 +77,7 @@ namespace AST {
 		return left;
 	}
 
-	std::shared_ptr<Expression> parse_conditional(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	std::shared_ptr<Expression> parse_conditional(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::conditional_exp);
 
 		if (node.contains_child_with_type(TokenType::question)) {
@@ -88,7 +88,7 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::expression);
 
 		if (node.contains_child_with_type(TokenType::equals)) {
@@ -99,7 +99,7 @@ namespace AST {
 		}
 	}
 
-	Assignment_Expression::Assignment_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Assignment_Expression::Assignment_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Expression(scope) {
 		node.check_type(TokenType::expression);
 
@@ -107,7 +107,7 @@ namespace AST {
 		exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 	}
 
-	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Expression(scope) {
 		node.check_type(TokenType::unary_expression);
 
@@ -132,7 +132,7 @@ namespace AST {
 		sub = parse_factor(sub_expression, scope);
 	}
 
-	Constant_Expression::Constant_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Constant_Expression::Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 			: Expression(scope) {
 		node.check_type(TokenType::constant);
 		int value = std::stoi(node.token.value);
@@ -174,14 +174,14 @@ namespace AST {
 		}
 	}
 
-	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Expression(scope) {
 		node.check_type(TokenType::identifier);
 
 		var_name = node.token.value;
 	}
 
-	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Expression(scope) {
 		node.check_type(TokenType::conditional_exp);
 		if (!node.contains_child_with_type(TokenType::question)) {
