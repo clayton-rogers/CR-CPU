@@ -24,12 +24,3 @@ jobs:
       run: |
         cd cr-cc
         ./test  --benchmark-no-analysis
-        
-    - name: Run build a compiler test
-      run: |
-        cd cr-cc
-        git clone https://github.com/clayton-rogers/write_a_c_compiler.git
-        cd write_a_c_compiler
-        git checkout fix_for_non_x86_compiler
-        ./test_compiler.sh ../cc 1 2 3 4 5     # add stages as compiler gets more complete
-        
