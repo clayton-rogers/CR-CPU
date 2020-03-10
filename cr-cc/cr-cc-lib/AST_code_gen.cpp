@@ -20,7 +20,7 @@ namespace AST {
 	}
 
 	// returns logical not of ra
-	static std::string gen_logical_negation(std::shared_ptr<Scope> scope) {
+	static std::string gen_logical_negation(std::shared_ptr<VarMap> scope) {
 		std::stringstream ss;
 		std::string l_zero = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -34,7 +34,7 @@ namespace AST {
 	}
 
 	// return the truthiness of ra
-	static std::string gen_is_true(std::shared_ptr<Scope> scope) {
+	static std::string gen_is_true(std::shared_ptr<VarMap> scope) {
 		std::stringstream ss;
 		std::string l_false = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -48,7 +48,7 @@ namespace AST {
 	}
 
 	// returns 1 if ra > 0
-	static std::string gen_is_positive(std::shared_ptr<Scope> scope) {
+	static std::string gen_is_positive(std::shared_ptr<VarMap> scope) {
 		std::stringstream ss;
 		std::string l_true = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -195,7 +195,9 @@ namespace AST {
 		}
 
 		// In case of short circuit, skip the operation:
-		ss << label_after << ":\n";
+		if (type == Type::logical_and || type == Type::logical_or) {
+			ss << label_after << ": # short circuit label\n";
+		}
 
 		// Result is now in ra
 		return ss.str();
@@ -217,9 +219,11 @@ namespace AST {
 	std::string Compount_Statement::generate_code() const {
 		std::string ret;
 
+		scope->set_current_scope(scope_id);
 		for (const auto& statement : statement_list) {
 			ret += statement->generate_code();
 		}
+		scope->close_scope();
 
 		return ret;
 	}
@@ -285,47 +289,29 @@ namespace AST {
 			throw std::logic_error("Failed to find type: " + name);
 		}
 	}
+
 	void Environment::create_type(Type* type) {
 		type_map[type->get_name()] = type;
 	}
 
-	void Scope::create_stack_var(const Type* type, std::string name) {
-		int var_offset = size_of_scope;
-		size_of_scope += type->get_size();
-
-		// Double check that the var doesn't exist already
-		for (const auto& var : vars) {
-			if (var.name == name) {
-				throw std::logic_error("Duplicate var with name: " + name);
-			}
-		}
-		vars.push_back({ var_offset, name });
-	}
-
-	int Scope::get_var_offset(std::string name) {
-		for (const auto& var : vars) {
-			if (var.name == name) {
-				// The variable's offset within the frame plus any temps stored on the stack
-				return var.offset + stack_offset;
-			}
-		}
-		throw std::logic_error("Referenced unknown variable: " + name);
-	}
-
-	std::string Scope::gen_scope_entry() {
+	std::string VarMap::gen_scope_entry() {
 		std::stringstream ss;
 
 		if (size_of_scope != 0) {
 			ss << "sub sp, " << output_byte(size_of_scope) << " # stack entry\n";
-			for (const auto& var : vars) {
-				ss << "# sp + " << var.offset << " = " << var.name << "\n";
+			Scope_Id id = 0;
+			for (const auto& scope : scopes) {
+				for (const auto& var : scope.offset_map) {
+					ss << "# sp + " << var.second.offset << " = " << var.first << "_" << id << "\n";
+				}
+				++id;
 			}
 		}
 
 		return ss.str();
 	}
 
-	std::string Scope::gen_scope_exit() {
+	std::string VarMap::gen_scope_exit() {
 		std::stringstream ss;
 
 		const int total_size = size_of_scope + stack_offset;
@@ -344,12 +330,12 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Scope::push_reg(std::string reg_name) {
+	std::string VarMap::push_reg(std::string reg_name) {
 		stack_offset++;
 		return "push " + reg_name + "\n";
 	}
 
-	std::string Scope::pop_reg(std::string reg_name) {
+	std::string VarMap::pop_reg(std::string reg_name) {
 		stack_offset--;
 		return "pop " + reg_name + "\n";
 	}
@@ -387,8 +373,9 @@ namespace AST {
 		ss << exp->generate_code();
 
 		// Result is now in ra, store in memory location
-		const int var_offset = scope->get_var_offset(var_name);
-		ss << "store.sp ra, " + output_byte(var_offset) << " # store " << var_name << "\n";
+		VarMap::Scope_Id id;
+		const int var_offset = scope->get_var_offset(var_name, &id);
+		ss << "store.sp ra, " + output_byte(var_offset) << " # store " << var_name << "_" << id << "\n";
 
 		return ss.str();
 	}
@@ -396,8 +383,9 @@ namespace AST {
 	std::string Variable_Expression::generate_code() const {
 		std::stringstream ss;
 
-		const int var_offset = scope->get_var_offset(var_name);
-		ss << "load.sp ra, " << output_byte(var_offset) << " # load " << var_name << "\n";
+		VarMap::Scope_Id id;
+		const int var_offset = scope->get_var_offset(var_name, &id);
+		ss << "load.sp ra, " << output_byte(var_offset) << " # load " << var_name << "_" << id << "\n";
 
 		return ss.str();
 	}
@@ -441,5 +429,12 @@ namespace AST {
 		ss << end_label << ": # end conditional expression\n";
 
 		return ss.str();
+	}
+
+	std::string Declaration_Statement::generate_code() const {
+		// Don't actually do anything for a declaration, just
+		// mark the var as available to the rest subsequent code.
+		scope->declare_var(var_name);
+		return "";
 	}
 }

@@ -2,7 +2,7 @@
 
 namespace AST {
 
-	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::statement);
 
 		const auto& child = node.children.at(0);
@@ -27,7 +27,7 @@ namespace AST {
 		}
 	}
 
-	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<Scope> scope) {
+	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::declaration);
 
 		std::vector<std::shared_ptr<Statement>> ret;
@@ -41,6 +41,7 @@ namespace AST {
 			{
 				// Add the var to the current scope
 				std::string name = declarator.get_child_with_type(TokenType::identifier).token.value;
+				ret.push_back(std::make_shared<Declaration_Statement>(declarator.get_child_with_type(TokenType::identifier), scope));
 				scope->create_stack_var(type_of_dec, name);
 
 				// If the var has an initializer, create a fake expression statement for it
@@ -62,7 +63,7 @@ namespace AST {
 		return ret;
 	}
 
-	Return_Statement::Return_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Return_Statement::Return_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
 			: Statement(scope) {
 		node.check_type(TokenType::jump_statement);
 
@@ -77,7 +78,7 @@ namespace AST {
 		}
 	}
 
-	Expression_Statement::Expression_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Expression_Statement::Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Statement(scope) {
 		node.check_type(TokenType::expression_statement);
 
@@ -85,31 +86,49 @@ namespace AST {
 		sub = parse_expression(node.children.at(0), scope);
 	}
 
-	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Statement(scope) {
 		node.check_type(TokenType::compound_statement);
 
-		// Code blocks can optionally have a list of declarations
-		if (node.contains_child_with_type(TokenType::declaration_list)) {
-			const auto& declarations = node.get_child_with_type(TokenType::declaration_list);
-			for (const auto& declaration_node : declarations.children) {
-				auto list_of_statements = parse_declaration(declaration_node, scope);
-				for (const auto& statement : list_of_statements) {
-					this->statement_list.push_back(statement);
+		scope_id = scope->create_scope();
+
+		// Compound statements can optionally have no statements inside, in which
+		// case we don't do anything
+		if (!node.contains_child_with_type(TokenType::block_item_list)) {
+			return;
+		}
+
+		const auto& block_item_list = node.get_child_with_type(TokenType::block_item_list);
+
+		for (const auto& block_item : block_item_list.children) {
+
+			switch (block_item.token.token_type)
+			{
+				// Code blocks can optionally have a list of declarations
+				case TokenType::declaration:
+				{
+					auto list_of_statements = parse_declaration(block_item, scope);
+					for (const auto& statement : list_of_statements) {
+						this->statement_list.push_back(statement);
+					}
 				}
+				break;
+				// Code blocks can optionally have a list of statements
+				case TokenType::statement:
+				{
+					std::shared_ptr<Statement> s = parse_statement(block_item, scope);
+					this->statement_list.push_back(s);
+				}
+				break;
+			default:
+				throw std::logic_error("Compound statement should never get here");
 			}
 		}
-		// Code blocks can optionally have a list of statments
-		if (node.contains_child_with_type(TokenType::statement_list)) {
-			const auto& list = node.get_child_with_type(TokenType::statement_list);
-			for (const auto& statement_node : list.children) {
-				std::shared_ptr<Statement> s = parse_statement(statement_node, scope);
-				this->statement_list.push_back(s);
-			}
-		}
+
+		scope->close_scope();
 	}
 
-	If_Statement::If_Statement(const ParseNode& node, std::shared_ptr<Scope> scope)
+	If_Statement::If_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Statement(scope) {
 		node.check_type(TokenType::if_statement);
 
@@ -124,5 +143,11 @@ namespace AST {
 		} else {
 			has_else = false;
 		}
+	}
+
+	Declaration_Statement::Declaration_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::identifier);
+		var_name = node.token.value;
 	}
 }

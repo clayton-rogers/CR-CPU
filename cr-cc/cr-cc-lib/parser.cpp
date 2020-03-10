@@ -36,25 +36,19 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::compound_statement,
 		{
+			{{TokenType::open_bracket, TokenType::block_item_list, TokenType::close_bracket}, {}},
 			{{TokenType::open_bracket, TokenType::close_bracket}, {}},
-			{{TokenType::open_bracket, TokenType::statement_list, TokenType::close_bracket}, {}},
-			{{TokenType::open_bracket, TokenType::declaration_list, TokenType::statement_list, TokenType::close_bracket}, {}},
-			{{TokenType::open_bracket, TokenType::declaration_list, TokenType::close_bracket}, {}},
 		}
 	},
-	{TokenType::statement_list,
+	{TokenType::block_item_list,
 		{
-			{{TokenType::statement}, TokenType::statement_tail},
+			{{}, TokenType::block_item},
 		}
 	},
-	{TokenType::declaration_list,
+	{TokenType::block_item,
 		{
-			{{TokenType::declaration}, TokenType::declaration_tail},
-		}
-	},
-	{TokenType::declaration_tail,
-		{
-			{{TokenType::declaration}, {}},
+			{{TokenType::declaration}, },
+			{{TokenType::statement}, },
 		}
 	},
 	{TokenType::declaration,
@@ -86,11 +80,6 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::if_statement}, {}},
 			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements
-		}
-	},
-	{TokenType::statement_tail,
-		{
-			{{TokenType::statement}, {}},
 		}
 	},
 	{TokenType::jump_statement,
@@ -254,7 +243,7 @@ static int parse_node(ParseNode* node, const TokenList& token_list, int offset) 
 			}
 
 			// If we did not match any required tokens, then try the next rule
-			if (consumed_tokens == 0) {
+			if (consumed_tokens == 0 && !rule.required.size() == 0) {
 				continue;
 			}
 			// else we will try to match as many optional parameters as possible before returning success
