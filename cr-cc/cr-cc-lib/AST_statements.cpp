@@ -121,7 +121,7 @@ namespace AST {
 				}
 				break;
 			default:
-				throw std::logic_error("Compound statement should never get here");
+				throw std::logic_error("Compound statement should never get here: " + tokenType_to_string(block_item.token.token_type));
 			}
 		}
 
