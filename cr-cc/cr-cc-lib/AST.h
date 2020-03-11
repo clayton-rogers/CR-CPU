@@ -292,6 +292,15 @@ namespace AST {
 		std::shared_ptr<Statement> contents;
 	};
 
+	class Do_While_Statement : public Statement {
+	public:
+		Do_While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::shared_ptr<Expression> condition;
+		std::shared_ptr<Statement> contents;
+	};
+
 	class Break_Statement : public Statement {
 	public:
 		Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);

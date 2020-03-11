@@ -79,6 +79,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::jump_statement}, {}},
 			{{TokenType::if_statement}, {}},
 			{{TokenType::while_statement}, {}},
+			{{TokenType::do_while_statement}, {}},
 			{{TokenType::break_statement}, {}},
 			{{TokenType::continue_statement}, {}},
 			{{TokenType::expression_statement}, {}},
@@ -106,6 +107,12 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::while_statement,
 		{
 			{{TokenType::key_while, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::statement}, {}},
+		}
+	},
+	{TokenType::do_while_statement,
+		{
+			{{TokenType::key_do, TokenType::statement, TokenType::key_while,
+			TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::break_statement,

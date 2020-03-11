@@ -13,6 +13,8 @@ namespace AST {
 			return std::make_shared<If_Statement>(child, scope);
 		case TokenType::while_statement:
 			return std::make_shared<While_Statement>(child, scope);
+		case TokenType::do_while_statement:
+			return std::make_shared<Do_While_Statement>(child, scope);
 		case TokenType::compound_statement:
 			return std::make_shared<Compount_Statement>(child, scope);
 		case TokenType::break_statement:
@@ -160,6 +162,14 @@ namespace AST {
 	While_Statement::While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Statement(scope) {
 		node.check_type(TokenType::while_statement);
+
+		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+		contents = parse_statement(node.get_child_with_type(TokenType::statement), scope);
+	}
+
+	Do_While_Statement::Do_While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::do_while_statement);
 
 		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 		contents = parse_statement(node.get_child_with_type(TokenType::statement), scope);

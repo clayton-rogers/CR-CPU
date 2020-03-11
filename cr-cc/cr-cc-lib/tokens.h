@@ -108,6 +108,7 @@ enum class TokenType {
 	jump_statement,
 	if_statement,
 	while_statement,
+	do_while_statement,
 	expression_statement,
 	break_statement,
 	continue_statement,

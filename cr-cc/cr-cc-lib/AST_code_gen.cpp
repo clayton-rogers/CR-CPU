@@ -460,6 +460,28 @@ namespace AST {
 		return ss.str();
 	}
 
+	std::string Do_While_Statement::generate_code() const {
+		std::stringstream ss;
+
+		VarMap::Loop_Labels label;
+		label.top = scope->env->label_maker.get_next_label();
+		label.after = scope->env->label_maker.get_next_label();
+
+		scope->push_loop(label);
+
+		// Check the condition, if false(zero) skip to end
+		ss << label.top << ": # do while statement\n";
+		ss << contents->generate_code();
+		ss << condition->generate_code();
+		ss << "jmp.r.z " << label.after << "\n";
+		ss << "jmp.r " << label.top << " # end of while statement\n";
+		ss << label.after << ":\n";
+
+		scope->pop_loop();
+
+		return ss.str();
+	}
+
 	std::string Break_Statement::generate_code() const {
 		return "jmp.r " + scope->get_after_label() + " # break\n";
 	}

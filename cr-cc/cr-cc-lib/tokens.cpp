@@ -98,6 +98,7 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::jump_statement, "jump_statement"},
 	{TokenType::if_statement, "if_statement"},
 	{TokenType::while_statement, "while_statement"},
+	{TokenType::do_while_statement, "do_while_statement"},
 	{TokenType::break_statement, "break_statement"},
 	{TokenType::continue_statement, "continue_statement"},
 	{TokenType::expression_statement, "expression_statement"},
