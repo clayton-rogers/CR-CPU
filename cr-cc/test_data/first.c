@@ -1,18 +1,9 @@
-
-//int test() {
-//	int a = 1;
-//	return 1 == a;
-//}
-
-// This is the first program possible
-int main () {
-    int a = 0;
-    int b = 1;
-
-    while (a < 5) {
-        a = a + 2;
-        b = b + a;
+// ret: 5
+int main() {
+    int sum = 5;
+    for (int i = 0; i < 10;) {
+        i = i + 1;
+        sum = sum + i;
     }
-
-    return a;
+    return sum;
 }

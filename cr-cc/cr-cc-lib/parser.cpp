@@ -78,6 +78,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::compound_statement}, {}},
 			{{TokenType::jump_statement}, {}},
 			{{TokenType::if_statement}, {}},
+			{{TokenType::for_statement}, {}},
 			{{TokenType::while_statement}, {}},
 			{{TokenType::do_while_statement}, {}},
 			{{TokenType::break_statement}, {}},
@@ -115,6 +116,34 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::semi_colon}, {}},
 		}
 	},
+	{TokenType::for_statement,
+		{
+			{{TokenType::key_for, TokenType::open_parenth, TokenType::for_init_expression,
+			TokenType::for_condition_expression, TokenType::for_increment_expression, TokenType::statement}, {}},
+		}
+	},
+	{TokenType::for_init_expression,
+		{
+			{{TokenType::declaration}, {}},
+			{{TokenType::expression, TokenType::semi_colon}, {}},
+			{{TokenType::semi_colon}, {}},
+		}
+	},
+	{TokenType::for_condition_expression,
+		{
+			// Condition expression is optional, if omitted it is assumed 1
+			{{TokenType::expression, TokenType::semi_colon}, {}},
+			{{TokenType::semi_colon}, {}},
+		}
+	},
+	{TokenType::for_increment_expression,
+		{
+			// Incremente expression is optional. We must include the close parenth
+			// because every non-terminal token must consume at least one token to be valid
+			{{TokenType::expression, TokenType::close_parenth}, {}},
+			{{TokenType::close_parenth}, {}},
+		}
+	},
 	{TokenType::break_statement,
 		{
 			{{TokenType::key_break, TokenType::semi_colon}, {}},
@@ -128,6 +157,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::expression_statement,
 		{
 			{{TokenType::expression, TokenType::semi_colon}, {}},
+			{{TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::expression,

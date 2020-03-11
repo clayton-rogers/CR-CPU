@@ -213,7 +213,12 @@ namespace AST {
 	}
 
 	std::string Expression_Statement::generate_code() const {
-		return sub->generate_code();
+		// Expression statement may be empty, in which case it's a nop
+		if (maybe_sub) {
+			return maybe_sub->generate_code();
+		} else {
+			return "";
+		}
 	}
 
 	std::string Compount_Statement::generate_code() const {
@@ -478,6 +483,48 @@ namespace AST {
 		ss << label.after << ":\n";
 
 		scope->pop_loop();
+
+		return ss.str();
+	}
+
+	std::string For_Statement::generate_code() const {
+		std::stringstream ss;
+		scope->set_current_scope(scope_id);
+
+		// label.top is where a continue should go
+		// label.end is where and end should go
+		// in the case of a for loop, a continue should execute the optional increment expression (which is not at the top)
+		VarMap::Loop_Labels label;
+		std::string actual_top = scope->env->label_maker.get_next_label();
+		label.top = scope->env->label_maker.get_next_label();
+		label.after = scope->env->label_maker.get_next_label();
+
+		ss << "# for loop\n";
+		for (const auto& statement : maybe_set_up_statements) {
+			ss << statement->generate_code();
+		}
+
+		scope->push_loop(label);
+
+		ss << actual_top << ": # top of for loop\n";
+		if (maybe_condition_statement) {
+			ss << maybe_condition_statement->generate_code();
+		} else {
+			// If the for loop condition is omitted, then it it assumed to be one (true)
+			ss << "loadi ra, 1\n";
+		}
+		ss << "jmp.r.z " << label.after << " # for loop condition\n";
+		ss << contents->generate_code();
+		ss << label.top << ": # for increment expression\n";
+		if (maybe_end_of_loop_expression) {
+			ss << maybe_end_of_loop_expression->generate_code();
+		}
+		ss << "jmp.r " << actual_top << " # end of for statement\n";
+		ss << label.after << ":\n";
+
+		scope->pop_loop();
+
+		scope->close_scope();
 
 		return ss.str();
 	}

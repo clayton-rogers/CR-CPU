@@ -249,10 +249,10 @@ namespace AST {
 	public:
 		Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		Expression_Statement(std::shared_ptr<Expression> sub, std::shared_ptr<VarMap> scope)
-			: Statement(scope), sub(sub) {}
+			: Statement(scope), maybe_sub(sub) {}
 		std::string generate_code() const override;
 	private:
-		std::shared_ptr<Expression> sub;
+		std::shared_ptr<Expression> maybe_sub;
 	};
 
 	class Compount_Statement : public Statement {
@@ -299,6 +299,18 @@ namespace AST {
 	private:
 		std::shared_ptr<Expression> condition;
 		std::shared_ptr<Statement> contents;
+	};
+
+	class For_Statement : public Statement {
+	public:
+		For_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::vector<std::shared_ptr<Statement>> maybe_set_up_statements;
+		std::shared_ptr<Expression> maybe_condition_statement;
+		std::shared_ptr<Expression> maybe_end_of_loop_expression;
+		std::shared_ptr<Statement> contents;
+		VarMap::Scope_Id scope_id;
 	};
 
 	class Break_Statement : public Statement {

@@ -15,6 +15,8 @@ namespace AST {
 			return std::make_shared<While_Statement>(child, scope);
 		case TokenType::do_while_statement:
 			return std::make_shared<Do_While_Statement>(child, scope);
+		case TokenType::for_statement:
+			return std::make_shared<For_Statement>(child, scope);
 		case TokenType::compound_statement:
 			return std::make_shared<Compount_Statement>(child, scope);
 		case TokenType::break_statement:
@@ -91,7 +93,9 @@ namespace AST {
 		node.check_type(TokenType::expression_statement);
 
 		// Expression statement is an expression followed by a semi colon
-		sub = parse_expression(node.children.at(0), scope);
+		if (node.contains_child_with_type(TokenType::expression)) {
+			maybe_sub = parse_expression(node.children.at(0), scope);
+		}
 	}
 
 	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -173,6 +177,44 @@ namespace AST {
 
 		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 		contents = parse_statement(node.get_child_with_type(TokenType::statement), scope);
+	}
+
+	For_Statement::For_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::for_statement);
+
+		// For statement creates its own scope to enclose any 'i' loop vars
+		scope_id = scope->create_scope();
+
+		// init expression/declaration
+		const ParseNode& init_expression_node = node.children.at(2);
+		if (init_expression_node.contains_child_with_type(TokenType::declaration)) {
+			maybe_set_up_statements = parse_declaration(init_expression_node.children.at(0), scope);
+		} else if (init_expression_node.contains_child_with_type(TokenType::expression)) {
+			// optional init expression exists
+			const auto optional_expression = parse_expression(init_expression_node.children.at(0), scope);
+			const auto expression_statement = std::make_shared<Expression_Statement>(optional_expression, scope);
+			maybe_set_up_statements.push_back(expression_statement);
+		} else {
+			// optional init expression does not exist
+		}
+
+		// condition expression
+		const ParseNode& conditional_expression_node = node.children.at(3);
+		if (conditional_expression_node.contains_child_with_type(TokenType::expression)) {
+			maybe_condition_statement = parse_expression(conditional_expression_node.children.at(0), scope);
+		}
+
+		// increment expression
+		const ParseNode& increment_expression_node = node.children.at(4);
+		if (increment_expression_node.contains_child_with_type(TokenType::expression)) {
+			maybe_end_of_loop_expression = parse_expression(increment_expression_node.children.at(0), scope);
+		}
+
+		const ParseNode& contents_node = node.children.at(5);
+		contents = parse_statement(contents_node, scope);
+
+		scope->close_scope();
 	}
 
 	Break_Statement::Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)

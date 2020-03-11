@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <locale>
 
 static const std::string DEFAULT_OUTPUT_FILENAME("out.");
 static const int RAM_SIZE_WORDS = 4096;
@@ -44,6 +45,16 @@ void parse_args(int arc, char** argv) {
 		}
 	}
 }
+
+// Stupid workaround just to get thousands separator to print
+struct Thousand_Sep : public std::numpunct<char> {
+	char do_thousands_sep() const override {
+		return ',';
+	}
+	std::string do_grouping() const override {
+		return "\3";
+	}
+};
 
 int main(int argc, char **argv) {
 	parse_args(argc, argv);
@@ -83,10 +94,13 @@ int main(int argc, char **argv) {
 			sim.load(program_loader.load_address, program_loader.machine_code);
 			sim.load(ret.load_address, ret.machine_code);
 
-			sim.run_until_halted(2000);
+			const int total_steps = 16000000;// up to one second of operation
+			sim.run_until_halted(total_steps);
 
 			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
 				<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
+			std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
+			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (total_steps - sim.get_state().steps_remaining) << std::endl;
 		}
 
 	} catch (std::logic_error& e) {

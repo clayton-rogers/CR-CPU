@@ -118,7 +118,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			sim.load(ret.load_address, ret.machine_code);
 			sim.load(program_loader.load_address, program_loader.machine_code);
 
-			sim.run_until_halted(2000);
+			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
 
 			// Check that the program produced the desired result
@@ -134,7 +134,6 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			CHECK(false);
 			continue;
 		}
-
 	}
 }
 
