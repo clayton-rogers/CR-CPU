@@ -6,11 +6,13 @@
 
 // This is the first program possible
 int main () {
-    int a = 2;
-    {
-        a = 3;
-        int a = 4;
+    int a = 0;
+    int b = 1;
+
+    while (a < 5) {
+        a = a + 2;
+        b = b + a;
     }
-	int b = 2;
+
     return a;
 }

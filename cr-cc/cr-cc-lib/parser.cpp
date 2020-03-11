@@ -78,6 +78,9 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::compound_statement}, {}},
 			{{TokenType::jump_statement}, {}},
 			{{TokenType::if_statement}, {}},
+			{{TokenType::while_statement}, {}},
+			{{TokenType::break_statement}, {}},
+			{{TokenType::continue_statement}, {}},
 			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements
 		}
@@ -98,6 +101,21 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			// If without else
 			{{TokenType::key_if, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth,
 				TokenType::statement}, {}},
+		}
+	},
+	{TokenType::while_statement,
+		{
+			{{TokenType::key_while, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::statement}, {}},
+		}
+	},
+	{TokenType::break_statement,
+		{
+			{{TokenType::key_break, TokenType::semi_colon}, {}},
+		}
+	},
+	{TokenType::continue_statement,
+		{
+			{{TokenType::key_continue, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::expression_statement,

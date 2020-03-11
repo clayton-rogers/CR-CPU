@@ -11,8 +11,14 @@ namespace AST {
 		switch (child.token.token_type) {
 		case TokenType::if_statement:
 			return std::make_shared<If_Statement>(child, scope);
+		case TokenType::while_statement:
+			return std::make_shared<While_Statement>(child, scope);
 		case TokenType::compound_statement:
 			return std::make_shared<Compount_Statement>(child, scope);
+		case TokenType::break_statement:
+			return std::make_shared<Break_Statement>(child, scope);
+		case TokenType::continue_statement:
+			return std::make_shared<Continue_Statement>(child, scope);
 		case TokenType::jump_statement:
 			if (child.children.at(0).token.token_type == TokenType::key_return) {
 				return std::make_shared<Return_Statement>(child, scope);
@@ -149,5 +155,23 @@ namespace AST {
 		: Statement(scope) {
 		node.check_type(TokenType::identifier);
 		var_name = node.token.value;
+	}
+
+	While_Statement::While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::while_statement);
+
+		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+		contents = parse_statement(node.get_child_with_type(TokenType::statement), scope);
+	}
+
+	Break_Statement::Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::break_statement);
+	}
+
+	Continue_Statement::Continue_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Statement(scope) {
+		node.check_type(TokenType::continue_statement);
 	}
 }
