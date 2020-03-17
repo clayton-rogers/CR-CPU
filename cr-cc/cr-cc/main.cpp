@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "file_io.h"
 #include "utilities.h"
+#include "simulator.h"
 
 #include <iostream>
 #include <iomanip>
@@ -12,6 +13,7 @@ static const int RAM_SIZE_WORDS = 4096;
 
 struct Options {
 	bool verbose = false;
+	bool should_sim = false;
 	std::string filename;
 	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
 };
@@ -34,6 +36,8 @@ void parse_args(int arc, char** argv) {
 			opt.verbose = true;
 		} else if ("-o" == arg) {
 			opt.output_filename = args.at(++i) + ".";
+		} else if ("--sim" == arg) {
+			opt.should_sim = true;
 		} else {
 			// if it's none of the options, assume filename
 			opt.filename = arg;
@@ -67,6 +71,22 @@ int main(int argc, char **argv) {
 				<< std::endl;
 
 			std::cout << "\n" << srec;
+		}
+
+		if (opt.should_sim) {
+			FileReader pl_f;
+			const std::string DIR = "test_data/valid_c/";
+			pl_f.add_directory(DIR);
+			auto program_loader = compile_tu("program_loader.s", pl_f);
+
+			Simulator sim;
+			sim.load(program_loader.load_address, program_loader.machine_code);
+			sim.load(ret.load_address, ret.machine_code);
+
+			sim.run_until_halted(2000);
+
+			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
+				<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
 		}
 
 	} catch (std::logic_error& e) {
