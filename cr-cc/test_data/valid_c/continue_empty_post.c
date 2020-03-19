@@ -1,6 +1,6 @@
-// ret: 5
+// ret: 55
 int main() {
-    int sum = 5;
+    int sum = 0;
     for (int i = 0; i < 10;) {
         i = i + 1;
         sum = sum + i;

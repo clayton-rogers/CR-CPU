@@ -25,11 +25,12 @@ public:
 		bool is_halted;
 
 		std::uint16_t output;
+		int steps_remaining;
 	};
 	void load(std::uint16_t addr, std::vector<std::uint16_t> machine_code);
 
 	void step();
-	void run_until_halted(int number_steps);
+	void run_until_halted(const int number_steps);
 
 	State get_state();
 
@@ -39,4 +40,5 @@ private:
 	Simulator_IO io;
 	Simulator_Timer timer;
 	Simulator_Core core;
+	int steps_remaining;
 };

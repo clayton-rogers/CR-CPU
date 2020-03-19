@@ -70,6 +70,10 @@ namespace AST {
 	class VarMap {
 	public:
 		using Scope_Id = std::size_t;
+		struct Loop_Labels {
+			std::string top;
+			std::string after;
+		};
 
 		VarMap(Environment* env);
 
@@ -83,6 +87,26 @@ namespace AST {
 
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
+
+		void push_loop(const Loop_Labels& l) {
+			loop_labels.push_back(l);
+		}
+		void pop_loop() {
+			loop_labels.pop_back();
+		}
+
+		std::string get_top_label() {
+			if (loop_labels.size() == 0) {
+				throw std::logic_error("Break or continue not in loop");
+			}
+			return loop_labels.back().top;
+		}
+		std::string get_after_label() {
+			if (loop_labels.size() == 0) {
+				throw std::logic_error("Break or continue not in loop");
+			}
+			return loop_labels.back().after;
+		}
 
 		std::string gen_scope_entry();
 		std::string gen_scope_exit();
@@ -100,6 +124,8 @@ namespace AST {
 		std::vector<Scope> scopes;
 		Scope_Id current_scope = 0;
 		static const Scope_Id NULL_SCOPE = static_cast<Scope_Id>(-1);
+
+		std::vector<Loop_Labels> loop_labels;
 
 		int size_of_scope = 0;
 		int stack_offset = 0;// size of temporaries
@@ -223,10 +249,10 @@ namespace AST {
 	public:
 		Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		Expression_Statement(std::shared_ptr<Expression> sub, std::shared_ptr<VarMap> scope)
-			: Statement(scope), sub(sub) {}
+			: Statement(scope), maybe_sub(sub) {}
 		std::string generate_code() const override;
 	private:
-		std::shared_ptr<Expression> sub;
+		std::shared_ptr<Expression> maybe_sub;
 	};
 
 	class Compount_Statement : public Statement {
@@ -255,6 +281,48 @@ namespace AST {
 		bool has_else;
 		std::shared_ptr<Statement> true_statement;
 		std::shared_ptr<Statement> false_statement;
+	};
+
+	class While_Statement : public Statement {
+	public:
+		While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::shared_ptr<Expression> condition;
+		std::shared_ptr<Statement> contents;
+	};
+
+	class Do_While_Statement : public Statement {
+	public:
+		Do_While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::shared_ptr<Expression> condition;
+		std::shared_ptr<Statement> contents;
+	};
+
+	class For_Statement : public Statement {
+	public:
+		For_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::vector<std::shared_ptr<Statement>> maybe_set_up_statements;
+		std::shared_ptr<Expression> maybe_condition_statement;
+		std::shared_ptr<Expression> maybe_end_of_loop_expression;
+		std::shared_ptr<Statement> contents;
+		VarMap::Scope_Id scope_id;
+	};
+
+	class Break_Statement : public Statement {
+	public:
+		Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	};
+
+	class Continue_Statement : public Statement {
+	public:
+		Continue_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
 	};
 
 	class Function :public Compilable {

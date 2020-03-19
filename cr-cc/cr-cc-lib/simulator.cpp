@@ -11,9 +11,10 @@ void Simulator::step() {
 	timer.step();
 }
 
-void Simulator::run_until_halted(int number_steps) {
-	while (!get_state().is_halted && number_steps != 0) {
-		--number_steps;
+void Simulator::run_until_halted(const int number_steps) {
+	steps_remaining = number_steps;
+	while (!get_state().is_halted && steps_remaining != 0) {
+		--steps_remaining;
 		step();
 	}
 }
@@ -25,6 +26,7 @@ Simulator::State Simulator::get_state() {
 		core.is_halted,
 
 		io.output,
+		steps_remaining,
 	};
 
 	return s;
