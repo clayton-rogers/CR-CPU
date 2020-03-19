@@ -570,6 +570,9 @@ static std::uint16_t instruction_to_machine(
 					// label instruction numbers should be relative to current instruction
 					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
 						const_value = get_label(a.label_value) - instruction_number;
+						if (const_value > +127 || const_value < -128) {
+							throw std::logic_error("Jmp or call to label too far away: " + a.label_value);
+						}
 					} else {
 						const_value = get_label(a.label_value);
 					}
@@ -921,6 +924,10 @@ std::vector<std::uint16_t> assemble(const std::string& assembly, std::uint16_t* 
 		for (auto& label : as.text_label_map) {
 			label.second += as.text_offset;
 		}
+		for (auto& instruction : as.instructions) {
+			instruction.number += as.text_offset;
+		}
+
 		// Data section is placed after the text section
 		const int size_of_text = static_cast<int>(as.instructions.size()) + as.text_offset;
 		for (auto& label : as.data_label_map) {

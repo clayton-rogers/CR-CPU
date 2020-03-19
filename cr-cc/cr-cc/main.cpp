@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
 		auto ret = compile_tu(opt.filename, f);
 		write_file(opt.output_filename + "s", ret.assembly);
 
-
 		write_file(opt.output_filename + "hex", machine_inst_to_hex(ret.machine_code));
 		write_bin_file(opt.output_filename + "bin", ret.machine_code);
 		auto srec = machine_inst_to_srec(ret.machine_code, ret.load_address);
