@@ -47,8 +47,8 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::block_item,
 		{
-			{{TokenType::declaration}, },
-			{{TokenType::statement}, },
+			{{TokenType::declaration}, {}},
+			{{TokenType::statement}, {}},
 		}
 	},
 	{TokenType::declaration,
