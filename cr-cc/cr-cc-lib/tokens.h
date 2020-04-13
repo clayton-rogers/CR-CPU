@@ -94,8 +94,13 @@ enum class TokenType {
 
 	// Tokens recognized by the parser
 	translation_unit,
+	function,
+	function_declaration,
 	function_definition,
-	function_definition_tail,
+	function_tail,
+	parameter_list,
+	parameter_list_tail,
+	parameter_declaration,
 	type_specifier,
 	compound_statement,
 	block_item,
@@ -134,6 +139,9 @@ enum class TokenType {
 	term_tail,
 	factor,
 	factor_tail,
+	function_call,
+	argument_expression_list,
+	argument_expression_list_tail,
 
 
 	last_token,

@@ -1,9 +1,10 @@
+int add(int b, int b2);
+
 // ret: 5
 int main() {
-    int sum = 5;
-    for (int i = 0; i < 10;) {
-        i = i + 1;
-        sum = sum + i;
-    }
-    return sum;
+	return add(10, 3);
+}
+
+int add(int a, int b) {
+	return a + b;
 }

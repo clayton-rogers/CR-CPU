@@ -24,21 +24,32 @@ namespace AST {
 		virtual bool is_complete() const = 0;
 	};
 
-	class Environment {
+	class Function;
+
+	class Environment : public Compilable {
 	public:
-		using Type_Map_Type = std::map<std::string, Type*>;
+		Environment() = default;
 		~Environment() {
 			for (const auto& t : type_map) {
 				delete t.second;
 			}
 		}
+		Environment(const Environment&&) = delete; // no move or copy
+
 		const Type* get_type(std::string name) const;
 		void create_type(Type* type);
+
+		void add_function(std::shared_ptr<Function> function);
+		std::string generate_code() const override;
 
 		Label_Maker label_maker;
 		// TODO static vars
 	private:
+		using Type_Map_Type = std::map<std::string, Type*>;
 		Type_Map_Type type_map;
+
+		using Function_Map_Type = std::map<std::string, std::shared_ptr<Function>>;
+		Function_Map_Type function_map;
 	};
 
 	//class Variable {
@@ -82,6 +93,7 @@ namespace AST {
 		void set_current_scope(Scope_Id scope);
 
 		void create_stack_var(const Type* type, const std::string& name);
+		void create_stack_var_at_offset(int offset, const std::string& name);
 		void declare_var(const std::string& name);
 		int get_var_offset(std::string name, Scope_Id* found_id = nullptr);
 
@@ -127,8 +139,10 @@ namespace AST {
 
 		std::vector<Loop_Labels> loop_labels;
 
-		int size_of_scope = 0;
+		int size_of_var_map = 0;
 		int stack_offset = 0;// size of temporaries
+
+		void increment_all_vars(int offset);
 	};
 	const Type* parse_type(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
@@ -225,6 +239,15 @@ namespace AST {
 		std::shared_ptr<Expression> condition;
 		std::shared_ptr<Expression> true_exp;
 		std::shared_ptr<Expression> false_exp;
+	};
+
+	class Function_Call_Expression : public Expression {
+	public:
+		Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
+		std::string generate_code() const override;
+	private:
+		std::string name;
+		std::vector<std::shared_ptr<Expression>> arguments;
 	};
 
 	class Statement : public Compilable {
@@ -330,22 +353,33 @@ namespace AST {
 		Function(const ParseNode& node, Environment* env);
 		virtual ~Function() {};
 		std::string generate_code() const;
+
+		std::string get_name() { return name; }
+		bool signature_matches(const Function& other);
+		bool is_defined() { return is_fn_defined; }
 	private:
+		struct Arg_Type {
+			const Type* type;
+			std::string name;
+			std::shared_ptr<Expression> maybe_init_value;
+		};
+
 		Environment* env;
 		std::shared_ptr<VarMap> scope;
+
 		const Type* return_type;
 		std::string name;
-		std::vector<std::string>arguments;
+
+		std::vector<Arg_Type> arguments;
+		bool is_fn_defined; // if not defined, contents will be empty
 		std::shared_ptr<Compount_Statement> contents;
 	};
 
 	class AST final : public Compilable {
 	public:
 		AST(const ParseNode& root);
-		std::string generate_code() const;
+		std::string generate_code() const override;
 	private:
 		Environment env;
-		//std::shared_ptr<VarMap> global_scope;
-		std::vector<std::shared_ptr<Function>> functions;
 	};
 }

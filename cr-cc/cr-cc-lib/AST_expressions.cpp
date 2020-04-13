@@ -16,6 +16,8 @@ namespace AST {
 			return parse_expression(node.children.at(1), scope);
 		case TokenType::identifier:
 			return std::make_shared<Variable_Expression>(child, scope);
+		case TokenType::function_call:
+			return std::make_shared<Function_Call_Expression>(child, scope);
 		default:
 			throw std::logic_error("Tried to parse_factor with invalid expression type: " +
 				tokenType_to_string(child.token.token_type));
@@ -191,5 +193,23 @@ namespace AST {
 		condition = parse_binary(node.children.at(0), scope);
 		true_exp = parse_expression(node.children.at(2), scope);
 		false_exp = parse_conditional(node.children.at(4), scope);
+	}
+
+	Function_Call_Expression::Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
+		: Expression(scope) {
+		node.check_type(TokenType::function_call);
+
+		name = node.get_child_with_type(TokenType::identifier).token.value;
+
+		// Any optional args?
+		if (node.contains_child_with_type(TokenType::argument_expression_list)) {
+			const auto& arg_list = node.get_child_with_type(TokenType::argument_expression_list);
+			for (const auto& arg : arg_list.children) {
+				if (arg.token.token_type == TokenType::comma) {
+					continue; // commas are expected between arguments
+				}
+				arguments.push_back(parse_expression(arg, scope));
+			}
+		}
 	}
 }
