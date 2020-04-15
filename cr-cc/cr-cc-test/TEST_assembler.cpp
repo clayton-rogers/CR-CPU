@@ -220,7 +220,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	}
 }
 
-TEST_CASE("Assembler Benchmarks", "[bench]") {
+TEST_CASE("Assembler Benchmarks", "[.][bench]") {
 	for (const auto& test_point : test_programs) {
 		std::string program = read_file(std::string("./test_data/") + test_point.name);
 		std::uint16_t unused;
