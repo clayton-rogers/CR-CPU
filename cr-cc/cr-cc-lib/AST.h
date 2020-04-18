@@ -354,7 +354,12 @@ namespace AST {
 
 	class Function :public Compilable {
 	public:
-		Function(const ParseNode& node, Environment* env);
+		enum class Parse_Type {
+			DECLARATION,
+			DEFINITION,
+		};
+		Function(const ParseNode& node, Environment* env, Parse_Type type);
+
 		virtual ~Function() {};
 		std::string generate_code() const;
 

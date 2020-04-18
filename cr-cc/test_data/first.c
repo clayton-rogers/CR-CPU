@@ -1,10 +1,13 @@
-int add(int, int);
-
-// ret: 5
-int main() {
-	return add(10, 3);
+int fib(int n) {
+    if (n == 0 || n == 1) {
+        return n;
+    } else {
+        return fib(n - 1) + fib(n - 2);
+    }
 }
 
-int add(int a, int a) {
-	return a + a;
+// ret: 8
+int main() {
+    int n = 6;
+	return fib(n);
 }

@@ -6,8 +6,8 @@ int fib(int n) {
     }
 }
 
-// ret: 5
+// ret: 8
 int main() {
-    int n = 5;
-    return fib(n);
+    int n = 6;
+	return fib(n);
 }

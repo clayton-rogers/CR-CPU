@@ -47,8 +47,19 @@ namespace AST {
 			switch (node.token.token_type) {
 			case TokenType::function:
 			{
-				auto fn = std::make_shared<Function>(node, &env);
+				// This may be a declaration or a definition.
+				// In case this is a definition that has not been declared, and the function
+				// is recursive, we need to always first parse it as a declaration and add it
+				// to the function map, so that when the definition is parsed, it will be able
+				// to find the declaration.
+				auto fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DECLARATION);
 				env.add_function(fn);
+
+				// If this really is only a declaration, this will just parse it as such again
+				// Otherwise this will parse the definition.
+				fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DEFINITION);
+				env.add_function(fn);
+
 				break;
 			}
 			default:
@@ -57,7 +68,7 @@ namespace AST {
 		}
 	}
 
-	Function::Function(const ParseNode& node, Environment* env)
+	Function::Function(const ParseNode& node, Environment* env, Parse_Type type)
 			: env(env), scope(std::make_shared<VarMap>(env)) {
 		node.check_type(TokenType::function);
 
@@ -72,6 +83,11 @@ namespace AST {
 			actual_node.check_type(TokenType::function_definition);
 		} else {
 			actual_node.check_type(TokenType::function_declaration);
+		}
+
+		// If the caller is asking for only a declaration, then override
+		if (is_fn_defined && type == Parse_Type::DECLARATION) {
+			is_fn_defined = false;
 		}
 
 		return_type = parse_type(actual_node.get_child_with_type(TokenType::type_specifier), scope);
