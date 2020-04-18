@@ -55,6 +55,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::parameter_declaration,
 		{
 			{{TokenType::type_specifier, TokenType::init_declarator}, {}},
+			{{TokenType::type_specifier}, {}},
 		}
 	},
 	{TokenType::type_specifier,

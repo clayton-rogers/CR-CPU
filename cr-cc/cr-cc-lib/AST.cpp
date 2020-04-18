@@ -80,6 +80,7 @@ namespace AST {
 
 		// Function arguments
 		if (actual_node.contains_child_with_type(TokenType::parameter_list)) {
+			int unnamed_var_count = 0;
 			const auto& parameter_list = actual_node.get_child_with_type(TokenType::parameter_list);
 			for (const auto& parameter_declaration : parameter_list.children) {
 				if (parameter_declaration.token.token_type == TokenType::comma) {
@@ -87,33 +88,40 @@ namespace AST {
 				}
 				Arg_Type arg;
 				arg.type = parse_type(parameter_declaration.get_child_with_type(TokenType::type_specifier), scope);
-				const auto& init_declarator = parameter_declaration.get_child_with_type(TokenType::init_declarator);
-				arg.name = init_declarator.get_child_with_type(TokenType::identifier).token.value;
-				if (init_declarator.contains_child_with_type(TokenType::equals)) {
-					arg.maybe_init_value = parse_expression(init_declarator.get_child_with_type(TokenType::expression), scope);
+				// A function declaration parameter may not have a declarator. Ex:
+				// int foo(int, int)
+				if (parameter_declaration.contains_child_with_type(TokenType::init_declarator)) {
+					const auto& init_declarator = parameter_declaration.get_child_with_type(TokenType::init_declarator);
+					arg.name = init_declarator.get_child_with_type(TokenType::identifier).token.value;
+					if (init_declarator.contains_child_with_type(TokenType::equals)) {
+						arg.maybe_init_value = parse_expression(init_declarator.get_child_with_type(TokenType::expression), scope);
+					}
+				} else {
+					arg.name = std::string("__unamed_var_") + std::to_string(unnamed_var_count++);
 				}
 
 				arguments.push_back(arg);
 			}
 		}
 
-		// Note this must be kept in line with Function::generate_code()
-		if (arguments.size() >= 1) {
-			scope->create_stack_var_at_offset(0, arguments.at(0).name);
-		} else {
-			scope->create_stack_var_at_offset(0, "__saved_ra");
-		}
-		if (arguments.size() >= 2) {
-			scope->create_stack_var_at_offset(1, arguments.at(1).name);
-		} else {
-			scope->create_stack_var_at_offset(1, "__saved_rb");
-		}
-		scope->create_stack_var_at_offset(2, "__return_addr");
-		for (std::size_t arg_index = 2; arg_index < arguments.size(); ++arg_index) {
-			scope->create_stack_var_at_offset(static_cast<int>(arg_index) + 1, arguments.at(arg_index).name);
-		}
-
+		// If this is only a declaration then we don't need to setup the scope or parse the contents
 		if (is_fn_defined) {
+			// Note this must be kept in line with Function::generate_code()
+			if (arguments.size() >= 1) {
+				scope->create_stack_var_at_offset(0, arguments.at(0).name);
+			} else {
+				scope->create_stack_var_at_offset(0, "__saved_ra");
+			}
+			if (arguments.size() >= 2) {
+				scope->create_stack_var_at_offset(1, arguments.at(1).name);
+			} else {
+				scope->create_stack_var_at_offset(1, "__saved_rb");
+			}
+			scope->create_stack_var_at_offset(2, "__return_addr");
+			for (std::size_t arg_index = 2; arg_index < arguments.size(); ++arg_index) {
+				scope->create_stack_var_at_offset(static_cast<int>(arg_index) + 1, arguments.at(arg_index).name);
+			}
+
 			contents = std::make_shared<Compount_Statement>(actual_node.get_child_with_type(TokenType::compound_statement), scope);
 		}
 	}

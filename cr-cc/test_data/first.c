@@ -1,10 +1,10 @@
-int add(int b, int b2);
+int add(int, int);
 
 // ret: 5
 int main() {
 	return add(10, 3);
 }
 
-int add(int a, int b) {
-	return a + b;
+int add(int a, int a) {
+	return a + a;
 }
