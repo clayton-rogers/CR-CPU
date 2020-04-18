@@ -14,5 +14,5 @@ void Label_Maker::set_fn_name(std::string fn) {
 
 std::string Label_Maker::get_label_for_fn(std::string name) const
 {
-	return std::string("._") + name;
+	return std::string(".") + name;
 }

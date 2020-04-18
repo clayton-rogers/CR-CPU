@@ -16,17 +16,46 @@ using RuleList = std::vector<Rule>;
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::translation_unit,
 		{
-			{{TokenType::function_definition}, TokenType::function_definition_tail},
+			{{TokenType::function}, TokenType::function_tail},
 		}
 	},
-	{TokenType::function_definition_tail,
+	{TokenType::function_tail,
 		{
+			{{TokenType::function}, {}},
+		}
+	},
+	{TokenType::function,
+		{
+			{{TokenType::function_declaration}, {}},
 			{{TokenType::function_definition}, {}},
+		}
+	},
+	{TokenType::function_declaration,
+		{
+			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::semi_colon}, {}},
+			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::function_definition,
 		{
+			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::compound_statement}, {}},
 			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::compound_statement}, {}},
+		}
+	},
+	{TokenType::parameter_list,
+		{
+			{{TokenType::parameter_declaration}, TokenType::parameter_list_tail},
+		}
+	},
+	{TokenType::parameter_list_tail,
+		{
+			{{TokenType::comma, TokenType::parameter_declaration}, {}},
+		}
+	},
+	{TokenType::parameter_declaration,
+		{
+			{{TokenType::type_specifier, TokenType::init_declarator}, {}},
+			{{TokenType::type_specifier}, {}},
 		}
 	},
 	{TokenType::type_specifier,
@@ -245,9 +274,26 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::factor,
 		{
 			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, {}},
+			{{TokenType::function_call}, {}},
 			{{TokenType::identifier}, {}},
 			{{TokenType::unary_expression}, {}},
 			{{TokenType::constant}, {}},
+		}
+	},
+	{TokenType::function_call,
+		{
+			{{TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth}, {}},
+			{{TokenType::identifier, TokenType::open_parenth, TokenType::argument_expression_list, TokenType::close_parenth}, {}},
+		}
+	},
+	{TokenType::argument_expression_list,
+		{
+			{{TokenType::expression}, TokenType::argument_expression_list_tail},
+		}
+	},
+	{TokenType::argument_expression_list_tail,
+		{
+			{{TokenType::comma, TokenType::expression}, {}},
 		}
 	},
 	{TokenType::unary_expression,

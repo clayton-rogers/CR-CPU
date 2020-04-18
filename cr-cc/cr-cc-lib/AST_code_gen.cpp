@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 namespace AST {
 
@@ -16,6 +17,21 @@ namespace AST {
 			<< std::setfill('0')
 			<< std::setw(2)
 			<< a;
+		return ss.str();
+	}
+
+	static std::string output_signed_byte(int a) {
+		if (a < -128 || a > 127) {
+			throw std::logic_error("Cannot generate signed byte for " + a);
+		}
+		const unsigned char out_val = static_cast<char>(a);
+		std::stringstream ss;
+		ss << "0x"
+			<< std::hex
+			<< std::uppercase
+			<< std::setfill('0')
+			<< std::setw(2)
+			<< static_cast<int>(out_val);
 		return ss.str();
 	}
 
@@ -123,14 +139,14 @@ namespace AST {
 		}
 
 		// Push onto stack and let the stack tracker know
-		ss << scope->push_reg("ra");
+		ss << scope->push_reg("ra") + "\n";
 
 		// Generate code for the right hand side
 		ss << sub_right->generate_code();
 
 		// Move to rb and restore left hand side
 		ss << "mov rb, ra\n";
-		ss << scope->pop_reg("ra");
+		ss << scope->pop_reg("ra") + "\n";
 
 		// Perform actual binary operation
 		switch (type) {
@@ -242,11 +258,27 @@ namespace AST {
 		ss << "\n# " << name << '\n';
 		// ss << arguments.... TODO
 		ss << scope->env->label_maker.get_label_for_fn(name) << ":\n";
-		// TODO any pushing of temp registers
-		// TODO allocate args to registers/calling stack
-		//ss << "push ra\n";
-		//ss << "push rb\n";
-		//ss << "push rp\n";
+
+		// Calling convention is that the first two arguments will be in ra and rb in the case of the
+		// compiler, these will be pushed immediately, but it allows for future optimization.
+		// Any additonal argument will be pushed by the caller
+		// RP will need to be saved as well when it's used in the future.
+		const bool is_ra_argument = arguments.size() >= 1;
+		const bool is_rb_argument = arguments.size() >= 2;
+
+		ss << "push rb ";
+		if (is_rb_argument) {
+			ss << "# push arg rb\n";
+		} else {
+			ss << "# store caller rb\n";
+		}
+		ss << "push ra ";
+		if (is_ra_argument) {
+			ss << "# push arg ra\n";
+		} else {
+			ss << "# store caller ra\n";
+		}
+
 		// Allocated space on the stack for vars in scope
 		ss << scope->gen_scope_entry();
 		// Code for contents
@@ -255,9 +287,26 @@ namespace AST {
 		ss << "loadi ra, 0\n"; // In case funtion runs off the end, it should return 0.
 		ss << scope->env->label_maker.get_fn_end_label() << ":\n";
 		ss << scope->gen_scope_exit();
-		//ss << "pop rp\n";
-		//ss << "pop rb\n";
-		//ss << "pop ra\n";
+		// From above, we always push two int onto the stack, so we always have to remove those
+		// but depending on what they are, we may have to restore them or discard them.
+		if (arguments.size() >= 2) {
+			// both ra and rb were args, so just drop them
+			ss << "add sp, 2 # drop pushed ra, and rb\n";
+		} else if (arguments.size() == 1) {
+			// restore rb, drop arg ra
+			ss << "add sp, 1 # drop arg ra\n";
+			ss << "pop rb # restore caller rb\n";
+		} else if (arguments.size() == 0 && env->get_type("void") == return_type) {
+			// restore caller ra and rb
+			ss << "pop ra # restore caller ra\n";
+			ss << "pop rb # restore caller rb\n";
+		} else if (arguments.size() == 0) {
+			// has a return type, so return is in ra, so don't have to restore ra
+			ss << "add sp, 1 # drop ra because we're returning a value\n";
+			ss << "pop rb # restore caller rb\n";
+		} else {
+			throw std::logic_error("Should never get here: unable to determine function epilogue");
+		}
 		ss << "ret\n";
 
 		return ss.str();
@@ -275,16 +324,42 @@ namespace AST {
 		// generate any global vars at global scope
 
 		// generate entry into main
-		ss << "loada ._main\n"; // Can't guarantee main is in range of a short jumpe
-		ss << "call ._main\n";
+		ss << "loada .main\n"; // Can't guarantee main is in range of a short jumpe
+		ss << "call .main\n";
 		ss << "ret\n"; // return to the OS
 
-		// generate code for each function
-		for (const auto& fn : functions) {
-			ss << fn->generate_code();
+		// Defer code gen to environment
+		ss << env.generate_code();
+
+		return ss.str();
+	}
+
+	std::string Environment::generate_code() const {
+		std::stringstream ss;
+
+		// generate code for functions
+		for (const auto& fn : function_map) {
+			if (fn.second->is_defined()) {
+				ss << fn.second->generate_code();
+			}
 		}
 
 		return ss.str();
+	}
+
+	void Environment::check_function(
+		const std::string& name,
+		const std::vector<std::shared_ptr<Expression>>& args)
+	{
+		if (function_map.count(name) != 1) {
+			throw std::logic_error("Called a function that has not been declared: " + name);
+		}
+		
+		auto function = function_map.at(name);
+
+		if (!function->signature_matches(name, args)) {
+			throw std::logic_error("Function call has mismatched signature: " + name);
+		}
 	}
 
 	const Type* Environment::get_type(std::string name) const {
@@ -302,12 +377,27 @@ namespace AST {
 	std::string VarMap::gen_scope_entry() {
 		std::stringstream ss;
 
-		if (size_of_scope != 0) {
-			ss << "sub sp, " << output_byte(size_of_scope) << " # stack entry\n";
+		if (size_of_var_map != 0) {
+			ss << "sub sp, " << output_byte(size_of_var_map) << " # stack entry\n";
+		}
+		{
 			Scope_Id id = 0;
 			for (const auto& scope : scopes) {
+				// We actually want to output them in offset order, not name order like they are in the map
+				struct Temp_Var_Map {
+					int offset;
+					std::string name;
+					Temp_Var_Map(int offset, std::string name) : offset(offset), name(name) {}
+				};
+				std::vector<Temp_Var_Map> vars;
 				for (const auto& var : scope.offset_map) {
-					ss << "# sp + " << var.second.offset << " = " << var.first << "_" << id << "\n";
+					vars.emplace_back(var.second.offset, var.first);
+				}
+				std::sort(vars.begin(), vars.end(), [](Temp_Var_Map a, Temp_Var_Map b) {
+					return a.offset > b.offset;
+					});
+				for (const auto& var : vars) {
+					ss << "# sp + " << var.offset << " = " << var.name << "_" << id << "\n";
 				}
 				++id;
 			}
@@ -319,11 +409,11 @@ namespace AST {
 	std::string VarMap::gen_scope_exit() {
 		std::stringstream ss;
 
-		const int total_size = size_of_scope + stack_offset;
+		const int total_size = size_of_var_map + stack_offset;
 
-		if (size_of_scope != 0) {
+		if (size_of_var_map != 0) {
 			ss << "add sp, " << output_byte(total_size) << " # stack exit\n";
-			ss << "# locals size: " << size_of_scope << " temp size: " << stack_offset << "\n";
+			ss << "# locals size: " << size_of_var_map << " temp size: " << stack_offset << "\n";
 
 		}
 
@@ -337,12 +427,12 @@ namespace AST {
 
 	std::string VarMap::push_reg(std::string reg_name) {
 		stack_offset++;
-		return "push " + reg_name + "\n";
+		return "push " + reg_name;
 	}
 
 	std::string VarMap::pop_reg(std::string reg_name) {
 		stack_offset--;
-		return "pop " + reg_name + "\n";
+		return "pop " + reg_name;
 	}
 
 	//std::string Local_Variable::gen_load(int current_sp_offset) {
@@ -380,7 +470,7 @@ namespace AST {
 		// Result is now in ra, store in memory location
 		VarMap::Scope_Id id;
 		const int var_offset = scope->get_var_offset(var_name, &id);
-		ss << "store.sp ra, " + output_byte(var_offset) << " # store " << var_name << "_" << id << "\n";
+		ss << "store.sp ra, " + output_signed_byte(var_offset) << " # store " << var_name << "_" << id << "\n";
 
 		return ss.str();
 	}
@@ -390,7 +480,7 @@ namespace AST {
 
 		VarMap::Scope_Id id;
 		const int var_offset = scope->get_var_offset(var_name, &id);
-		ss << "load.sp ra, " << output_byte(var_offset) << " # load " << var_name << "_" << id << "\n";
+		ss << "load.sp ra, " << output_signed_byte(var_offset) << " # load " << var_name << "_" << id << "\n";
 
 		return ss.str();
 	}
@@ -432,6 +522,54 @@ namespace AST {
 		ss << else_label << ": # else\n";
 		ss << false_exp->generate_code();
 		ss << end_label << ": # end conditional expression\n";
+
+		return ss.str();
+	}
+
+	std::string Function_Call_Expression::generate_code() const {
+		std::stringstream ss;
+
+		// TODO we need to modify this if types other than int exist
+
+		auto number_args = arguments.size();
+
+		// Calculate and setup args for call
+		while (number_args > 2) {
+			ss << arguments.at(number_args - 1)->generate_code();
+			ss << scope->push_reg("ra") + "\n";
+			--number_args;
+		}
+		if (number_args == 2) {
+			ss << arguments.at(number_args - 1)->generate_code();
+			ss << scope->push_reg("ra") + "\n";
+			--number_args;
+			ss << arguments.at(number_args - 1)->generate_code();
+			ss << scope->pop_reg("rb") + "\n";
+		} else if (number_args == 1) {
+			ss << arguments.at(number_args - 1)->generate_code();
+		} else if (number_args == 0) {
+			// nothing to do, no args to setup
+		} else {
+			throw std::logic_error("Should never get here: called Function_Call_Expression::generate_code"
+				" with weird number of arguments: " + std::to_string(number_args));
+		}
+
+		// The actual funtion call proper
+		ss << "loada ." << name << " # function call\n";
+		ss << "call ." << name << "\n";
+
+		// Clean up after the function call
+		number_args = arguments.size();
+		if (number_args > 2) {
+			number_args -= 2;
+			// We use "pop_reg" to fix the stack accounting we setup prior to the function
+			// since we don't need the values, as an optimization, we ignore the return
+			// of pop_reg and instead add the correct amount to the stack
+			for (int i = 0; i < static_cast<int>(number_args); ++i) {
+				scope->pop_reg("");
+			}
+			ss << "add sp, " << output_signed_byte(static_cast<int>(number_args)) << " # clean up after function call\n";
+		}
 
 		return ss.str();
 	}
