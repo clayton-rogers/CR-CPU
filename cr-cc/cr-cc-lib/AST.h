@@ -25,6 +25,7 @@ namespace AST {
 	};
 
 	class Function;
+	class Expression;
 
 	class Environment : public Compilable {
 	public:
@@ -40,6 +41,9 @@ namespace AST {
 		void create_type(Type* type);
 
 		void add_function(std::shared_ptr<Function> function);
+		void check_function(
+			const std::string& name,
+			const std::vector<std::shared_ptr<Expression>>& args);
 		std::string generate_code() const override;
 
 		Label_Maker label_maker;
@@ -356,6 +360,7 @@ namespace AST {
 
 		std::string get_name() { return name; }
 		bool signature_matches(const Function& other);
+		bool signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args);
 		bool is_defined() { return is_fn_defined; }
 	private:
 		struct Arg_Type {

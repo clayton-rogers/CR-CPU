@@ -211,5 +211,9 @@ namespace AST {
 				arguments.push_back(parse_expression(arg, scope));
 			}
 		}
+
+		// Check that the function exists and has the correct arguments.
+		// Throws if there is any issue.
+		scope->env->check_function(name, arguments);
 	}
 }

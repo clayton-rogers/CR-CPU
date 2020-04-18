@@ -129,6 +129,18 @@ namespace AST {
 		return true;
 	}
 
+	bool Function::signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) {
+		if (name != other_name) return false;
+		if (arguments.size() != other_args.size()) return false;
+
+		// TODO should also check expression type when that exists
+		//for (size_t i = 0; i < arguments.size(); ++i) {
+		//	if (arguments.at(i).type != other.arguments.at(i).type) return false;
+		//}
+
+		return true;
+	}
+
 	VarMap::VarMap(Environment* env)
 		: env(env) {
 		// Add a single highest level scope

@@ -339,10 +339,27 @@ namespace AST {
 
 		// generate code for functions
 		for (const auto& fn : function_map) {
-			ss << fn.second->generate_code();
+			if (fn.second->is_defined()) {
+				ss << fn.second->generate_code();
+			}
 		}
 
 		return ss.str();
+	}
+
+	void Environment::check_function(
+		const std::string& name,
+		const std::vector<std::shared_ptr<Expression>>& args)
+	{
+		if (function_map.count(name) != 1) {
+			throw std::logic_error("Called a function that has not been declared: " + name);
+		}
+		
+		auto function = function_map.at(name);
+
+		if (!function->signature_matches(name, args)) {
+			throw std::logic_error("Function call has mismatched signature: " + name);
+		}
 	}
 
 	const Type* Environment::get_type(std::string name) const {
@@ -512,7 +529,6 @@ namespace AST {
 	std::string Function_Call_Expression::generate_code() const {
 		std::stringstream ss;
 
-		// TODO we should check that the arguments that the function is called with actually match the signature
 		// TODO we need to modify this if types other than int exist
 
 		auto number_args = arguments.size();
