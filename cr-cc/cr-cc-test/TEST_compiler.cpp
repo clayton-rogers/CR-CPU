@@ -15,19 +15,6 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	fr.add_directory("./test_data");
 	
 	auto ret = compile_tu("first.c", fr);
-
-	//std::string test_filename = "basic.c";
-	//std::string result = compile(test_filename, fr);
-	//std::cout << result << std::endl;
-
-	//std::string test_filename = "first.c";
-	//std::string result = c_to_asm(test_filename, fr);
-	//std::cout << "\n\n" << result << std::endl;
-	//std::cout << result << std::endl;
-	//std::uint16_t offset;
-	//auto machine_code = assemble(result, &offset);
-	//auto m_code_hex = machine_inst_to_srec(machine_code, offset);
-	//std::cout << "\n\n" << m_code_hex << std::endl;
 }
 
 TEST_CASE("Test properties of cast uint16", "[c]") {
@@ -136,6 +123,24 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		}
 	}
 }
+
+// We don't actually want to burden the auto build with this
+
+//TEST_CASE("Exaustive Compiler Benchmarks", "[.][bench]") {
+//
+//	const std::string DIR = "test_data/valid_c/";
+//	auto dir_list = read_directory(DIR);
+//
+//	for (const auto& item : dir_list) {
+//		if (item == "test_data/valid_c/program_loader.s") { continue; }
+//		FileReader fr;
+//		fr.add_directory(DIR);
+//
+//		BENCHMARK(std::string("Filename: " ) + item) {
+//			return compile_tu(item, fr);
+//		};
+//	}
+//}
 
 TEST_CASE("Invalid C programs", "[c]") {
 

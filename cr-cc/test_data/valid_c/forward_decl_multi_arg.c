@@ -1,6 +1,7 @@
 int foo(int a, int b);
 
-// ret: -1
+// ret: 0xFFFF
+// result of the sim is always unsigned
 int main() {
     return foo(1, 2);
 }
