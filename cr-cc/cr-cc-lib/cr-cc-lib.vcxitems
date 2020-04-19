@@ -39,6 +39,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)assembler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)AST.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)cast.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)compiler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)c_to_asm.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />

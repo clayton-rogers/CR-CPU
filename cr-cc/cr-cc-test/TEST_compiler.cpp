@@ -17,40 +17,6 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	auto ret = compile_tu("first.c", fr);
 }
 
-TEST_CASE("Test properties of cast uint16", "[c]") {
-
-	SECTION("At pos limit") {
-		int a = 0x7FFF;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x7FFF);
-	}
-	SECTION("Above limit") {
-		int a = 0x8000;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x8000);
-	}
-	SECTION("At pos max") {
-		int a = 0xFFFF;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0xFFFF);
-	}
-	SECTION("Negative") {
-		int a = -1;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0xFFFF);
-	}
-	SECTION("At neg max") {
-		int a = -32768;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x8000);
-	}
-}
-
 TEST_CASE("Compiler Benchmarks", "[.][bench]") {
 	FileReader fr;
 	fr.add_directory("./test_data");

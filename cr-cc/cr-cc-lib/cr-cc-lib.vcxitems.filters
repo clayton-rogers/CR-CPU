@@ -110,6 +110,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)linker.h">
       <Filter>Linker</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)cast.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">

@@ -29,5 +29,11 @@
     <ClCompile Include="TEST_compiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TEST_linker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TEST_cast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
