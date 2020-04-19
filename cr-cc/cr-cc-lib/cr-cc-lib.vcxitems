@@ -23,6 +23,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)c_to_asm.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)file_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)label_maker.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)linker.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)object_code.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
@@ -41,6 +43,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)c_to_asm.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)label_maker.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)linker.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)object_code.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)old_parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)preprocessor.h" />
