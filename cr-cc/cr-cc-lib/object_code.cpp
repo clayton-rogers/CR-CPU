@@ -138,3 +138,5 @@ Stream_Type Object_Code::to_object_code() const
 
 	return stream;
 }
+
+const std::uint16_t Object_Code::MAGIC; // ascii "CR"

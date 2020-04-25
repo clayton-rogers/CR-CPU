@@ -10,12 +10,15 @@ static const std::uint16_t DEFAULT_LINKER_LOAD_ADDRESS = 0x0200;
 
 static void handle_object(
 	std::vector<std::uint16_t>& output_machine_code,
-	Object_Type& object
+	Object_Type& object,
+	std::uint16_t objects_load_address
 	)
 {
 	// first handle any relocations
 	{
-		const auto current_offset = u16(output_machine_code.size());
+		const std::uint16_t current_offset = u16(output_machine_code.size())
+			+ DEFAULT_LINKER_LOAD_ADDRESS
+			- objects_load_address;
 
 		for (const auto& reloc : object.relocations.relocation_locations) {
 			std::uint16_t offset = object.machine_code.machine_code.at(reloc.offset);
@@ -27,7 +30,7 @@ static void handle_object(
 			}
 
 			// apply the offset and mask back the byte we want
-			offset = offset + current_offset;
+			offset += current_offset;
 			if (reloc.type == Relocations::Relocation_Type::HI_BYTE) {
 				offset >>= 8;
 			} else {
@@ -38,7 +41,15 @@ static void handle_object(
 			std::uint16_t word = object.machine_code.machine_code.at(reloc.offset);
 			word &= 0xFF00; // delete the old value
 			word |= offset; // apply new value
+			object.machine_code.machine_code.at(reloc.offset) = word;
 		}
+	}
+
+
+	// finally just append the new object code to the existing
+	{
+		const auto& new_mach = object.machine_code.machine_code;
+		output_machine_code.insert(output_machine_code.cend(), new_mach.cbegin(), new_mach.cend());
 	}
 }
 
@@ -60,7 +71,7 @@ Object_Code link(std::vector<Object::Object_Code>&& link_items)
 		case Object_Code::OBJECT:
 		{
 			auto& object = std::get<Object_Type>(item.contents);
-			handle_object(machine, object);
+			handle_object(machine, object, item.load_address);
 			break;
 		}
 		case Object_Code::LIBRARY:
