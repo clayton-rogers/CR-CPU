@@ -19,8 +19,7 @@ Compiler_Return compile_tu(std::string filename, FileReader f) {
 		throw std::logic_error("Cannot handle file with extension: " + file_extension);
 	}
 
-	ret.load_address = 0;
-	ret.machine_code = assemble(ret.assembly, &ret.load_address);
+	ret.item = assemble(ret.assembly);
 
 	return ret;
 }

@@ -1,14 +1,18 @@
 #include "assembler.h"
 
 #include "utilities.h"
+#include "cast.h"
 
 #include <map>
+#include <set>
 #include <sstream>
 #include <cctype>
 #include <algorithm>
 #include <string>
 #include <iostream>
 #include <cstdint>
+
+using namespace Object;
 
 enum class OPCODE {
 	ADD,
@@ -155,16 +159,23 @@ struct Data_Label {
 	std::vector<int> values;
 };
 
+struct External_Label {
+	std::vector<int> hi_references;
+	std::vector<int> lo_references;
+};
+
 struct AssemblerState {
 	std::map<std::string, Data_Label> data_label_map;
 	std::map<std::string, int> text_label_map;
 	std::map<std::string, int> const_map;
+	std::map<std::string, External_Label> extern_label_map;
 	std::vector<Instruction> instructions;
 	int current_line = 0;
 
 	int static_allocation_offset = 0;
 	int next_inst_addr = 0;
-	int text_offset = 0;
+
+	Object_Container out;
 };
 
 static std::vector<std::string> split_by_lines(const std::string& assembly) {
@@ -422,15 +433,43 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		return;
 	}
 
-	// Text offset
+	// Extern label declarations
 	//   Format:
-	// .text_offset 0xabcdB
-	// # offsets the text (and data) sections by the given amount
-	if (directive == ".text_offset") {
-		if (tokens.size() != 2) {
-			throw std::logic_error("Text offset requires one argument");
+	// .extern a_function
+	// # a_function can now be used as a label in the rest of the program
+	// # an external reference will be created in the object file, which
+	// # will need to be resolved at link time.
+	// loada .a_function
+	// call .a_function
+	// # this may also be used for extern funtions. The programmer must keep
+	// # track of which is which
+	if (directive == ".extern") {
+		auto extern_label = tokens.at(1);
+		if (as->extern_label_map.count(extern_label) == 1) {
+			// Duplicate extern labels are allowed
+		} else {
+			as->extern_label_map[extern_label] = External_Label(); // default construct
 		}
-		as->text_offset = std::stoi(tokens.at(1), 0, 0);
+
+		return;
+	}
+
+	// Export label
+	//   Format:
+	// .my_fun:
+	// .export my_fun
+	// # my_fun will now be accessable in other compilation units.
+	// # Specifically, this will cause an exported symbol to be generated
+	// # which the link will match with external references in other units.
+	// TODO this should also work with global variables
+	if (directive == ".export") {
+		const auto export_label = tokens.at(1);
+		if (as->text_label_map.count(export_label) == 0) {
+			throw std::logic_error("Tried to export unknown symbol: " + export_label);
+		}
+		const auto offset = u16(as->text_label_map.at(export_label));
+		auto& exported_symbols = std::get<Object_Type>(as->out.contents).exported_symbols;
+		exported_symbols.push_back(Object::Exported_Symbol{ export_label, Object::Symbol_Type::FUNCTION, offset });
 
 		return;
 	}
@@ -450,6 +489,7 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 
 	Instruction output;
 
+	// TODO this should be doable without the try catch block
 	try {
 		std::stringstream full_opcode(tokens.at(0));
 		std::string temp;
@@ -509,9 +549,13 @@ static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
 static std::uint16_t instruction_to_machine(
 	const Instruction& inst,
 	const int instruction_number,
-	const std::map<std::string, Data_Label>& data_label_map,
-	const std::map<std::string, int>& text_label_map,
-	const std::map<std::string, int>& const_label_map) {
+	AssemblerState* as)
+{
+	const std::map<std::string, Data_Label>& data_label_map = as->data_label_map;
+	const std::map<std::string, int>& text_label_map = as->text_label_map;
+	const std::map<std::string, int>& const_label_map = as->const_map;
+	auto& extern_label_map = as->extern_label_map;
+	auto& relocations = std::get<Object_Type>(as->out.contents).relocations;
 
 	const std::map<OPCODE, int> opcode_to_machine =
 	{
@@ -536,7 +580,7 @@ static std::uint16_t instruction_to_machine(
 		{OPCODE::NOP,   15},
 	};
 
-	auto get_label = [&data_label_map, &text_label_map, &const_label_map](std::string label) -> int {
+	auto get_label = [&data_label_map, &text_label_map, &const_label_map, &extern_label_map](std::string label) -> int {
 		if (data_label_map.count(label) == 1) {
 			return data_label_map.at(label).offset;
 		}
@@ -549,7 +593,34 @@ static std::uint16_t instruction_to_machine(
 			return const_label_map.at(label);
 		}
 
+		if (extern_label_map.count(label) == 1) {
+			return 0; // all extern references are just filled with 0x00. The linker will fill them out properly.
+		}
+
 		throw std::logic_error("Label not found: " + label);
+	};
+
+	// All labels need relocation if they are referred to in absolute terms. Except const values, which never change
+	auto need_relocation = [&data_label_map, &text_label_map, &const_label_map, &extern_label_map](std::string label) -> bool {
+		if (const_label_map.count(label) == 1) {
+			return false;
+		}
+		if (extern_label_map.count(label) == 1) {
+			return false; // no data, so no point in relocating
+		}
+
+		return true;
+	};
+
+	auto handle_external_ref_if_needed = [&extern_label_map, instruction_number](std::string label, HI_LO_TYPE type) {
+		if (extern_label_map.count(label) == 0) {
+			return;
+		}
+		if (type == HI_LO_TYPE::HI_BYTE) {
+			extern_label_map.at(label).hi_references.push_back(instruction_number);
+		} else {
+			extern_label_map.at(label).lo_references.push_back(instruction_number);
+		}
 	};
 
 	std::uint16_t machine = 0;
@@ -574,6 +645,10 @@ static std::uint16_t instruction_to_machine(
 							throw std::logic_error("Jmp or call to label too far away: " + a.label_value);
 						}
 					} else {
+						if (need_relocation(a.label_value)) {
+							relocations.push_back(Relocation{ HI_LO_TYPE::LO_BYTE, u16(instruction_number) });
+						}
+						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
 						const_value = get_label(a.label_value);
 					}
 					const_value &= 0xFF;
@@ -596,8 +671,16 @@ static std::uint16_t instruction_to_machine(
 
 					const_value = get_label(label_str) + offset;
 					if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
+						if (need_relocation(a.label_value)) {
+							relocations.push_back(Relocation{ HI_LO_TYPE::HI_BYTE, u16(instruction_number) });
+						}
+						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::HI_BYTE);
 						const_value >>= 8;
 					} else {
+						if (need_relocation(a.label_value)) {
+							relocations.push_back(Relocation{ HI_LO_TYPE::LO_BYTE, u16(instruction_number) });
+						}
+						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
 						const_value &= 0xFF;
 					}
 				}
@@ -858,14 +941,16 @@ static std::uint16_t instruction_to_machine(
 }
 
 static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
-	std::vector<std::uint16_t> machine_code;
+	auto& machine_code = std::get<Object_Type>(as->out.contents).machine_code;
 
+	// Compile instructions
 	for (const auto& inst : as->instructions) {
 		machine_code.push_back(
-			instruction_to_machine(inst, inst.number, as->data_label_map, as->text_label_map, as->const_map)
+			instruction_to_machine(inst, inst.number, as)
 		);
 	}
 
+	// Get size of data section
 	const int size_of_data = [&as]() -> int {
 		int size = 0;
 		for (const auto& label : as->data_label_map) {
@@ -874,6 +959,7 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 		return size;
 	}();
 
+	// Add contents of data section
 	machine_code.resize(machine_code.size() + size_of_data);
 	for (const auto& var : as->data_label_map) {
 		Data_Label label = var.second;
@@ -883,14 +969,37 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 			if (label.has_values) {
 				value = label.values.at(i);
 			}
-			machine_code.at(static_cast<size_t>(label.offset) - as->text_offset + i) = static_cast<uint16_t>(value);
+			machine_code.at(static_cast<size_t>(label.offset) + i) = static_cast<uint16_t>(value);
 		}
+	}
+
+	// Add all external references to the object
+	auto& extern_ref = std::get<Object_Type>(as->out.contents).external_references;
+	for (const auto& ref : as->extern_label_map) {
+		External_Reference hi_ref;
+		External_Reference lo_ref;
+
+		hi_ref.name = ref.first;
+		lo_ref.name = ref.first;
+		hi_ref.type = HI_LO_TYPE::HI_BYTE;
+		lo_ref.type = HI_LO_TYPE::LO_BYTE;
+
+		for (const auto& hi_location : ref.second.hi_references) {
+			hi_ref.locations.push_back(u16(hi_location));
+		}
+
+		for (const auto& lo_location : ref.second.lo_references) {
+			lo_ref.locations.push_back(u16(lo_location));
+		}
+
+		extern_ref.push_back(hi_ref);
+		extern_ref.push_back(lo_ref);
 	}
 
 	return machine_code;
 }
 
-std::vector<std::uint16_t> assemble(const std::string& assembly, std::uint16_t* offset) {
+Object_Container assemble(const std::string& assembly) {
 
 	const std::vector<std::string> lines = split_by_lines(assembly);
 
@@ -920,23 +1029,16 @@ std::vector<std::uint16_t> assemble(const std::string& assembly, std::uint16_t* 
 			}
 		}
 
-		// Handle text offset
-		for (auto& label : as.text_label_map) {
-			label.second += as.text_offset;
-		}
-		for (auto& instruction : as.instructions) {
-			instruction.number += as.text_offset;
-		}
-
 		// Data section is placed after the text section
-		const int size_of_text = static_cast<int>(as.instructions.size()) + as.text_offset;
+		const int size_of_text = static_cast<int>(as.instructions.size());
 		for (auto& label : as.data_label_map) {
 			label.second.offset += size_of_text;
 		}
 
-		*offset = static_cast<std::uint16_t>(as.text_offset);
-
-		return generate_machine_code(&as);
+		//as.out.load_address = static_cast<std::uint16_t>(as.text_offset);
+		as.out.load_address = 0;
+		generate_machine_code(&as);
+		return as.out;
 
 	} catch (const std::logic_error& e) {
 		std::string msg = std::string("line ") + std::to_string(as.current_line) + ": " + e.what();

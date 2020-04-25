@@ -2,6 +2,7 @@
 #include "file_io.h"
 #include "utilities.h"
 #include "simulator.h"
+#include "linker.h"
 
 #include <iostream>
 #include <iomanip>
@@ -67,17 +68,22 @@ int main(int argc, char **argv) {
 		FileReader f;
 
 		auto ret = compile_tu(opt.filename, f);
+		// TODO handle multiple files
+		auto exe = link({ ret.item } );
+		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
+
+
 		write_file(opt.output_filename + "s", ret.assembly);
 
-		write_file(opt.output_filename + "hex", machine_inst_to_hex(ret.machine_code));
-		write_bin_file(opt.output_filename + "bin", ret.machine_code);
-		auto srec = machine_inst_to_srec(ret.machine_code, ret.load_address);
+		write_file(opt.output_filename + "hex", machine_inst_to_hex(machine_code));
+		write_bin_file(opt.output_filename + "bin", machine_code);
+		auto srec = machine_inst_to_srec(machine_code, exe.load_address);
 		write_file(opt.output_filename + "srec", srec);
 
 		if (opt.verbose) {
-			std::cout << "Code size: " << ret.machine_code.size() << "/" << RAM_SIZE_WORDS
+			std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
 				<< " (" << std::fixed << std::setprecision(2)
-				<< static_cast<float>(ret.machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
+				<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
 				<< std::endl;
 
 			std::cout << "\n" << srec;
@@ -90,8 +96,8 @@ int main(int argc, char **argv) {
 			auto program_loader = compile_tu("program_loader.s", pl_f);
 
 			Simulator sim;
-			sim.load(program_loader.load_address, program_loader.machine_code);
-			sim.load(ret.load_address, ret.machine_code);
+			sim.load(0, std::get<Object::Object_Type>(program_loader.item.contents).machine_code);
+			sim.load(exe.load_address, machine_code);
 
 			const int total_steps = 16000000;// up to one second of operation
 			sim.run_until_halted(total_steps);

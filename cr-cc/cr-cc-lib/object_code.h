@@ -50,6 +50,9 @@ namespace Object {
 
 	struct Executable {
 		std::vector<std::uint16_t> machine_code;
+
+		// For Debug only:
+		std::vector<Exported_Symbol> exported_symbols;
 	};
 
 	struct Map {

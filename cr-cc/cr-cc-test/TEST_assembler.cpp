@@ -94,14 +94,17 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loada .const \n .constant 0xfedc const", "D0FE "},
 		{".constant 123 .const", ""}, // by itself constants produce no code
 		{".constant 0x00ff const \n loadi ra, .const[1] \n loadi.h ra, .const[1]", "A000 A201 "}, // array offsets should roll over into high byte
-		{".label: \n loadi ra, .label \n loadi.h ra .label \n  .text_offset 0x0102", "A002 A201 "},
+		{".label: \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
+		{".label: \n .export label \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
+		{".extern label \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
+		{".extern label \n loadi ra, .label \n loadi.h ra .label \n .extern label", "A000 A200 "}, // duplicate labels are allowed
 	};
 
 	for (const auto& test_point : test_points) {
 		INFO(test_point.input);
 
-		std::uint16_t unused;
-		std::string output = machine_inst_to_simple_hex(assemble(test_point.input, &unused));
+		auto object_file = assemble(test_point.input);
+		std::string output = machine_inst_to_simple_hex(std::get<Object::Object_Type>(object_file.contents).machine_code);
 
 		CHECK(output == test_point.expected_out);
 	}
@@ -151,12 +154,14 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"shftr rb, -1", // constant must be 0 .. 15
 		".text_offset 0x1020 013", // text offset only takes one argument
 		".text_offset ", // text offset must take an argument
+		".extern ", // missing label
+		".export ", // missing label
+		".export label \n .label: \n nop", // trying to export label that doesn't exist (yet)
 	};
 
 	for (const auto& test_point : test_points) {
 		INFO(test_point);
-		std::uint16_t unused;
-		CHECK_THROWS(assemble(test_point, &unused));
+		CHECK_THROWS(assemble(test_point));
 	}
 }
 
@@ -206,11 +211,10 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		REQUIRE(program.length() != 0);
 
-		std::uint16_t offset;
-		auto instructions = assemble(program, &offset);
+		auto object_file = assemble(program);
 
 		Simulator sim;
-		sim.load(0, instructions);
+		sim.load(0, std::get<Object::Object_Type>(object_file.contents).machine_code);
 		sim.run_until_halted(200);
 
 		// Check that the simulated assembled program actually does as expected
@@ -223,12 +227,131 @@ TEST_CASE("Test assembler programs", "[asm]") {
 TEST_CASE("Assembler Benchmarks", "[.][bench]") {
 	for (const auto& test_point : test_programs) {
 		std::string program = read_file(std::string("./test_data/") + test_point.name);
-		std::uint16_t unused;
 
 		REQUIRE(program.length() != 0);
 
 		BENCHMARK(std::string("Benchmark: ") + test_point.name) {
-			return assemble(program, &unused);
+			return assemble(program);
 		};
+	}
+}
+
+static bool operator==(const Object::Relocation& a, const Object::Relocation& b) {
+	if (a.type != b.type) {
+		return false;
+	} else if (a.offset != b.offset) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+static bool operator==(const Object::External_Reference& a, const Object::External_Reference& b) {
+	if (a.name != b.name) {
+		return false;
+	} else if (a.type != b.type) {
+		return false;
+	} else if (a.locations != b.locations) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+static bool operator==(const Object::Exported_Symbol& a, const Object::Exported_Symbol& b) {
+	if (a.name != b.name) {
+		return false;
+	} else if (a.type != b.type) {
+		return false;
+	} else if (a.offset != b.offset) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+TEST_CASE("Assembler object Relocations", "[asm]") {
+	using namespace Object;
+
+	std::string input = read_file("./test_data/relocation_test.s");
+	auto object_file = assemble(input);
+	auto object = std::get<Object_Type>(object_file.contents);
+
+	// Check that we have the required relocations
+	{
+		const auto& reloc = object.relocations;
+
+		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x0B });
+		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0C });
+		CHECK(reloc.at(2) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0D });
+		CHECK(reloc.at(3) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0E });
+		CHECK(reloc.at(4) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0F });
+		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x10 });
+		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x11 });
+	}
+	// Check the output machine code
+	{
+		std::string expected_machine_code =
+			"F000 F000 F000 F000 D081 C223 9223 7223 6223 A281 A023 D000 C204 9204 7204 6204 A200 A004 ";
+		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
+
+		CHECK(expected_machine_code == actual_machine_code);
+	}
+}
+
+TEST_CASE("Assembler object External references", "[asm]") {
+	using namespace Object;
+
+	std::string input = read_file("./test_data/external_references_test.s");
+	auto object_file = assemble(input);
+	auto object = std::get<Object_Type>(object_file.contents);
+
+	// Check that we have the required external refs
+	{
+		const auto& refs = object.external_references;
+
+		CHECK(refs.at(0) == External_Reference{ "bar", HI_LO_TYPE::HI_BYTE, {} });
+		CHECK(refs.at(1) == External_Reference{ "bar", HI_LO_TYPE::LO_BYTE, {} });
+		CHECK(refs.at(2) == External_Reference{ "foo", HI_LO_TYPE::HI_BYTE, {0x04} });
+		CHECK(refs.at(3) == External_Reference{ "foo", HI_LO_TYPE::LO_BYTE, {0x05} });
+	}
+	// Check the output machine code
+	{
+		std::string expected_machine_code =
+			"F000 F000 F000 F000 D000 C200 ";
+		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
+
+		CHECK(expected_machine_code == actual_machine_code);
+	}
+}
+
+TEST_CASE("Assembler object Exported referencs", "[asm]") {
+	using namespace Object;
+
+	std::string input = read_file("./test_data/exported_references_test.s");
+	auto object_file = assemble(input);
+	auto object = std::get<Object_Type>(object_file.contents);
+
+	// Check that we have the required external refs
+	{
+		const auto& exported = object.exported_symbols;
+
+		CHECK(exported.at(0) == Exported_Symbol{ "add_numbers", Symbol_Type::FUNCTION, 0x02 });
+		CHECK(exported.at(1) == Exported_Symbol{ "main", Symbol_Type::FUNCTION, 0x04 });
+	}
+	// Check that we have the required relocations
+	{
+		const auto& reloc = object.relocations;
+
+		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x06 });
+		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x07 });
+	}
+	// Check the output machine code
+	{
+		std::string expected_machine_code =
+			"F000 F000 0100 C100 A00A A40B D000 C202 C100 ";
+		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
+
+		CHECK(expected_machine_code == actual_machine_code);
 	}
 }

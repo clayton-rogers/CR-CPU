@@ -3,25 +3,27 @@
 
 #include <cstdint>
 #include <vector>
+#include <unordered_map>
 
 using namespace Object;
 
 static const std::uint16_t DEFAULT_LINKER_LOAD_ADDRESS = 0x0200;
 
 static void handle_object(
-	std::vector<std::uint16_t>& output_machine_code,
-	Object_Type& object,
+	///std::vector<std::uint16_t>& output_machine_code,
+	Object_Type& output_object,
+	Object_Type& input_object,
 	std::uint16_t objects_load_address
 	)
 {
-	const std::uint16_t relocation_offset = u16(output_machine_code.size())
+	const std::uint16_t relocation_offset = u16(output_object.machine_code.size())
 		+ DEFAULT_LINKER_LOAD_ADDRESS
 		- objects_load_address;
 
 	// First handle any code relocations
 	{
-		for (const auto& reloc : object.relocations) {
-			std::uint16_t offset = object.machine_code.at(reloc.offset);
+		for (const auto& reloc : input_object.relocations) {
+			std::uint16_t offset = input_object.machine_code.at(reloc.offset);
 
 			// mask out the byte we care about
 			offset &= 0xFF;
@@ -38,24 +40,78 @@ static void handle_object(
 			}
 
 			// write the byte back to the machine code
-			std::uint16_t word = object.machine_code.at(reloc.offset);
+			std::uint16_t word = input_object.machine_code.at(reloc.offset);
 			word &= 0xFF00; // delete the old value
 			word |= offset; // apply new value
-			object.machine_code.at(reloc.offset) = word;
+			input_object.machine_code.at(reloc.offset) = word;
 		}
 	}
 
-	// Next exported symbol relocations
-	{
-		for (auto& symbol : object.exported_symbols) {
-			symbol.offset += relocation_offset;
+	// Double check that this new object doesn't export any already exported symbols
+	for (const auto& existing_symbol : output_object.exported_symbols) {
+		for (const auto& new_symbol : input_object.exported_symbols) {
+			if (existing_symbol.name == new_symbol.name) {
+				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
+			}
 		}
 	}
+
+	// Relocate exported symbols
+	for (auto& symbol : input_object.exported_symbols) {
+		symbol.offset += relocation_offset;
+	}
+
+	// Add the exported symbols to the output
+	output_object.exported_symbols.insert(
+		output_object.exported_symbols.cend(),
+		input_object.exported_symbols.cbegin(),
+		input_object.exported_symbols.cend());
+
+	// Relocate external references
+	for (auto& ref : input_object.external_references) {
+		for (auto& location : ref.locations) {
+			location += relocation_offset;
+		}
+	}
+
+	// Add the external references to the output
+	output_object.external_references.insert(
+		output_object.external_references.cend(),
+		input_object.external_references.cbegin(),
+		input_object.external_references.cend());
 
 	// finally just append the new object code to the existing
-	{
-		const auto& new_mach = object.machine_code;
-		output_machine_code.insert(output_machine_code.cend(), new_mach.cbegin(), new_mach.cend());
+	output_object.machine_code.insert(
+		output_object.machine_code.cend(),
+		input_object.machine_code.cbegin(),
+		input_object.machine_code.cend());
+}
+
+static void apply_references(Object_Type& object)
+{
+	std::unordered_map<std::string, Exported_Symbol> symbol_table;
+
+	// Add all the know references to the map
+	for (const auto& symbol : object.exported_symbols) {
+		symbol_table[symbol.name] = symbol;
+	}
+
+	// Try to resolve all the references
+	for (const auto& ref : object.external_references) {
+		if (symbol_table.count(ref.name) == 0) {
+			throw std::logic_error("Undefined external reference: " + ref.name);
+		}
+
+		const auto& symbol = symbol_table.at(ref.name);
+		std::uint16_t value = (ref.type == HI_LO_TYPE::HI_BYTE) ? symbol.offset >> 8 : symbol.offset & 0xFF;
+
+		for (const auto& location : ref.locations) {
+			// TODO kind of a hack, should be a proper way to get the address
+			std::uint16_t word = object.machine_code.at(location - DEFAULT_LINKER_LOAD_ADDRESS);
+			word &= 0xFF00; // delete the old value
+			word |= value; // apply new value
+			object.machine_code.at(location - DEFAULT_LINKER_LOAD_ADDRESS) = word;
+		}
 	}
 }
 
@@ -65,11 +121,9 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 	// i.e. none of them are libraries or maps. This means
 	// that we know that all inputs will be copied to the output.
 
-	Object_Container output;
-	output.contents = Executable(); // set the variant
-	output.load_address = DEFAULT_LINKER_LOAD_ADDRESS;
-
-	auto& machine = std::get<Executable>(output.contents).machine_code;
+	// All the input objects are collected into this one, then
+	// transfered to the output container
+	Object_Type collector_object;
 
 	for (auto& item : link_items) {
 		switch (item.contents.index())
@@ -77,7 +131,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 		case Object_Container::OBJECT:
 		{
 			auto& object = std::get<Object_Type>(item.contents);
-			handle_object(machine, object, item.load_address);
+			handle_object(collector_object, object, item.load_address);
 			break;
 		}
 		case Object_Container::LIBRARY:
@@ -93,47 +147,16 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 		}
 	}
 
+	// Now that we have all the objects collected, apply all the references
+	apply_references(collector_object);
 
-
-
-	//output.type = Object_Code::Object_Type::EXECUTABLE;
-	//// Executables only have a single machine code section
-	//auto machine_code = std::make_unique<Machine_Code>();
-	//auto known_symbols = std::make_unique<Exported_Symbols>();
-	//
-	//
-	//for (const auto& object : objects) {
-	//	const auto current_offset = u16(machine_code->machine_code.size());
-	//
-	//	if (object.type != Object_Code::Object_Type::OBJECT) {
-	//		throw std::logic_error("Link: only objects currently supported");
-	//	}
-	//
-	//	Machine_Code* new_machine_code = nullptr;
-	//	Exported_Symbols* new_exported = nullptr;
-	//	External_References* new_external_ref = nullptr;
-	//	Relocation* new_relocation = nullptr;
-	//	for (const auto& section : object.sections) {
-	//		switch (section->section_type)
-	//		{
-	//			case Section::Section_Type::EXPORTED_SYMBOLS:
-	//				new_exported = dynamic_cast<Exported_Symbols*>(section.get());
-	//				break;
-	//			case Section::Section_Type::EXTERNAL_REFERENCES:
-	//				new_external_ref = dynamic_cast<External_References*>(section.get());
-	//				break;
-	//			case Section::Section_Type::RELOCATION:
-	//				new_relocation = dynamic_cast<Relocation*>(section.get());
-	//				break;
-	//			case Section::Section_Type::TEXT:
-	//				new_machine_code = dynamic_cast<Machine_Code*>(section.get());
-	//				break;
-	//		default:
-	//			throw std::logic_error("Link: Unexpected section");
-	//		}
-	//	}
-	//
-	//}
+	Executable exe{
+		collector_object.machine_code,
+		collector_object.exported_symbols
+	};
+	Object_Container output;
+	output.contents = exe; // set the variant
+	output.load_address = DEFAULT_LINKER_LOAD_ADDRESS;
 
 	return output;
 }

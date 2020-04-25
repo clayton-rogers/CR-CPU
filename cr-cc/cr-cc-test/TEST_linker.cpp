@@ -428,7 +428,6 @@ TEST_CASE("Test linker", "[link]") {
 			obj.relocations.emplace_back(
 				Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
 
-			//TODO check the exported symbols are relocated
 			obj.exported_symbols.emplace_back(
 				Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
 
@@ -444,9 +443,14 @@ TEST_CASE("Test linker", "[link]") {
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
 		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
 		CHECK(output.load_address == DEFAULT_LOAD_ADDR);
-		const auto& code = std::get<Executable>(output.contents).machine_code;
+		
+		const auto& debug_external_ref = std::get<Executable>(output.contents).exported_symbols;
+		CHECK(debug_external_ref.at(0).name == "fun");
+		CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
+		CHECK(debug_external_ref.at(0).offset == 0x0206);
 
 		// offset to apply is 0x200 + 0x03 = 0x203
+		const auto& code = std::get<Executable>(output.contents).machine_code;
 		CHECK(code.at(0) == 0xfa14);
 		CHECK(code.at(1) == 0x1011);
 		CHECK(code.at(2) == 0xabcd);
@@ -454,5 +458,81 @@ TEST_CASE("Test linker", "[link]") {
 		CHECK(code.at(4) == 0x1013);
 		CHECK(code.at(5) == 0x1014);
 		CHECK(code.at(6) == 0x1011);
+	}
+
+	SECTION("External references and exported symbols") {
+		std::vector<Object_Container> items(2);
+
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0xabcd);
+			obj.machine_code.push_back(0xac00);
+			obj.machine_code.push_back(0xad00);
+
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "funa", Symbol_Type::FUNCTION, 0x01 }
+			);
+
+			obj.external_references.push_back(
+				External_Reference{ "funb", HI_LO_TYPE::LO_BYTE, {0x01, 0x03} }
+			);
+			obj.external_references.push_back(
+				External_Reference{ "funb", HI_LO_TYPE::HI_BYTE, {0x04} }
+			);
+
+			items.at(0).load_address = 0;
+			items.at(0).contents = obj;
+		}
+
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1011);
+
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "funb", Symbol_Type::FUNCTION, 0x03 }
+			);
+
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::LO_BYTE, {0x01} }
+			);
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::HI_BYTE, {0x02} }
+			);
+
+
+			items.at(1).load_address = 0;
+			items.at(1).contents = obj;
+		}
+
+		auto output = link(std::move(items));
+
+		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
+		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
+		CHECK(output.load_address == DEFAULT_LOAD_ADDR);
+
+		const auto& debug_external_ref = std::get<Executable>(output.contents).exported_symbols;
+		CHECK(debug_external_ref.at(0).name == "funa");
+		CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
+		CHECK(debug_external_ref.at(0).offset == 0x0201);
+		CHECK(debug_external_ref.at(1).name == "funb");
+		CHECK(debug_external_ref.at(1).type == Symbol_Type::FUNCTION);
+		CHECK(debug_external_ref.at(1).offset == 0x0208);
+
+		// offset to apply is 0x200 + 0x03 = 0x203
+		const auto& code = std::get<Executable>(output.contents).machine_code;
+		CHECK(code.at(0) == 0xfa12);
+		CHECK(code.at(1) == 0x1008);
+		CHECK(code.at(2) == 0xabcd);
+		CHECK(code.at(3) == 0xac08);
+		CHECK(code.at(4) == 0xad02);
+		CHECK(code.at(5) == 0xfa12);
+		CHECK(code.at(6) == 0x1001);
+		CHECK(code.at(7) == 0x1002);
+		CHECK(code.at(8) == 0x1011);
 	}
 }

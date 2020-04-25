@@ -74,13 +74,14 @@ using namespace Object;
 
 Stream_Type Object_Container::to_object_code() const
 {
-	std::vector<std::uint16_t> stream;
-
-	auto stream_cat = [](Stream_Type& a, const Stream_Type& b) {
-		return a.insert(a.cend(), b.cbegin(), b.cend());
-	};
-
-	auto object_to_stream = [&stream_cat](Stream_Type& s, const Object_Type& obj) {
+	return Stream_Type();
+//	std::vector<std::uint16_t> stream;
+//
+//	auto stream_cat = [](Stream_Type& a, const Stream_Type& b) {
+//		return a.insert(a.cend(), b.cbegin(), b.cend());
+//	};
+//
+//	auto object_to_stream = [&stream_cat](Stream_Type& s, const Object_Type& obj) {
 //		auto temp = obj.exports.to_stream();
 //		stream_cat(s, temp);
 //		temp = obj.references.to_stream();
@@ -89,54 +90,54 @@ Stream_Type Object_Container::to_object_code() const
 //		stream_cat(s, temp);
 //		temp = obj.machine_code.to_stream();
 //		stream_cat(s, temp);
-	};
-
-	// object code header
-	stream.push_back(MAGIC);
-	stream.push_back(object_version);
-	stream.push_back(u16(contents.index())); // type of object
-	stream.push_back(load_address);
-	stream.push_back(0); // reserved
-	stream.push_back(0); // reserved
-	stream.push_back(0); // reserved
-	stream.push_back(0); // placeholder for size of sections
-
-	// contents
-	switch (contents.index()) {
-	case OBJECT:
-	{
-		const auto& object = std::get<Object_Type>(contents);
-		object_to_stream(stream, object);
-		break;
-	}
-	case LIBRARY:
-	{
-		const auto& lib = std::get<Library_Type>(contents);
-		for (const auto& object : lib.objects) {
-			object_to_stream(stream, object);
-		}
-		break;
-	}
-	case EXECUTABLE:
-	{
-		const auto& exe = std::get<Executable>(contents);
+//	};
+//
+//	// object code header
+//	stream.push_back(MAGIC);
+//	stream.push_back(object_version);
+//	stream.push_back(u16(contents.index())); // type of object
+//	stream.push_back(load_address);
+//	stream.push_back(0); // reserved
+//	stream.push_back(0); // reserved
+//	stream.push_back(0); // reserved
+//	stream.push_back(0); // placeholder for size of sections
+//
+//	// contents
+//	switch (contents.index()) {
+//	case OBJECT:
+//	{
+//		const auto& object = std::get<Object_Type>(contents);
+//		object_to_stream(stream, object);
+//		break;
+//	}
+//	case LIBRARY:
+//	{
+//		const auto& lib = std::get<Library_Type>(contents);
+//		for (const auto& object : lib.objects) {
+//			object_to_stream(stream, object);
+//		}
+//		break;
+//	}
+//	case EXECUTABLE:
+//	{
+//		const auto& exe = std::get<Executable>(contents);
 //		auto temp = exe.machine_code.to_stream();
 //		stream_cat(stream, temp);
-		break;
-	}
-	case MAP:
-	{
-		const auto& map = std::get<Map>(contents);
+//		break;
+//	}
+//	case MAP:
+//	{
+//		const auto& map = std::get<Map>(contents);
 //		auto temp = map.exports.to_stream();
 //		stream_cat(stream, temp);
-		break;
-	}
-	}
-
-	static constexpr auto OC_HEADER_SIZE = 4;
-	stream.at(3) = u16(stream.size() - OC_HEADER_SIZE);
-
-	return stream;
+//		break;
+//	}
+//	}
+//
+//	static constexpr auto OC_HEADER_SIZE = 4;
+//	stream.at(3) = u16(stream.size() - OC_HEADER_SIZE);
+//
+//	return stream;
 }
 
 const std::uint16_t Object_Container::MAGIC; // ascii "CR"

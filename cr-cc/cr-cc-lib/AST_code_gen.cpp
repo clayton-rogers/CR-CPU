@@ -316,9 +316,6 @@ namespace AST {
 		std::stringstream ss;
 		ss << '\n';
 
-		// For now assume all programs are userspace programs
-		ss << ".text_offset 0x0200\n\n";
-
 		// generate any required constants, i.e. memory layouts???
 
 		// generate any global vars at global scope

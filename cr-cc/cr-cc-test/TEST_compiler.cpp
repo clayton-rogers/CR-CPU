@@ -3,6 +3,7 @@
 #include "compiler.h"
 #include "utilities.h"
 #include "simulator.h"
+#include "linker.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -65,11 +66,16 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			auto ret = compile_tu(item, fr);
 			auto program_loader = compile_tu("program_loader.s", fr);
+			auto& pl_object_container = program_loader.item;
+
+			std::vector<Object::Object_Container> objs;
+			objs.push_back(ret.item);
+			auto exe = link(std::move(objs));
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
-			sim.load(ret.load_address, ret.machine_code);
-			sim.load(program_loader.load_address, program_loader.machine_code);
+			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+			sim.load(0, std::get<Object::Object_Type>(pl_object_container.contents).machine_code);
 
 			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
