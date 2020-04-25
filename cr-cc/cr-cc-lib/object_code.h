@@ -10,96 +10,38 @@ namespace Object {
 
 	using Stream_Type = std::vector<std::uint16_t>;
 
-	class Section {
-	public:
-		
-		enum class Section_Type {
-			EXTERNAL_REFERENCES,
-			RELOCATION,
-			EXPORTED_SYMBOLS,
-			TEXT,
-			OBJECT,
-		};
-		Section_Type section_type;
-
-		virtual ~Section() = default;
-		Section(Section_Type type) : section_type(type) {}
-		Stream_Type to_stream() const;
-
-	private:
-		virtual Stream_Type child_to_stream() const = 0;
+	enum class HI_LO_TYPE {
+		HI_BYTE,
+		LO_BYTE,
 	};
 
-	class External_References : public Section {
-	public:
-		enum class Reference_Type {
-			HI_BYTE,
-			LO_BYTE,
-		};
-		struct External_Reference {
-			std::string name;
-			Reference_Type type;
-			std::vector<std::uint16_t> locations;
-		};
-		std::vector<External_Reference> references;
-
-		External_References() : Section(Section_Type::EXTERNAL_REFERENCES) {}
-	private:
-		Stream_Type child_to_stream() const override;
+	enum class Symbol_Type {
+		FUNCTION,
+		VARIABLE,
 	};
 
-	class Relocations : public Section {
-	public:
-		enum class Relocation_Type {
-			HI_BYTE,
-			LO_BYTE,
-		};
-		struct Relocation {
-			Relocation_Type type;
-			std::uint16_t offset;
-		};
-		std::vector<Relocation> relocation_locations;
-
-		Relocations() : Section(Section_Type::RELOCATION) {}
-	private:
-		Stream_Type child_to_stream() const override;
+	struct External_Reference {
+		std::string name;
+		HI_LO_TYPE type;
+		std::vector<std::uint16_t> locations;
 	};
 
-	class Exported_Symbols : public Section {
-	public:
-		enum class Symbol_Type {
-			FUNCTION,
-			VARIABLE,
-		};
-		struct Exported_Symbol {
-			std::string name;
-			Symbol_Type type;
-			std::uint16_t offset;
-		};
-		std::vector<Exported_Symbol> symbols;
-
-		Exported_Symbols() : Section(Section_Type::EXPORTED_SYMBOLS) {}
-	private:
-		Stream_Type child_to_stream() const override;
+	struct Relocation {
+		HI_LO_TYPE type;
+		std::uint16_t offset;
 	};
 
-	class Machine_Code : public Section {
-	public:
-		std::vector<std::uint16_t> machine_code;
-
-		Machine_Code() : Section(Section_Type::TEXT) {}
-	private:
-		Stream_Type child_to_stream() const override;
+	struct Exported_Symbol {
+		std::string name;
+		Symbol_Type type;
+		std::uint16_t offset;
 	};
-
-
-
 
 	struct Object_Type {
-		Exported_Symbols exports;
-		External_References references;
-		Relocations relocations;
-		Machine_Code machine_code;
+		std::vector<Exported_Symbol>    exported_symbols;
+		std::vector<External_Reference> external_references;
+		std::vector<Relocation>         relocations;
+		std::vector<std::uint16_t>      machine_code;
 	};
 
 	struct Library_Type {
@@ -107,16 +49,16 @@ namespace Object {
 	};
 
 	struct Executable {
-		Machine_Code machine_code;
+		std::vector<std::uint16_t> machine_code;
 	};
 
 	struct Map {
-		Exported_Symbols exports;
+		std::vector<Exported_Symbol> exported_symbols;
 	};
 
 	// TODO shared lib?
 
-	class Object_Code {
+	class Object_Container {
 	public:
 
 		static const std::uint16_t MAGIC = 0x4352; // ascii "CR"

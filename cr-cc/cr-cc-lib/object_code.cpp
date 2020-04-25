@@ -6,73 +6,73 @@
 
 using namespace Object;
 
-Stream_Type Section::to_stream() const
-{
-	auto child_stream = child_to_stream();
+//Stream_Type Section::to_stream() const
+//{
+//	auto child_stream = child_to_stream();
+//
+//	Stream_Type section_stream;
+//	section_stream.push_back(u16(section_type));
+//	section_stream.push_back(u16(child_stream.size()));
+//	section_stream.insert(section_stream.cend(),
+//		std::make_move_iterator(child_stream.cbegin()),
+//		std::make_move_iterator(child_stream.cend()));
+//	
+//	return section_stream;
+//}
+//
+//Stream_Type External_References::child_to_stream() const
+//{
+//	Stream_Type stream;
+//	for (const auto& ref : references) {
+//		for (const auto& character : ref.name) {
+//			stream.push_back(static_cast<std::uint16_t>(character));
+//		}
+//		stream.push_back(0); // null to terminate string
+//		stream.push_back(static_cast<std::uint16_t>(ref.type));
+//		stream.insert(stream.cend(), ref.locations.cbegin(), ref.locations.cend());
+//	}
+//
+//	return stream;
+//}
+//
+//Stream_Type Relocations::child_to_stream() const
+//{
+//	Stream_Type temp;
+//
+//	for (const auto& reloc : relocation_locations) {
+//		// The type of each relocation is encoded in the MSB
+//		std::uint16_t next_val = reloc.offset;
+//		if (reloc.type == Relocation_Type::HI_BYTE) {
+//			next_val |= 0x8000;
+//		}
+//		temp.push_back(next_val);
+//	}
+//
+//	return temp;
+//}
+//
+//Stream_Type Exported_Symbols::child_to_stream() const
+//{
+//	Stream_Type stream;
+//	for (const auto& symbol : symbols) {
+//		for (const auto& character : symbol.name) {
+//			stream.push_back(static_cast<std::uint16_t>(character));
+//		}
+//		stream.push_back(0); // null to terminate string
+//		stream.push_back(static_cast<std::uint16_t>(symbol.type));
+//		stream.push_back(symbol.offset);
+//	}
+//
+//	return stream;
+//}
+//
+//Stream_Type Machine_Code::child_to_stream() const
+//{
+//	// Just return a copy of the machine code
+//	return machine_code;
+//}
 
-	Stream_Type section_stream;
-	section_stream.push_back(u16(section_type));
-	section_stream.push_back(u16(child_stream.size()));
-	section_stream.insert(section_stream.cend(),
-		std::make_move_iterator(child_stream.cbegin()),
-		std::make_move_iterator(child_stream.cend()));
-	
-	return section_stream;
-}
-
-Stream_Type External_References::child_to_stream() const
-{
-	Stream_Type stream;
-	for (const auto& ref : references) {
-		for (const auto& character : ref.name) {
-			stream.push_back(static_cast<std::uint16_t>(character));
-		}
-		stream.push_back(0); // null to terminate string
-		stream.push_back(static_cast<std::uint16_t>(ref.type));
-		stream.insert(stream.cend(), ref.locations.cbegin(), ref.locations.cend());
-	}
-
-	return stream;
-}
-
-Stream_Type Relocations::child_to_stream() const
-{
-	Stream_Type temp;
-
-	for (const auto& reloc : relocation_locations) {
-		// The type of each relocation is encoded in the MSB
-		std::uint16_t next_val = reloc.offset;
-		if (reloc.type == Relocation_Type::HI_BYTE) {
-			next_val |= 0x8000;
-		}
-		temp.push_back(next_val);
-	}
-
-	return temp;
-}
-
-Stream_Type Exported_Symbols::child_to_stream() const
-{
-	Stream_Type stream;
-	for (const auto& symbol : symbols) {
-		for (const auto& character : symbol.name) {
-			stream.push_back(static_cast<std::uint16_t>(character));
-		}
-		stream.push_back(0); // null to terminate string
-		stream.push_back(static_cast<std::uint16_t>(symbol.type));
-		stream.push_back(symbol.offset);
-	}
-
-	return stream;
-}
-
-Stream_Type Machine_Code::child_to_stream() const
-{
-	// Just return a copy of the machine code
-	return machine_code;
-}
-
-Stream_Type Object_Code::to_object_code() const
+Stream_Type Object_Container::to_object_code() const
 {
 	std::vector<std::uint16_t> stream;
 
@@ -81,14 +81,14 @@ Stream_Type Object_Code::to_object_code() const
 	};
 
 	auto object_to_stream = [&stream_cat](Stream_Type& s, const Object_Type& obj) {
-		auto temp = obj.exports.to_stream();
-		stream_cat(s, temp);
-		temp = obj.references.to_stream();
-		stream_cat(s, temp);
-		temp = obj.relocations.to_stream();
-		stream_cat(s, temp);
-		temp = obj.machine_code.to_stream();
-		stream_cat(s, temp);
+//		auto temp = obj.exports.to_stream();
+//		stream_cat(s, temp);
+//		temp = obj.references.to_stream();
+//		stream_cat(s, temp);
+//		temp = obj.relocations.to_stream();
+//		stream_cat(s, temp);
+//		temp = obj.machine_code.to_stream();
+//		stream_cat(s, temp);
 	};
 
 	// object code header
@@ -120,15 +120,15 @@ Stream_Type Object_Code::to_object_code() const
 	case EXECUTABLE:
 	{
 		const auto& exe = std::get<Executable>(contents);
-		auto temp = exe.machine_code.to_stream();
-		stream_cat(stream, temp);
+//		auto temp = exe.machine_code.to_stream();
+//		stream_cat(stream, temp);
 		break;
 	}
 	case MAP:
 	{
 		const auto& map = std::get<Map>(contents);
-		auto temp = map.exports.to_stream();
-		stream_cat(stream, temp);
+//		auto temp = map.exports.to_stream();
+//		stream_cat(stream, temp);
 		break;
 	}
 	}
@@ -139,4 +139,4 @@ Stream_Type Object_Code::to_object_code() const
 	return stream;
 }
 
-const std::uint16_t Object_Code::MAGIC; // ascii "CR"
+const std::uint16_t Object_Container::MAGIC; // ascii "CR"

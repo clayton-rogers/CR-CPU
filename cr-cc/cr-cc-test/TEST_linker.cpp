@@ -400,47 +400,51 @@ TEST_CASE("Test linker", "[link]") {
 	using namespace Object;
 
 	SECTION("Relocations") {
-		Object_Code item1;
+		Object_Container item1;
 		item1.load_address = 0;
 		{
 			Object_Type obj;
-			obj.machine_code.machine_code.push_back(0xfa12);
-			obj.machine_code.machine_code.push_back(0x1011);
-			obj.machine_code.machine_code.push_back(0xabcd);
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0xabcd);
 
-			obj.relocations.relocation_locations.emplace_back(
-				Relocations::Relocation{Relocations::Relocation_Type::HI_BYTE, 0} );
+			obj.relocations.emplace_back(
+				Relocation{HI_LO_TYPE::HI_BYTE, 0} );
 
 			item1.contents = obj;
 		}
 
-		Object_Code item2;
+		Object_Container item2;
 		item2.load_address = 0;
 		{
 			Object_Type obj;
-			obj.machine_code.machine_code.push_back(0xfa12);
-			obj.machine_code.machine_code.push_back(0x1011);
-			obj.machine_code.machine_code.push_back(0x1011);
-			obj.machine_code.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0x1011);
 
-			obj.relocations.relocation_locations.emplace_back(
-				Relocations::Relocation{ Relocations::Relocation_Type::HI_BYTE, 1 });
-			obj.relocations.relocation_locations.emplace_back(
-				Relocations::Relocation{ Relocations::Relocation_Type::LO_BYTE, 2 });
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+
+			//TODO check the exported symbols are relocated
+			obj.exported_symbols.emplace_back(
+				Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
 
 			item2.contents = obj;
 		}
 
-		std::vector<Object_Code> items;
+		std::vector<Object_Container> items;
 		items.push_back(item1);
 		items.push_back(item2);
 
 		auto output = link(std::move(items));
 
-		CHECK(output.contents.index() == Object_Code::EXECUTABLE);
+		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
 		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
 		CHECK(output.load_address == DEFAULT_LOAD_ADDR);
-		const auto& code = std::get<Executable>(output.contents).machine_code.machine_code;
+		const auto& code = std::get<Executable>(output.contents).machine_code;
 
 		// offset to apply is 0x200 + 0x03 = 0x203
 		CHECK(code.at(0) == 0xfa14);
