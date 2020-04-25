@@ -48,11 +48,19 @@ namespace Object {
 		Stream_Type child_to_stream() const override;
 	};
 
-	class Relocation : public Section {
+	class Relocations : public Section {
 	public:
-		std::vector<std::uint16_t> relocation_locations;
+		enum class Relocation_Type {
+			HI_BYTE,
+			LO_BYTE,
+		};
+		struct Relocation {
+			Relocation_Type type;
+			std::uint16_t offset;
+		};
+		std::vector<Relocation> relocation_locations;
 
-		Relocation() : Section(Section_Type::RELOCATION) {}
+		Relocations() : Section(Section_Type::RELOCATION) {}
 	private:
 		Stream_Type child_to_stream() const override;
 	};
@@ -90,7 +98,7 @@ namespace Object {
 	struct Object_Type {
 		Exported_Symbols exports;
 		External_References references;
-		Relocation relocations;
+		Relocations relocations;
 		Machine_Code machine_code;
 	};
 
@@ -115,16 +123,16 @@ namespace Object {
 		std::uint16_t load_address = 0;
 
 		std::variant<Object_Type, Library_Type, Executable, Map> contents;
-		
-		Stream_Type to_object_code() const;
-
-	private:
 		enum Variant_Type {
 			OBJECT,
 			LIBRARY,
 			EXECUTABLE,
 			MAP,
 		};
+		
+		Stream_Type to_object_code() const;
+
+	private:
 		std::uint16_t object_version = 2;
 	};
 }

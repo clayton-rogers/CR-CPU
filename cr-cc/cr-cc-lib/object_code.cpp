@@ -35,10 +35,20 @@ Stream_Type External_References::child_to_stream() const
 	return stream;
 }
 
-Stream_Type Relocation::child_to_stream() const
+Stream_Type Relocations::child_to_stream() const
 {
-	// Just return a copy of the locations
-	return relocation_locations;
+	Stream_Type temp;
+
+	for (const auto& reloc : relocation_locations) {
+		// The type of each relocation is encoded in the MSB
+		std::uint16_t next_val = reloc.offset;
+		if (reloc.type == Relocation_Type::HI_BYTE) {
+			next_val |= 0x8000;
+		}
+		temp.push_back(next_val);
+	}
+
+	return temp;
 }
 
 Stream_Type Exported_Symbols::child_to_stream() const

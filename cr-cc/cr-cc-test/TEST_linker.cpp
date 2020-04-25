@@ -80,9 +80,9 @@ TEST_CASE("Test section code", "[link]") {
 		}
 	}
 
-	SECTION("Relocation") {
+	SECTION("Relocations") {
 		auto temp = Section::create_section(Section::Section_Type::RELOCATION);
-		auto rel = dynamic_cast<Relocation&>(*temp);
+		auto rel = dynamic_cast<Relocations&>(*temp);
 
 		SECTION("Empty") {
 			auto stream = rel.to_stream();
