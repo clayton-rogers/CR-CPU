@@ -258,6 +258,7 @@ namespace AST {
 		ss << "\n# " << name << '\n';
 		// ss << arguments.... TODO
 		ss << scope->env->label_maker.get_label_for_fn(name) << ":\n";
+		ss << ".export " << name << "\n";
 
 		// Calling convention is that the first two arguments will be in ra and rb in the case of the
 		// compiler, these will be pushed immediately, but it allows for future optimization.
@@ -319,11 +320,6 @@ namespace AST {
 		// generate any required constants, i.e. memory layouts???
 
 		// generate any global vars at global scope
-
-		// generate entry into main
-		ss << "loada .main\n"; // Can't guarantee main is in range of a short jumpe
-		ss << "call .main\n";
-		ss << "ret\n"; // return to the OS
 
 		// Defer code gen to environment
 		ss << env.generate_code();
