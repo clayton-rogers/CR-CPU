@@ -364,9 +364,9 @@ namespace AST {
 		std::string generate_code() const;
 
 		std::string get_name() { return name; }
-		bool signature_matches(const Function& other);
-		bool signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args);
-		bool is_defined() { return is_fn_defined; }
+		bool signature_matches(const Function& other) const;
+		bool signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const;
+		bool is_defined() const { return is_fn_defined; }
 	private:
 		struct Arg_Type {
 			const Type* type;
@@ -382,6 +382,7 @@ namespace AST {
 
 		std::vector<Arg_Type> arguments;
 		bool is_fn_defined; // if not defined, contents will be empty
+		// TODO track whether function is called and don't generate if it isn't
 		std::shared_ptr<Compount_Statement> contents;
 	};
 

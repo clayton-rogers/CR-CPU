@@ -142,7 +142,7 @@ namespace AST {
 		}
 	}
 
-	bool Function::signature_matches(const Function& other) {
+	bool Function::signature_matches(const Function& other) const {
 		if (name != other.name) return false;
 		if (arguments.size() != other.arguments.size()) return false;
 
@@ -153,7 +153,7 @@ namespace AST {
 		return true;
 	}
 
-	bool Function::signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) {
+	bool Function::signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const {
 		if (name != other_name) return false;
 		if (arguments.size() != other_args.size()) return false;
 
