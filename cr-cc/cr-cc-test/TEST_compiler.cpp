@@ -64,18 +64,19 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		// rather than stopping at the first failed compile
 		try {
 
-			auto ret = compile_tu(item, fr);
-			auto program_loader = compile_tu("program_loader.s", fr);
-			auto& pl_object_container = program_loader.item;
+			auto test_program = compile_tu(item, fr).item;
+			auto init_main = compile_tu("./stdlib/main.s", fr).item; // this is what calls the main fn
+			auto program_loader = compile_tu("program_loader.s", fr).item; // This jumps to 0x200
 
 			std::vector<Object::Object_Container> objs;
-			objs.push_back(ret.item);
+			objs.push_back(init_main);
+			objs.push_back(test_program);
 			auto exe = link(std::move(objs));
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
 			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-			sim.load(0, std::get<Object::Object_Type>(pl_object_container.contents).machine_code);
+			sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
 
 			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
