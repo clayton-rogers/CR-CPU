@@ -128,3 +128,36 @@ TEST_CASE("Invalid C programs", "[c]") {
 		CHECK_THROWS(compile_tu(item, fr));
 	}
 }
+
+TEST_CASE("Whole C program", "[c]") {
+	FileReader fr;
+	
+	// For the actual program
+	fr.add_directory("./test_data/whole_program/");
+	// For main.s
+	fr.add_directory("./stdlib/");
+	// For program loader
+	fr.add_directory("./test_data/valid_c/");
+
+	std::vector<Object::Object_Container> objs;
+	objs.push_back(compile_tu("main.s", fr).item);
+	objs.push_back(compile_tu("main.c", fr).item);
+	objs.push_back(compile_tu("add.c", fr).item);
+
+	auto exe = link(std::move(objs));
+
+	auto program_loader = compile_tu("program_loader.s", fr).item;
+
+	Simulator sim;
+	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+	sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+
+	sim.run_until_halted(20000);
+	CHECK(sim.get_state().is_halted == true);
+
+	// Check that the program produced the desired result
+	const int actual_program_output = sim.get_state().ra;
+	const int expected_program_output = 123;
+
+	CHECK(actual_program_output == expected_program_output);
+}
