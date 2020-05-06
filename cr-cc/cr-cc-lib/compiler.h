@@ -1,6 +1,7 @@
 #pragma once
 
 #include "file_io.h"
+#include "object_code.h"
 
 #include <string>
 #include <vector>
@@ -8,8 +9,7 @@
 
 struct Compiler_Return {
 	std::string assembly;
-	std::vector<std::uint16_t> machine_code;
-	std::uint16_t load_address = 0;
+	Object::Object_Container item;
 };
 
 Compiler_Return compile_tu(std::string filename, FileReader f);

@@ -80,11 +80,11 @@ std::string FileReader::read_file_from_directories(std::string filename)
 		std::string full_filename = directory + "/" + filename;
 
 		if (file_exists(full_filename)) {
-			result = read_file(full_filename);
+			return read_file(full_filename);
 		}
 	}
 
-	return result;
+	throw std::logic_error("Could not find file: " + filename);
 }
 
 std::vector<std::string> read_directory(std::string directory) {

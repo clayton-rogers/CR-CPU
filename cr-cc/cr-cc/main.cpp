@@ -2,6 +2,7 @@
 #include "file_io.h"
 #include "utilities.h"
 #include "simulator.h"
+#include "linker.h"
 
 #include <iostream>
 #include <iomanip>
@@ -15,7 +16,8 @@ static const int RAM_SIZE_WORDS = 4096;
 struct Options {
 	bool verbose = false;
 	bool should_sim = false;
-	std::string filename;
+	bool compile_only = false;
+	std::vector<std::string> filenames;
 	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
 };
 
@@ -37,11 +39,13 @@ void parse_args(int arc, char** argv) {
 			opt.verbose = true;
 		} else if ("-o" == arg) {
 			opt.output_filename = args.at(++i) + ".";
+		} else if ("-c" == arg) {
+			opt.compile_only = true;
 		} else if ("--sim" == arg) {
 			opt.should_sim = true;
 		} else {
 			// if it's none of the options, assume filename
-			opt.filename = arg;
+			opt.filenames.push_back(arg);
 		}
 	}
 }
@@ -58,7 +62,7 @@ struct Thousand_Sep : public std::numpunct<char> {
 
 int main(int argc, char **argv) {
 	parse_args(argc, argv);
-	if (opt.filename == "") {
+	if (opt.filenames.size() == 0) {
 		std::cout << "Need file for input!!" << std::endl;
 		return 1;
 	}
@@ -66,18 +70,35 @@ int main(int argc, char **argv) {
 	try {
 		FileReader f;
 
-		auto ret = compile_tu(opt.filename, f);
-		write_file(opt.output_filename + "s", ret.assembly);
+		std::vector<Object::Object_Container> objs;
 
-		write_file(opt.output_filename + "hex", machine_inst_to_hex(ret.machine_code));
-		write_bin_file(opt.output_filename + "bin", ret.machine_code);
-		auto srec = machine_inst_to_srec(ret.machine_code, ret.load_address);
+		if (!opt.compile_only) {
+			// If we're compiling only, we just want to create objs.
+			// For the normal case, we also want to link into an exe.
+			auto ret = compile_tu("./stdlib/main.s", FileReader());
+			objs.push_back(ret.item);
+		}
+
+		for (const auto& filename : opt.filenames) {
+			auto ret = compile_tu(filename, f);
+			objs.push_back(ret.item);
+			write_file(opt.output_filename + "s", ret.assembly);
+		}
+
+		// TODO if compile_only then don't link
+		auto exe = link(std::move(objs));
+
+		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
+
+		write_file(opt.output_filename + "hex", machine_inst_to_hex(machine_code));
+		write_bin_file(opt.output_filename + "bin", machine_code);
+		auto srec = machine_inst_to_srec(machine_code, exe.load_address);
 		write_file(opt.output_filename + "srec", srec);
 
 		if (opt.verbose) {
-			std::cout << "Code size: " << ret.machine_code.size() << "/" << RAM_SIZE_WORDS
+			std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
 				<< " (" << std::fixed << std::setprecision(2)
-				<< static_cast<float>(ret.machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
+				<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
 				<< std::endl;
 
 			std::cout << "\n" << srec;
@@ -90,8 +111,8 @@ int main(int argc, char **argv) {
 			auto program_loader = compile_tu("program_loader.s", pl_f);
 
 			Simulator sim;
-			sim.load(program_loader.load_address, program_loader.machine_code);
-			sim.load(ret.load_address, ret.machine_code);
+			sim.load(0, std::get<Object::Object_Type>(program_loader.item.contents).machine_code);
+			sim.load(exe.load_address, machine_code);
 
 			const int total_steps = 16000000;// up to one second of operation
 			sim.run_until_halted(total_steps);

@@ -3,6 +3,7 @@
 #include "compiler.h"
 #include "utilities.h"
 #include "simulator.h"
+#include "linker.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -15,40 +16,6 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	fr.add_directory("./test_data");
 	
 	auto ret = compile_tu("first.c", fr);
-}
-
-TEST_CASE("Test properties of cast uint16", "[c]") {
-
-	SECTION("At pos limit") {
-		int a = 0x7FFF;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x7FFF);
-	}
-	SECTION("Above limit") {
-		int a = 0x8000;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x8000);
-	}
-	SECTION("At pos max") {
-		int a = 0xFFFF;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0xFFFF);
-	}
-	SECTION("Negative") {
-		int a = -1;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0xFFFF);
-	}
-	SECTION("At neg max") {
-		int a = -32768;
-		std::uint16_t b = static_cast<std::uint16_t>(a);
-
-		CHECK(b == 0x8000);
-	}
 }
 
 TEST_CASE("Compiler Benchmarks", "[.][bench]") {
@@ -97,13 +64,19 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		// rather than stopping at the first failed compile
 		try {
 
-			auto ret = compile_tu(item, fr);
-			auto program_loader = compile_tu("program_loader.s", fr);
+			auto test_program = compile_tu(item, fr).item;
+			auto init_main = compile_tu("./stdlib/main.s", fr).item; // this is what calls the main fn
+			auto program_loader = compile_tu("program_loader.s", fr).item; // This jumps to 0x200
+
+			std::vector<Object::Object_Container> objs;
+			objs.push_back(init_main);
+			objs.push_back(test_program);
+			auto exe = link(std::move(objs));
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
-			sim.load(ret.load_address, ret.machine_code);
-			sim.load(program_loader.load_address, program_loader.machine_code);
+			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+			sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
 
 			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
@@ -154,4 +127,37 @@ TEST_CASE("Invalid C programs", "[c]") {
 
 		CHECK_THROWS(compile_tu(item, fr));
 	}
+}
+
+TEST_CASE("Whole C program", "[c]") {
+	FileReader fr;
+	
+	// For the actual program
+	fr.add_directory("./test_data/whole_program/");
+	// For main.s
+	fr.add_directory("./stdlib/");
+	// For program loader
+	fr.add_directory("./test_data/valid_c/");
+
+	std::vector<Object::Object_Container> objs;
+	objs.push_back(compile_tu("main.s", fr).item);
+	objs.push_back(compile_tu("main.c", fr).item);
+	objs.push_back(compile_tu("add.c", fr).item);
+
+	auto exe = link(std::move(objs));
+
+	auto program_loader = compile_tu("program_loader.s", fr).item;
+
+	Simulator sim;
+	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+	sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+
+	sim.run_until_halted(20000);
+	CHECK(sim.get_state().is_halted == true);
+
+	// Check that the program produced the desired result
+	const int actual_program_output = sim.get_state().ra;
+	const int expected_program_output = 123;
+
+	CHECK(actual_program_output == expected_program_output);
 }

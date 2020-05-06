@@ -52,6 +52,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp">
       <Filter>Simulator</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)linker.cpp">
+      <Filter>Linker</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)object_code.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -102,6 +106,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator.h">
       <Filter>Simulator</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)object_code.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)linker.h">
+      <Filter>Linker</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)cast.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">
@@ -112,6 +121,9 @@
     </Filter>
     <Filter Include="Assembler">
       <UniqueIdentifier>{fbc0af6c-95cd-4c75-8e4b-a0e1c91b360b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Linker">
+      <UniqueIdentifier>{0c837b18-4d32-4740-8a04-bdca5a57da14}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

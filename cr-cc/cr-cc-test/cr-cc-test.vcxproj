@@ -124,7 +124,9 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="TEST_assembler.cpp" />
+    <ClCompile Include="TEST_cast.cpp" />
     <ClCompile Include="TEST_compiler.cpp" />
+    <ClCompile Include="TEST_linker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

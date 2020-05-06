@@ -252,62 +252,69 @@ namespace AST {
 	std::string Function::generate_code() const {
 		std::stringstream ss;
 
-		this->scope->env->label_maker.set_fn_name(name);
+		if (is_defined()) {
 
-		// Function header
-		ss << "\n# " << name << '\n';
-		// ss << arguments.... TODO
-		ss << scope->env->label_maker.get_label_for_fn(name) << ":\n";
+			this->scope->env->label_maker.set_fn_name(name);
 
-		// Calling convention is that the first two arguments will be in ra and rb in the case of the
-		// compiler, these will be pushed immediately, but it allows for future optimization.
-		// Any additonal argument will be pushed by the caller
-		// RP will need to be saved as well when it's used in the future.
-		const bool is_ra_argument = arguments.size() >= 1;
-		const bool is_rb_argument = arguments.size() >= 2;
+			// Function header
+			ss << "\n# " << name << '\n';
+			// ss << arguments.... TODO
+			ss << scope->env->label_maker.get_label_for_fn(name) << ":\n";
+			ss << ".export " << name << "\n";
 
-		ss << "push rb ";
-		if (is_rb_argument) {
-			ss << "# push arg rb\n";
+			// Calling convention is that the first two arguments will be in ra and rb in the case of the
+			// compiler, these will be pushed immediately, but it allows for future optimization.
+			// Any additonal argument will be pushed by the caller
+			// RP will need to be saved as well when it's used in the future.
+			const bool is_ra_argument = arguments.size() >= 1;
+			const bool is_rb_argument = arguments.size() >= 2;
+
+			ss << "push rb ";
+			if (is_rb_argument) {
+				ss << "# push arg rb\n";
+			} else {
+				ss << "# store caller rb\n";
+			}
+			ss << "push ra ";
+			if (is_ra_argument) {
+				ss << "# push arg ra\n";
+			} else {
+				ss << "# store caller ra\n";
+			}
+
+			// Allocated space on the stack for vars in scope
+			ss << scope->gen_scope_entry();
+			// Code for contents
+			ss << contents->generate_code();
+			// Exit block
+			ss << "loadi ra, 0\n"; // In case funtion runs off the end, it should return 0.
+			ss << scope->env->label_maker.get_fn_end_label() << ":\n";
+			ss << scope->gen_scope_exit();
+			// From above, we always push two int onto the stack, so we always have to remove those
+			// but depending on what they are, we may have to restore them or discard them.
+			if (arguments.size() >= 2) {
+				// both ra and rb were args, so just drop them
+				ss << "add sp, 2 # drop pushed ra, and rb\n";
+			} else if (arguments.size() == 1) {
+				// restore rb, drop arg ra
+				ss << "add sp, 1 # drop arg ra\n";
+				ss << "pop rb # restore caller rb\n";
+			} else if (arguments.size() == 0 && env->get_type("void") == return_type) {
+				// restore caller ra and rb
+				ss << "pop ra # restore caller ra\n";
+				ss << "pop rb # restore caller rb\n";
+			} else if (arguments.size() == 0) {
+				// has a return type, so return is in ra, so don't have to restore ra
+				ss << "add sp, 1 # drop ra because we're returning a value\n";
+				ss << "pop rb # restore caller rb\n";
+			} else {
+				throw std::logic_error("Should never get here: unable to determine function epilogue");
+			}
+			ss << "ret\n";
 		} else {
-			ss << "# store caller rb\n";
+			// If the function has not been defined, assume this is an externally declared function
+			ss << ".extern " + this->name << "\n";
 		}
-		ss << "push ra ";
-		if (is_ra_argument) {
-			ss << "# push arg ra\n";
-		} else {
-			ss << "# store caller ra\n";
-		}
-
-		// Allocated space on the stack for vars in scope
-		ss << scope->gen_scope_entry();
-		// Code for contents
-		ss << contents->generate_code();
-		// Exit block
-		ss << "loadi ra, 0\n"; // In case funtion runs off the end, it should return 0.
-		ss << scope->env->label_maker.get_fn_end_label() << ":\n";
-		ss << scope->gen_scope_exit();
-		// From above, we always push two int onto the stack, so we always have to remove those
-		// but depending on what they are, we may have to restore them or discard them.
-		if (arguments.size() >= 2) {
-			// both ra and rb were args, so just drop them
-			ss << "add sp, 2 # drop pushed ra, and rb\n";
-		} else if (arguments.size() == 1) {
-			// restore rb, drop arg ra
-			ss << "add sp, 1 # drop arg ra\n";
-			ss << "pop rb # restore caller rb\n";
-		} else if (arguments.size() == 0 && env->get_type("void") == return_type) {
-			// restore caller ra and rb
-			ss << "pop ra # restore caller ra\n";
-			ss << "pop rb # restore caller rb\n";
-		} else if (arguments.size() == 0) {
-			// has a return type, so return is in ra, so don't have to restore ra
-			ss << "add sp, 1 # drop ra because we're returning a value\n";
-			ss << "pop rb # restore caller rb\n";
-		} else {
-			throw std::logic_error("Should never get here: unable to determine function epilogue");
-		}
-		ss << "ret\n";
 
 		return ss.str();
 	}
@@ -316,17 +323,9 @@ namespace AST {
 		std::stringstream ss;
 		ss << '\n';
 
-		// For now assume all programs are userspace programs
-		ss << ".text_offset 0x0200\n\n";
-
 		// generate any required constants, i.e. memory layouts???
 
 		// generate any global vars at global scope
-
-		// generate entry into main
-		ss << "loada .main\n"; // Can't guarantee main is in range of a short jumpe
-		ss << "call .main\n";
-		ss << "ret\n"; // return to the OS
 
 		// Defer code gen to environment
 		ss << env.generate_code();
@@ -337,7 +336,16 @@ namespace AST {
 	std::string Environment::generate_code() const {
 		std::stringstream ss;
 
-		// generate code for functions
+		// Extern functions must be declared in the assembly before they are used.
+
+		// generate code for extern functions
+		for (const auto& fn : function_map) {
+			if (!fn.second->is_defined()) {
+				ss << fn.second->generate_code();
+			}
+		}
+
+		// generate code for functions defined here
 		for (const auto& fn : function_map) {
 			if (fn.second->is_defined()) {
 				ss << fn.second->generate_code();
