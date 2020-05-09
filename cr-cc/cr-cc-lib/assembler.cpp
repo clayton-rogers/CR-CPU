@@ -671,16 +671,16 @@ static std::uint16_t instruction_to_machine(
 
 					const_value = get_label(label_str) + offset;
 					if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
-						if (need_relocation(a.label_value)) {
+						if (need_relocation(label_str)) {
 							relocations.push_back(Relocation{ HI_LO_TYPE::HI_BYTE, u16(instruction_number) });
 						}
-						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::HI_BYTE);
+						handle_external_ref_if_needed(label_str, HI_LO_TYPE::HI_BYTE);
 						const_value >>= 8;
 					} else {
-						if (need_relocation(a.label_value)) {
+						if (need_relocation(label_str)) {
 							relocations.push_back(Relocation{ HI_LO_TYPE::LO_BYTE, u16(instruction_number) });
 						}
-						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
+						handle_external_ref_if_needed(label_str, HI_LO_TYPE::LO_BYTE);
 						const_value &= 0xFF;
 					}
 				}
