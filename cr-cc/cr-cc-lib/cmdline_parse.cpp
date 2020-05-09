@@ -25,6 +25,10 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.compile_only = true;
 		} else if ("--sim" == arg) {
 			opt.should_sim = true;
+		} else if ("--no-main" == arg) {
+			opt.include_main = false;
+		} else if ("--link-addr" == arg) {
+			opt.link_address = std::stoi(args.at(++i), nullptr, 0);
 		} else {
 			// if it's none of the options, assume filename
 			opt.filenames.push_back(arg);

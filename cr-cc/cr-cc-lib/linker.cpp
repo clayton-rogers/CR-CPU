@@ -7,17 +7,16 @@
 
 using namespace Object;
 
-static const std::uint16_t DEFAULT_LINKER_LOAD_ADDRESS = 0x0200;
-
 static void handle_object(
 	///std::vector<std::uint16_t>& output_machine_code,
 	Object_Type& output_object,
 	Object_Type& input_object,
-	std::uint16_t objects_load_address
+	std::uint16_t objects_load_address,
+	std::uint16_t link_addr
 	)
 {
 	const std::uint16_t relocation_offset = u16(output_object.machine_code.size())
-		+ DEFAULT_LINKER_LOAD_ADDRESS
+		+ link_addr
 		- objects_load_address;
 
 	// First handle any code relocations
@@ -87,7 +86,7 @@ static void handle_object(
 		input_object.machine_code.cend());
 }
 
-static void apply_references(Object_Type& object)
+static void apply_references(Object_Type& object, std::uint16_t link_addr)
 {
 	std::unordered_map<std::string, Exported_Symbol> symbol_table;
 
@@ -107,16 +106,22 @@ static void apply_references(Object_Type& object)
 
 		for (const auto& location : ref.locations) {
 			// TODO kind of a hack, should be a proper way to get the address
-			std::uint16_t word = object.machine_code.at(location - DEFAULT_LINKER_LOAD_ADDRESS);
+			std::uint16_t word = object.machine_code.at(location - link_addr);
 			word &= 0xFF00; // delete the old value
 			word |= value; // apply new value
-			object.machine_code.at(location - DEFAULT_LINKER_LOAD_ADDRESS) = word;
+			object.machine_code.at(location - link_addr) = word;
 		}
 	}
 }
 
-Object_Container link(std::vector<Object::Object_Container>&& link_items)
+Object_Container link(std::vector<Object::Object_Container>&& link_items, int link_addr)
 {
+	std::uint16_t real_link_addr = 0;
+	try {
+		real_link_addr = u16(link_addr);
+	} catch (const std::logic_error& ) {
+		throw std::logic_error("Link address out of range: " + link_addr);
+	}
 	// For now we're going to assume all inputs are objects.
 	// i.e. none of them are libraries or maps. This means
 	// that we know that all inputs will be copied to the output.
@@ -131,7 +136,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 		case Object_Container::OBJECT:
 		{
 			auto& object = std::get<Object_Type>(item.contents);
-			handle_object(collector_object, object, item.load_address);
+			handle_object(collector_object, object, item.load_address, real_link_addr);
 			break;
 		}
 		case Object_Container::LIBRARY:
@@ -148,7 +153,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 	}
 
 	// Now that we have all the objects collected, apply all the references
-	apply_references(collector_object);
+	apply_references(collector_object, real_link_addr);
 
 	Executable exe{
 		collector_object.machine_code,
@@ -156,7 +161,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items)
 	};
 	Object_Container output;
 	output.contents = exe; // set the variant
-	output.load_address = DEFAULT_LINKER_LOAD_ADDRESS;
+	output.load_address = real_link_addr;
 
 	return output;
 }

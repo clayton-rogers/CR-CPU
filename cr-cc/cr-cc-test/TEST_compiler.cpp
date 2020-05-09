@@ -70,7 +70,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			std::vector<Object::Object_Container> objs;
 			objs.push_back(init_main);
 			objs.push_back(test_program);
-			auto exe = link(std::move(objs));
+			auto exe = link(std::move(objs), 0x200);
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
@@ -143,7 +143,7 @@ TEST_CASE("Whole C program", "[c]") {
 	objs.push_back(compile_tu("main.c", fr).item);
 	objs.push_back(compile_tu("add.c", fr).item);
 
-	auto exe = link(std::move(objs));
+	auto exe = link(std::move(objs), 0x200);
 
 	auto program_loader = compile_tu("program_loader.s", fr).item;
 

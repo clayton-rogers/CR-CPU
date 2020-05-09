@@ -438,7 +438,7 @@ TEST_CASE("Test linker", "[link]") {
 		items.push_back(item1);
 		items.push_back(item2);
 
-		auto output = link(std::move(items));
+		auto output = link(std::move(items), 0x200);
 
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
 		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
@@ -509,7 +509,7 @@ TEST_CASE("Test linker", "[link]") {
 			items.at(1).contents = obj;
 		}
 
-		auto output = link(std::move(items));
+		auto output = link(std::move(items), 0x200);
 
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
 		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;

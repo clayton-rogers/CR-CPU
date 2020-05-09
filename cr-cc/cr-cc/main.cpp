@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
 		std::vector<Object::Object_Container> objs;
 
-		if (!opt.compile_only) {
+		if (!opt.compile_only && opt.include_main) {
 			// If we're compiling only, we just want to create objs.
 			// For the normal case, we also want to link into an exe.
 			auto ret = compile_tu("main.s", f);
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 		}
 
 		// TODO if compile_only then don't link
-		auto exe = link(std::move(objs));
+		auto exe = link(std::move(objs), opt.link_address);
 
 		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
