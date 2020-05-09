@@ -1,6 +1,8 @@
 
 .extern foo
 .extern bar
+# extern references are allowed to be redeclared
+.extern foo
 
 
 nop
