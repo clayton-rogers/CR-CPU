@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (total_steps - sim.get_state().steps_remaining) << std::endl;
 		}
 
-	} catch (std::logic_error& e) {
+	} catch (const std::logic_error& e) {
 		std::cout << "ASSEMBLY ERROR: \n";
 		std::cout << e.what() << std::endl;
 		return 1;
