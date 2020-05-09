@@ -56,6 +56,7 @@
       <Filter>Linker</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)object_code.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)cmdline_parse.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -111,6 +112,8 @@
       <Filter>Linker</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)cast.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)compiler_options.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)cmdline_parser.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Simulator">

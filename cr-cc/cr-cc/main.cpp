@@ -3,6 +3,7 @@
 #include "utilities.h"
 #include "simulator.h"
 #include "linker.h"
+#include "cmdline_parser.h"
 
 #include <iostream>
 #include <iomanip>
@@ -11,46 +12,9 @@
 #include <locale>
 #include <cstdlib>
 
-static const std::string DEFAULT_OUTPUT_FILENAME("out.");
+
 static const int RAM_SIZE_WORDS = 4096;
 static const char* STDLIB_ENV_VAR = "CRSTDLIBPATH";
-
-struct Options {
-	bool verbose = false;
-	bool should_sim = false;
-	bool compile_only = false;
-	std::vector<std::string> filenames;
-	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
-};
-
-static Options opt;
-
-void parse_args(int arc, char** argv) {
-	std::vector<std::string> args;
-
-	for (int i = 0; i < arc; ++i) {
-		args.emplace_back(argv[i]);
-	}
-
-	// Start at one to ignore filename of "this"
-	// ex: cc.ext -v filename.c
-	for (int i = 1; i < static_cast<int>(args.size()); ++i) {
-		const auto& arg = args.at(i);
-
-		if ("-v" == arg || "--verbose" == arg) {
-			opt.verbose = true;
-		} else if ("-o" == arg) {
-			opt.output_filename = args.at(++i) + ".";
-		} else if ("-c" == arg) {
-			opt.compile_only = true;
-		} else if ("--sim" == arg) {
-			opt.should_sim = true;
-		} else {
-			// if it's none of the options, assume filename
-			opt.filenames.push_back(arg);
-		}
-	}
-}
 
 // Stupid workaround just to get thousands separator to print
 struct Thousand_Sep : public std::numpunct<char> {
@@ -63,7 +27,7 @@ struct Thousand_Sep : public std::numpunct<char> {
 };
 
 int main(int argc, char **argv) {
-	parse_args(argc, argv);
+	auto opt = parse_args(argc, argv);
 	if (opt.filenames.size() == 0) {
 		std::cout << "Need file for input!!" << std::endl;
 		return 1;
