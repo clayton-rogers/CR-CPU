@@ -20,5 +20,5 @@ public:
 
 private:
 	std::shared_ptr<Simulator_Bus> bus;
-	std::array<std::uint16_t, 0x1000> ram;
+	std::array<std::uint16_t, 0x1000> ram = { 0 };
 };

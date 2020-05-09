@@ -33,8 +33,8 @@ namespace Object {
 
 	struct Exported_Symbol {
 		std::string name;
-		Symbol_Type type;
-		std::uint16_t offset;
+		Symbol_Type type = Symbol_Type::FUNCTION;
+		std::uint16_t offset = 0;
 	};
 
 	struct Object_Type {

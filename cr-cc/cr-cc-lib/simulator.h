@@ -40,5 +40,5 @@ private:
 	Simulator_IO io;
 	Simulator_Timer timer;
 	Simulator_Core core;
-	int steps_remaining;
+	int steps_remaining = 0;
 };
