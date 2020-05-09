@@ -9,9 +9,11 @@
 #include <string>
 #include <vector>
 #include <locale>
+#include <cstdlib>
 
 static const std::string DEFAULT_OUTPUT_FILENAME("out.");
 static const int RAM_SIZE_WORDS = 4096;
+static const char* STDLIB_ENV_VAR = "CRSTDLIBPATH";
 
 struct Options {
 	bool verbose = false;
@@ -69,13 +71,27 @@ int main(int argc, char **argv) {
 
 	try {
 		FileReader f;
+		// FileReader defaults to including the current directory
+		// Next add all user defined directories
+		{
+			// TODO
+		}
+		// Finally add stdlib path last so it's checked last
+		{
+			auto stdlib_path = std::getenv(STDLIB_ENV_VAR);
+			if (stdlib_path) {
+				f.add_directory(std::string(stdlib_path));
+			} else {
+				throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
+			}
+		}
 
 		std::vector<Object::Object_Container> objs;
 
 		if (!opt.compile_only) {
 			// If we're compiling only, we just want to create objs.
 			// For the normal case, we also want to link into an exe.
-			auto ret = compile_tu("./stdlib/main.s", FileReader());
+			auto ret = compile_tu("main.s", f);
 			objs.push_back(ret.item);
 		}
 
@@ -105,10 +121,7 @@ int main(int argc, char **argv) {
 		}
 
 		if (opt.should_sim) {
-			FileReader pl_f;
-			const std::string DIR = "test_data/valid_c/";
-			pl_f.add_directory(DIR);
-			auto program_loader = compile_tu("program_loader.s", pl_f);
+			auto program_loader = compile_tu("program_loader.s", f);
 
 			Simulator sim;
 			sim.load(0, std::get<Object::Object_Type>(program_loader.item.contents).machine_code);

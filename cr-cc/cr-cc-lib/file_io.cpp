@@ -84,6 +84,11 @@ std::string FileReader::read_file_from_directories(std::string filename)
 		}
 	}
 
+	std::cout << "Looked in paths:" << std::endl;
+	for (const auto& path : directories) {
+		std::cout << path << std::endl;
+	}
+
 	throw std::logic_error("Could not find file: " + filename);
 }
 

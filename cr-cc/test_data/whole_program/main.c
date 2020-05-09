@@ -1,4 +1,4 @@
-#include "test_data/whole_program/add.h"
+#include "add.h"
 
 int main() {
 	int a = 11;

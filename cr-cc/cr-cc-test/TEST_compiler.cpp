@@ -56,7 +56,6 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 	for (const auto& item : dir_list) {
 		INFO(item);
-		if (item == "test_data/valid_c/program_loader.s") { continue; }
 		FileReader fr;
 		fr.add_directory(DIR);
 
@@ -66,7 +65,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			auto test_program = compile_tu(item, fr).item;
 			auto init_main = compile_tu("./stdlib/main.s", fr).item; // this is what calls the main fn
-			auto program_loader = compile_tu("program_loader.s", fr).item; // This jumps to 0x200
+			auto program_loader = compile_tu("./stdlib/program_loader.s", fr).item; // This jumps to 0x200
 
 			std::vector<Object::Object_Container> objs;
 			objs.push_back(init_main);
