@@ -281,18 +281,32 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 	{
 		const auto& reloc = object.relocations;
 
-		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x0B });
-		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0C });
-		CHECK(reloc.at(2) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0D });
-		CHECK(reloc.at(3) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0E });
-		CHECK(reloc.at(4) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x0F });
-		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x10 });
-		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x11 });
+		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x10 });
+		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x11 });
+		CHECK(reloc.at(2) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x12 });
+		CHECK(reloc.at(3) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x13 });
+		CHECK(reloc.at(4) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x14 });
+		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x15 });
+		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x16 });
+
+		CHECK(reloc.at(7) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x17 });
+		CHECK(reloc.at(8) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x18 });
+		CHECK(reloc.at(9) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x19 });
+		CHECK(reloc.at(10) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1A });
+		CHECK(reloc.at(11) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1B });
+		CHECK(reloc.at(12) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x1C });
+		CHECK(reloc.at(13) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1D });
 	}
 	// Check the output machine code
 	{
 		std::string expected_machine_code =
-			"F000 F000 F000 F000 D081 C223 9223 7223 6223 A281 A023 D000 C204 9204 7204 6204 A200 A004 ";
+			"F000 F000 F000 F000 "
+			"D081 C223 9223 7223 6223 A281 A023 "
+			"D081 7224 6224 A281 A024 "
+			"D000 C204 9204 7204 6204 A200 A004 "
+			"D000 C21E 921E 721E 621E A200 A01E "
+			"4323 "
+			;
 		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
 
 		CHECK(expected_machine_code == actual_machine_code);
