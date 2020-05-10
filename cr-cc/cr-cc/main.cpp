@@ -28,6 +28,9 @@ struct Thousand_Sep : public std::numpunct<char> {
 
 int main(int argc, char **argv) {
 	auto opt = parse_args(argc, argv);
+	if (opt.should_exit) {
+		return 1;
+	}
 	if (opt.filenames.size() == 0) {
 		std::cout << "Need file for input!!" << std::endl;
 		return 1;

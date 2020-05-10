@@ -135,8 +135,6 @@ TEST_CASE("Whole C program", "[c]") {
 	fr.add_directory("./test_data/whole_program/");
 	// For main.s
 	fr.add_directory("./stdlib/");
-	// For program loader
-	fr.add_directory("./test_data/valid_c/");
 
 	std::vector<Object::Object_Container> objs;
 	objs.push_back(compile_tu("main.s", fr).item);

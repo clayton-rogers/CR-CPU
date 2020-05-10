@@ -1,5 +1,7 @@
 #include "cmdline_parser.h"
 
+#include <iostream>
+
 
 const std::string Compiler_Options::DEFAULT_OUTPUT_FILENAME = "out.";
 
@@ -10,6 +12,10 @@ Compiler_Options parse_args(int arc, char** argv) {
 		args.emplace_back(argv[i]);
 	}
 
+	if (args.size() == 1) {
+		args.emplace_back("-h");
+	}
+
 	Compiler_Options opt;
 
 	// Start at one to ignore filename of "this"
@@ -17,7 +23,24 @@ Compiler_Options parse_args(int arc, char** argv) {
 	for (int i = 1; i < static_cast<int>(args.size()); ++i) {
 		const auto& arg = args.at(i);
 
-		if ("-v" == arg || "--verbose" == arg) {
+		if ("-h" == arg || "--help" == arg) {
+			std::cout <<
+				"cr-cc - Compiler for CR-CPU architecture\n"
+				"\n"
+				"Usage: cr-cc [options] file..\n"
+				"\n"
+				"Options:\n"
+				"  -v, --verbose         Enable verbose output\n"
+				"  -o <filename>         Outputs to a particular filename\n"
+				"  -c                    Only compiles the file(s) to objects, does not link\n"
+				"  --sim                 Simulates the program on an emulator\n"
+				"  --no-main             When linking, does not include the default jump to main()\n"
+				"  --link-addr <number>  Relocates the program to run at the given address\n"
+				<< std::endl;
+
+			opt.should_exit = true;
+			return opt;
+		} else if ("-v" == arg || "--verbose" == arg) {
 			opt.verbose = true;
 		} else if ("-o" == arg) {
 			opt.output_filename = args.at(++i) + ".";
