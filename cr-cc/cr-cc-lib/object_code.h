@@ -11,8 +11,8 @@ namespace Object {
 	using Stream_Type = std::vector<std::uint16_t>;
 
 	enum class HI_LO_TYPE {
-		HI_BYTE,
 		LO_BYTE,
+		HI_BYTE,
 	};
 
 	enum class Symbol_Type {
@@ -63,10 +63,12 @@ namespace Object {
 
 	class Object_Container {
 	public:
-
+		// Static
 		static const std::uint16_t MAGIC = 0x4352; // ascii "CR"
-		std::uint16_t load_address = 0;
+		static const std::uint16_t OBJECT_VERSION = 3;
 
+		// Members
+		std::uint16_t load_address = 0;
 		std::variant<Object_Type, Library_Type, Executable, Map> contents;
 		enum Variant_Type {
 			OBJECT,
@@ -75,9 +77,23 @@ namespace Object {
 			MAP,
 		};
 		
-		Stream_Type to_object_code() const;
-
-	private:
-		std::uint16_t object_version = 2;
+		// Methods
+		Stream_Type to_stream() const;
+		static Object_Container from_stream(const Stream_Type& s);
 	};
+
+
+
+
+	// **********************************************************************
+	// Operators
+	// **********************************************************************
+	bool operator==(const Object_Container& a,   const Object_Container& b);
+	bool operator==(const Object_Type& a,        const Object_Type& b);
+	bool operator==(const Library_Type& a,       const Library_Type& b);
+	bool operator==(const Executable& a,         const Executable& b);
+	bool operator==(const Map& a,                const Map& b);
+	bool operator==(const Relocation& a,         const Relocation& b);
+	bool operator==(const External_Reference& a, const External_Reference& b);
+	bool operator==(const Exported_Symbol& a,    const Exported_Symbol& b);
 }
