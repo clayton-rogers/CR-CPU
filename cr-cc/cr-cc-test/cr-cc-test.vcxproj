@@ -129,6 +129,7 @@
     <ClCompile Include="TEST_cast.cpp" />
     <ClCompile Include="TEST_compiler.cpp" />
     <ClCompile Include="TEST_linker.cpp" />
+    <ClCompile Include="TEST_object_code.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

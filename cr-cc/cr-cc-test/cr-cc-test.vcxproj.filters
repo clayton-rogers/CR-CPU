@@ -35,5 +35,8 @@
     <ClCompile Include="TEST_cast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TEST_object_code.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

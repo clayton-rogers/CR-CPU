@@ -236,40 +236,6 @@ TEST_CASE("Assembler Benchmarks", "[.][bench]") {
 	}
 }
 
-static bool operator==(const Object::Relocation& a, const Object::Relocation& b) {
-	if (a.type != b.type) {
-		return false;
-	} else if (a.offset != b.offset) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
-static bool operator==(const Object::External_Reference& a, const Object::External_Reference& b) {
-	if (a.name != b.name) {
-		return false;
-	} else if (a.type != b.type) {
-		return false;
-	} else if (a.locations != b.locations) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
-static bool operator==(const Object::Exported_Symbol& a, const Object::Exported_Symbol& b) {
-	if (a.name != b.name) {
-		return false;
-	} else if (a.type != b.type) {
-		return false;
-	} else if (a.offset != b.offset) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
 TEST_CASE("Assembler object Relocations", "[asm]") {
 	using namespace Object;
 
