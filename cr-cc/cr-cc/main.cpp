@@ -53,11 +53,24 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		if (opt.compile_only) {
+			for (const auto& filename : opt.filenames) {
+				auto ret = compile_tu(filename, f);
+				auto output_filename = get_base_filename(filename) + ".o";
+				auto stream = ret.item.to_stream();
+				write_bin_file(output_filename, stream);
+
+				if (opt.verbose) {
+					auto object = std::get<Object::Object_Type>(ret.item.contents);
+					std::cout << "Code size: " << object.machine_code.size() << std::endl;
+				}
+			}
+			return 0;
+		}
+
 		std::vector<Object::Object_Container> objs;
 
-		if (!opt.compile_only && opt.include_main) {
-			// If we're compiling only, we just want to create objs.
-			// For the normal case, we also want to link into an exe.
+		if (opt.include_main) {
 			auto ret = compile_tu("main.s", f);
 			objs.push_back(ret.item);
 		}
@@ -68,7 +81,6 @@ int main(int argc, char **argv) {
 			write_file(opt.output_filename + "s", ret.assembly);
 		}
 
-		// TODO if compile_only then don't link
 		auto exe = link(std::move(objs), opt.link_address);
 
 		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;

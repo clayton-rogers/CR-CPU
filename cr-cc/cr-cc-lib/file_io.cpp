@@ -101,3 +101,11 @@ std::vector<std::string> read_directory(std::string directory) {
 
 	return ret;
 }
+
+std::string get_base_filename(std::string filename) {
+	return filename.substr(0, filename.find_last_of("."));
+}
+
+std::string get_file_extension(std::string filename) {
+	return filename.substr(filename.find_last_of(".") + 1);
+}

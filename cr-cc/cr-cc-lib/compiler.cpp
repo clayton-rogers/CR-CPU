@@ -8,7 +8,7 @@
 Compiler_Return compile_tu(std::string filename, FileReader f) {
 	Compiler_Return ret;
 	
-	std::string file_extension = filename.substr(filename.find_last_of(".") + 1);
+	std::string file_extension = get_file_extension(filename);
 
 	if (file_extension == "c") {
 		// TODO if any include paths are specified add them here.

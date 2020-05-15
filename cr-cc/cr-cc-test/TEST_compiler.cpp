@@ -158,3 +158,10 @@ TEST_CASE("Whole C program", "[c]") {
 
 	CHECK(actual_program_output == expected_program_output);
 }
+
+TEST_CASE("Test file io filename methods", "[c]") {
+	std::string filename("test.txt");
+
+	CHECK(get_base_filename(filename) == std::string("test"));
+	CHECK(get_file_extension(filename) == std::string("txt"));
+}
