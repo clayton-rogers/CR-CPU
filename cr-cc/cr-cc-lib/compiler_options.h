@@ -11,6 +11,7 @@ struct Compiler_Options {
 	bool include_main = true;
 	bool should_exit = false;
 	bool output_map = false;
+	bool output_assembly = false;
 	int link_address = 0x200;
 	std::vector<std::string> filenames;
 	std::string output_filename = DEFAULT_OUTPUT_FILENAME;

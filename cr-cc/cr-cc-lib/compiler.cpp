@@ -99,6 +99,12 @@ int compile(Compiler_Options opt) {
 			const auto container = compile_tu(filename, f);
 			objs.push_back(container);
 
+			if (get_file_extension(filename) == "c" && opt.output_assembly) {
+				const auto assembly = c_to_asm(filename, f);
+				const auto asm_filename = get_base_filename(filename) + ".s";
+				write_file(asm_filename, assembly);
+			}
+
 			if (opt.compile_only) {
 				const auto output_filename = get_base_filename(filename) + ".o";
 				const auto stream = container.to_stream();
@@ -109,9 +115,6 @@ int compile(Compiler_Options opt) {
 					std::cout << "Code size: " << object.machine_code.size() << std::endl;
 				}
 			}
-
-			// TODO
-			//write_file(opt.output_filename + "s", ret.assembly);
 		}
 
 		if (opt.compile_only) {
