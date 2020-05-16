@@ -43,6 +43,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --srec-stdout         Also output srec to stdout (implies --srec)\n"
 				"  -I<dir>               Add dir to the list of paths searched for includes\n"
 				"  --function-size       Prints the compiled size of each function\n"
+				"  --dump                Dumps a object, does not compile/link\n"
 				<< std::endl;
 
 			opt.should_exit = true;
@@ -84,6 +85,8 @@ Compiler_Options parse_args(int arc, char** argv) {
 		} else if (arg.at(0) == '-' && arg.at(1) == 'I') {
 			auto path = arg.substr(2);
 			opt.include_paths.push_back(path);
+		} else if ("--dump" == arg) {
+			opt.dump_object = true;
 		} else {
 			// if it's none of the options, assume filename
 			opt.filenames.push_back(arg);

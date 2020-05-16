@@ -1,8 +1,11 @@
 #include "object_code.h"
 
 #include "cast.h"
+#include "utilities.h"
 
 #include <iterator>
+#include <sstream>
+#include <iomanip>
 
 using namespace Object;
 
@@ -360,7 +363,7 @@ Stream_Type Object_Container::to_stream() const
 		break;
 	}
 	}
-	
+
 	stream.at(7) = u16(stream.size() - OC_HEADER_SIZE);
 
 	return stream;
@@ -368,7 +371,7 @@ Stream_Type Object_Container::to_stream() const
 
 static void check_header(const Stream_Type& s) {
 	if (s.at(0) != Object_Container::MAGIC) {
-		throw std::logic_error("Magic value does not match!");
+		throw std::logic_error("Magic value does not match! Is this a CR-CPU object?");
 	}
 	if (s.at(1) != Object_Container::OBJECT_VERSION) {
 		throw std::logic_error(std::string("Version does not match, expected: ") +
@@ -388,7 +391,7 @@ Object_Container Object_Container::from_stream(const Stream_Type& s) {
 		throw std::logic_error("Object size mismatch");
 	}
 
-	auto type = static_cast<Variant_Type>(s.at(2));
+	const auto type = static_cast<Variant_Type>(s.at(2));
 
 	Stream_Type_Iterator stream_iterator(s);
 	stream_iterator.set_offset(offset);
@@ -487,4 +490,381 @@ bool Object::operator==(const Object::Exported_Symbol& a, const Object::Exported
 	} else {
 		return true;
 	}
+}
+
+
+static std::string to_string(const Symbol_Type& type) {
+	switch (type) {
+	case Symbol_Type::FUNCTION:
+		return "FUNCTION";
+	case Symbol_Type::VARIABLE:
+		return "VARIABLE";
+	case Symbol_Type::DATA:
+		return "DATA";
+	default:
+		throw std::logic_error("Could not convert Symbol_Type to string: " + std::to_string((int)type));
+	}
+}
+
+static std::string to_string(const HI_LO_TYPE& type) {
+	switch (type) {
+	case HI_LO_TYPE::HI_BYTE:
+		return "HI_BYTE";
+	case HI_LO_TYPE::LO_BYTE:
+		return "LO_BYTE";
+	default:
+		throw std::logic_error("Could not convert HI_LO_TYPE to string: " + std::to_string((int)type));
+	}
+}
+
+static std::string to_string(const std::vector<Exported_Symbol>& exported_symbols) {
+	std::stringstream ss;
+
+	ss << "\n    Exports: (size:" << exported_symbols.size() << ")\n";
+	for (const auto& symbol : exported_symbols) {
+		ss << "0x" << u16_to_string(symbol.offset) << " " << to_string(symbol.type) << ": " << symbol.name << "\n";
+	}
+
+	return ss.str();
+}
+
+static std::string to_string(const std::vector<External_Reference>& external_references) {
+	std::stringstream ss;
+
+	ss << "\n    External references: (size:" << external_references.size() << ")\n";
+	for (const auto& ref : external_references) {
+		ss << ref.name << " type: " << to_string(ref.type) << " offsets:";
+		for (const auto& offset : ref.locations) {
+			ss << " 0x" << u16_to_string(offset);
+		}
+		ss << "\n";
+	}
+
+	return ss.str();
+}
+
+static std::string to_string(const std::vector<Relocation>& relocations) {
+	std::stringstream ss;
+
+	ss << "\n    Relocations: (size:" << relocations.size() << ")\n";
+	for (const auto& reloc : relocations) {
+		ss << "type: " << to_string(reloc.type) <<
+			" offset: 0x" << u16_to_string(reloc.location) <<
+			" value: 0x" << u16_to_string(reloc.new_offset) << "\n";
+	}
+
+	return ss.str();
+}
+
+static std::string byte_to_string(int value) {
+	std::stringstream output;
+	output << std::hex << std::setfill('0') << std::setw(2) << value;
+	std::string temp = output.str();
+	for (auto& c : temp) c = static_cast<char>(std::toupper(c));
+	return temp;
+}
+
+static std::string machine_to_string(const std::uint16_t instruction, const std::string& ref_string) {
+	std::stringstream ss;
+
+	const int op_code = (instruction & 0xF000) >> 12;
+	const int high = (instruction & 0x0C00) >> 10;
+	const int low = (instruction & 0x0300) >> 8;
+	const int literal = (instruction & 0x00FF) >> 0;
+	const std::string literal_string = (ref_string == "") ? std::string("0x") + byte_to_string(literal) : ref_string;
+
+	std::string high_reg = [&high]() {
+		switch (high) {
+		case 0:
+			return "ra";
+		case 1:
+			return "rb";
+		case 2:
+			return "rp";
+		case 3:
+			return "sp";
+		default:
+			throw std::logic_error("high reg should never get here");
+		}
+	}();
+	std::string low_reg = [&low]() {
+		switch (low) {
+		case 0:
+			return "ra";
+		case 1:
+			return "rb";
+		case 2:
+			return "rp";
+		case 3:
+			return ""; // const will be filled in later
+		default:
+			throw std::logic_error("low reg should never get here");
+		}
+	}();
+
+	enum OPCODES {
+		ADD,
+		SUB,
+		AND,
+		OR,
+		XOR,
+		SHIFT,
+		LOAD,
+		STORE,
+		MOV,
+		JMP,
+		LOADI,
+		PUSH_POP,
+		CALL_RET,
+		LOADA,
+		HALT,
+		NOP,
+	};
+
+	bool should_print_literal = false;
+	switch (op_code) {
+	case ADD:
+		ss << "add " << high_reg << " " << low_reg;
+		if (low == 3) should_print_literal = true;
+		break;
+	case SUB:
+		ss << "sub " << high_reg << " " << low_reg;
+		if (low == 3) should_print_literal = true;
+		break;
+	case AND:
+		ss << "and " << high_reg << " " << low_reg;
+		if (low == 3) should_print_literal = true;
+		break;
+	case OR:
+		ss << "or " << high_reg << " " << low_reg;
+		if (low == 3) should_print_literal = true;
+		break;
+	case XOR:
+		ss << "xor " << high_reg << " " << low_reg;
+		if (low == 3) should_print_literal = true;
+		break;
+	case SHIFT:
+		if (low & 1) {
+			ss << "shftl ";
+		} else {
+			ss << "shftr ";
+		}
+		ss << high_reg << " ";
+		if (low & 2) {
+			ss << "rb";
+		} else {
+			should_print_literal = true;
+		}
+		break;
+	case LOAD:
+		ss << "load";
+		switch (low) {
+		case 0:
+			ss << ".rp";
+			break;
+		case 1:
+			ss << ".sp";
+			break;
+		}
+		ss << " " << high_reg << " ";
+		should_print_literal = true;
+		break;
+	case STORE:
+		ss << "store";
+		switch (low) {
+		case 0:
+			ss << ".rp";
+			break;
+		case 1:
+			ss << ".sp";
+			break;
+		}
+		ss << " " << high_reg << " ";
+		should_print_literal = true;
+		break;
+	case MOV:
+		ss << "mov " << high_reg << " " << low_reg;
+		if (low == 3) ss << "sp";
+		break;
+	case JMP:
+		ss << "jmp";
+		if (!(low & 2)) ss << ".r";
+		switch (high) {
+		case 0:
+			break;
+		case 1:
+			ss << ".z";
+			break;
+		case 2:
+			ss << ".nz";
+			break;
+		case 3:
+			ss << ".gz";
+			break;
+		}
+		ss << " ";
+		should_print_literal = true;
+		break;
+	case LOADI:
+		ss << "loadi";
+		if (low & 2) ss << ".h";
+		ss << " " << high_reg + " ";
+		should_print_literal = true;
+		break;
+	case PUSH_POP:
+		if (low & 1) {
+			ss << "pop ";
+		} else {
+			ss << "push ";
+		}
+		ss << high_reg;
+		break;
+	case CALL_RET:
+		if (low & 1) {
+			ss << "ret";
+		} else {
+			ss << "call";
+			if (!(low & 2)) {
+				ss << ".r";
+			}
+			ss << " ";
+			should_print_literal = true;
+		}
+		break;
+	case LOADA:
+		ss << "loada ";
+		should_print_literal = true;
+		break;
+	case HALT:
+		ss << "halt";
+		break;
+	case NOP:
+		ss << "nop";
+		break;
+	}
+	if (should_print_literal) {
+		ss << literal_string;
+	}
+
+	return ss.str();
+}
+
+static std::string to_string(
+	const std::vector<std::uint16_t>& machine_code,
+	const std::vector<Exported_Symbol>& exported_symbols,
+	const std::uint16_t base_offset,
+	const std::vector<External_Reference>& external_references = {},
+	const std::vector<Relocation>& relocation = {}
+)
+{
+	std::stringstream ss;
+
+	ss << "\n    Machine Code: (size:" << machine_code.size() << ")\n";
+
+	std::uint16_t offset = base_offset;
+	for (const auto& instruction : machine_code) {
+		for (const auto& symbol : exported_symbols) {
+			if (symbol.offset == offset) {
+				ss << "." << symbol.name << ":\n";
+			}
+		}
+		std::string ref_string;
+		for (const auto& ref : external_references) {
+			for (const auto& ref_offset : ref.locations) {
+				if (ref_offset == offset) {
+					ref_string = std::string(".") + ref.name;
+				}
+			}
+		}
+		for (const auto& reloc : relocation) {
+			if (reloc.location == offset) {
+				if (reloc.type == HI_LO_TYPE::HI_BYTE) {
+					ref_string = std::string("0x") + byte_to_string(reloc.new_offset >> 8);
+				} else {
+					ref_string = std::string("0x") + byte_to_string(reloc.new_offset & 0xFF);
+				}
+			}
+		}
+		ss << "0x" << u16_to_string(offset++) << ": 0x" << u16_to_string(instruction) << " " << machine_to_string(instruction, ref_string) << "\n";
+	}
+
+	return ss.str();
+}
+
+static std::string to_string(const Object_Type& obj) {
+	std::stringstream ss;
+
+	ss << to_string(obj.exported_symbols);
+	ss << to_string(obj.external_references);
+	ss << to_string(obj.relocations);
+	ss << to_string(obj.machine_code, obj.exported_symbols, 0, obj.external_references, obj.relocations);
+
+	return ss.str();
+}
+
+static std::string to_string(const Library_Type& obj) {
+	std::stringstream ss;
+
+	for (const auto& lib_obj : obj.objects) {
+		ss << "\n";
+		ss << to_string(lib_obj);
+	}
+
+	return ss.str();
+}
+
+static std::string to_string(const Executable& obj) {
+	std::stringstream ss;
+
+	ss << to_string(obj.exported_symbols);
+	ss << to_string(obj.machine_code, obj.exported_symbols, obj.load_address);
+
+	return ss.str();
+}
+
+static std::string to_string(const Map& obj) {
+	std::stringstream ss;
+
+	ss << to_string(obj.exported_symbols);
+
+	return ss.str();
+}
+
+std::string Object::to_string(const Object_Container& obj) {
+	std::stringstream ss;
+
+	const auto obj_type = static_cast<Object_Container::Variant_Type>(obj.contents.index());
+	const auto obj_type_to_str = [](auto obj_type) {
+		switch (obj_type)
+		{
+		case Object_Container::OBJECT: return "OBJECT";
+		case Object_Container::LIBRARY: return "LIBRARY";
+		case Object_Container::EXECUTABLE: return "EXECUTABLE";
+		case Object_Container::MAP: return "MAP";
+		default:
+			throw std::logic_error("Could not conver object type to string");
+		}
+	};
+
+	ss << "Object Type: " << obj_type_to_str(obj_type) << "\n";
+	ss << "Object Version: " << obj.OBJECT_VERSION << "\n";
+
+	switch (obj_type) {
+		case Object_Container::OBJECT:
+			ss << ::to_string(std::get<Object_Type>(obj.contents));
+			break;
+		case Object_Container::LIBRARY:
+			ss << ::to_string(std::get<Library_Type>(obj.contents));
+			break;
+		case Object_Container::EXECUTABLE:
+			ss << ::to_string(std::get<Executable>(obj.contents));
+			break;
+		case Object_Container::MAP:
+			ss << ::to_string(std::get<Map>(obj.contents));
+			break;
+		default:
+			throw std::logic_error("Could not conver object to string");
+	}
+
+	return ss.str();
 }

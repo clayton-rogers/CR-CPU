@@ -18,6 +18,7 @@ struct Compiler_Options {
 	bool output_srec = false;
 	bool output_srec_stdout = false;
 	bool output_assembly = false;
+	bool dump_object = false;
 	int link_address = 0x200;
 	std::vector<std::string> filenames;
 	std::vector<std::string> include_paths;

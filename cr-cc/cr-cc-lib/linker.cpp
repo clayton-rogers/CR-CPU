@@ -228,8 +228,6 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 {
 	Library_Type library;
 
-	// TODO check that there are no duplicate exported symbols
-
 	std::unordered_set<std::string> exported_symbols;
 	
 	for (const auto& obj : objects) {
@@ -237,7 +235,7 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 		library.objects.push_back(contents);
 
 		for (const auto& symbol : contents.exported_symbols) {
-			if (exported_symbols.count(symbol.name) != 0) {
+			if (symbol.name != "__static_data" && exported_symbols.count(symbol.name) != 0) {
 				throw std::logic_error("Duplicate symbol in library: " + symbol.name);
 			}
 			exported_symbols.insert(symbol.name);

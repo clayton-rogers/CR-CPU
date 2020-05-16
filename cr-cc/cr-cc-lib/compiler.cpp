@@ -150,6 +150,20 @@ int compile(Compiler_Options opt) {
 		std::cout << "Need file for input!!" << std::endl;
 		return 1;
 	}
+	if (opt.dump_object) {
+		for (const auto& filename : opt.filenames) {
+			try {
+				auto stream = read_bin_file(filename);
+				auto obj = Object::Object_Container::from_stream(stream);
+				std::cout << Object::to_string(obj);
+			} catch (const std::logic_error& e) {
+				std::cout << "Error loading object: " << std::endl;
+				std::cout << e.what() << std::endl;
+			}
+		}
+
+		return 0;
+	}
 
 	std::string stdlib_path = ".";
 	if (opt.include_stdlib) {

@@ -23,7 +23,7 @@ namespace Object {
 
 	struct External_Reference {
 		std::string name;
-		HI_LO_TYPE type;
+		HI_LO_TYPE type = HI_LO_TYPE::LO_BYTE;
 		std::vector<std::uint16_t> locations;
 	};
 
@@ -102,4 +102,6 @@ namespace Object {
 	bool operator==(const Relocation& a,         const Relocation& b);
 	bool operator==(const External_Reference& a, const External_Reference& b);
 	bool operator==(const Exported_Symbol& a,    const Exported_Symbol& b);
+
+	std::string to_string(const Object_Container& obj);
 }
