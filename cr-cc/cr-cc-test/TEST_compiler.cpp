@@ -63,9 +63,9 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 		// rather than stopping at the first failed compile
 		try {
 
-			auto test_program = compile_tu(item, fr).item;
-			auto init_main = compile_tu("./stdlib/main.s", fr).item; // this is what calls the main fn
-			auto program_loader = compile_tu("./stdlib/program_loader.s", fr).item; // This jumps to 0x200
+			auto test_program = compile_tu(item, fr);
+			auto init_main = compile_tu("./stdlib/main.s", fr); // this is what calls the main fn
+			auto program_loader = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
 
 			std::vector<Object::Object_Container> objs;
 			objs.push_back(init_main);
@@ -137,13 +137,13 @@ TEST_CASE("Whole C program", "[c]") {
 	fr.add_directory("./stdlib/");
 
 	std::vector<Object::Object_Container> objs;
-	objs.push_back(compile_tu("main.s", fr).item);
-	objs.push_back(compile_tu("main.c", fr).item);
-	objs.push_back(compile_tu("add.c", fr).item);
+	objs.push_back(compile_tu("main.s", fr));
+	objs.push_back(compile_tu("main.c", fr));
+	objs.push_back(compile_tu("add.c", fr));
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader = compile_tu("program_loader.s", fr).item;
+	auto program_loader = compile_tu("program_loader.s", fr);
 
 	Simulator sim;
 	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);

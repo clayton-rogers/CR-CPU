@@ -92,6 +92,24 @@ std::string FileReader::read_file_from_directories(std::string filename)
 	throw std::logic_error("Could not find file: " + filename);
 }
 
+std::vector<std::uint16_t> FileReader::read_bin_file_from_directories(std::string filename)
+{
+	for (const auto& directory : directories) {
+		std::string full_filename = directory + "/" + filename;
+
+		if (file_exists(full_filename)) {
+			return read_bin_file(full_filename);
+		}
+	}
+
+	std::cout << "Looked in paths:" << std::endl;
+	for (const auto& path : directories) {
+		std::cout << path << std::endl;
+	}
+
+	throw std::logic_error("Could not find file: " + filename);
+}
+
 std::vector<std::string> read_directory(std::string directory) {
 	std::vector<std::string> ret;
 
