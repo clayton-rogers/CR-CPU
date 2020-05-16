@@ -86,6 +86,28 @@ static void handle_object(
 		input_object.machine_code.cend());
 }
 
+static void handle_map(
+	Object_Type& output_object,
+	const Map& input_map
+	)
+{
+
+	// Double check that this new object doesn't export any already exported symbols
+	for (const auto& existing_symbol : output_object.exported_symbols) {
+		for (const auto& new_symbol : input_map.exported_symbols) {
+			if (existing_symbol.name == new_symbol.name) {
+				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
+			}
+		}
+	}
+
+	// Add the exported symbols to the output
+	output_object.exported_symbols.insert(
+		output_object.exported_symbols.cend(),
+		input_map.exported_symbols.cbegin(),
+		input_map.exported_symbols.cend());
+}
+
 static void apply_references(Object_Type& object, std::uint16_t link_addr)
 {
 	std::unordered_map<std::string, Exported_Symbol> symbol_table;
@@ -143,8 +165,11 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 			throw std::logic_error("link(): libraries not implemented yet");
 			break;
 		case Object_Container::MAP:
-			throw std::logic_error("link(): map not implemented yet");
+		{
+			auto& map = std::get<Map>(item.contents);
+			handle_map(collector_object, map);
 			break;
+		}
 		case Object_Container::EXECUTABLE:
 			throw std::logic_error("link(): should never get here: exe is not a valid input object");
 		default:
