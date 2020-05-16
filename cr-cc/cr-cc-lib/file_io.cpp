@@ -49,14 +49,18 @@ void write_file(std::string filename, std::string data) {
 std::vector<std::uint16_t> read_bin_file(std::string filename) {
 	std::ifstream file(filename, std::ios::binary);
 
+	if (!file) {
+		throw std::logic_error("Error opening file: " + filename);
+	}
+
 	std::vector<std::uint16_t> output;
 
-	file.seekg(0, std::ios::end);
 	// Get file size in bytes, then allocate half as uin16_t
-	const unsigned int file_size_bytes = static_cast<unsigned int>(file.tellg());
+	const auto file_size_bytes = fs::file_size(filename);
+	if ((file_size_bytes % 2) != 0) {
+		throw std::logic_error("Error file not multiple of 2, is this a binary file?: " + filename);
+	}
 	output.resize(file_size_bytes/2);
-
-	file.seekg(0, std::ios::beg);
 
 	file.read(reinterpret_cast<char*>(output.data()), file_size_bytes);
 
