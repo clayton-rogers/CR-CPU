@@ -64,8 +64,8 @@ namespace Object {
 	class Object_Container {
 	public:
 		// Static
-		static const std::uint16_t MAGIC = 0x4352; // ascii "CR"
-		static const std::uint16_t OBJECT_VERSION = 3;
+		static const std::uint16_t MAGIC = 0x5243; // ascii "CR"
+		static const std::uint16_t OBJECT_VERSION = 4;
 
 		// Members
 		std::uint16_t load_address = 0;
