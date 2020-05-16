@@ -41,7 +41,7 @@ bool file_exists(std::string filename) {
 }
 
 void write_file(std::string filename, std::string data) {
-	std::ofstream file(filename, std::ios::binary);
+	std::ofstream file(filename);
 
 	file << data;
 }
