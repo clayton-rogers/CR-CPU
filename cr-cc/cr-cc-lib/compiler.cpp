@@ -49,6 +49,19 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 
 }
 
+static Object::Object_Container to_map(const Object::Object_Container& obj) {
+	auto object = std::get<Object::Executable>(obj.contents);
+
+	Object::Map map_contents;
+	map_contents.exported_symbols = object.exported_symbols;
+
+	Object::Object_Container map;
+	map.contents = map_contents;
+	map.load_address = obj.load_address;
+
+	return map;
+}
+
 int compile(Compiler_Options opt) {
 	if (opt.should_exit) {
 		return 1;
@@ -83,19 +96,21 @@ int compile(Compiler_Options opt) {
 		}
 
 		for (const auto& filename : opt.filenames) {
-			auto container = compile_tu(filename, f);
+			const auto container = compile_tu(filename, f);
 			objs.push_back(container);
 
 			if (opt.compile_only) {
-				auto output_filename = get_base_filename(filename) + ".o";
-				auto stream = container.to_stream();
+				const auto output_filename = get_base_filename(filename) + ".o";
+				const auto stream = container.to_stream();
 				write_bin_file(output_filename, stream);
 
 				if (opt.verbose) {
-					auto object = std::get<Object::Object_Type>(container.contents);
+					const auto object = std::get<Object::Object_Type>(container.contents);
 					std::cout << "Code size: " << object.machine_code.size() << std::endl;
 				}
 			}
+
+			// TODO
 			//write_file(opt.output_filename + "s", ret.assembly);
 		}
 
@@ -110,6 +125,12 @@ int compile(Compiler_Options opt) {
 		{
 			auto stream = exe.to_stream();
 			write_bin_file(opt.output_filename + "bin", stream);
+		}
+		if (opt.output_map) {
+			const auto map = to_map(exe);
+			const auto map_stream = map.to_stream();
+			const auto map_filename = opt.output_filename + "map";
+			write_bin_file(map_filename, map_stream);
 		}
 		write_file(opt.output_filename + "hex", machine_inst_to_hex(machine_code));
 		auto srec = machine_inst_to_srec(machine_code, exe.load_address);

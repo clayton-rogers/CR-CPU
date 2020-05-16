@@ -36,6 +36,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --sim                 Simulates the program on an emulator\n"
 				"  --no-main             When linking, does not include the default jump to main()\n"
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
+				"  --map                 Also output in map format\n"
 				<< std::endl;
 
 			opt.should_exit = true;
@@ -52,6 +53,8 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.include_main = false;
 		} else if ("--link-addr" == arg) {
 			opt.link_address = std::stoi(args.at(++i), nullptr, 0);
+		} else if ("--map" == arg) {
+			opt.output_map = true;
 		} else {
 			// if it's none of the options, assume filename
 			opt.filenames.push_back(arg);
