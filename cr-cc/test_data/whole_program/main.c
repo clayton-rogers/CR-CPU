@@ -1,4 +1,5 @@
 #include "add.h"
+#include "sub.h"
 
 int main() {
 	int a = 11;
@@ -8,5 +9,5 @@ int main() {
 	int sum = add(a,b);
 	int not_sum = not_add(a,b);
 	
-	return sum + not_sum;
+	return sub(not_sum, sum);
 }

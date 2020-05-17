@@ -75,8 +75,8 @@ int compile(Compiler_Options opt) {
 		FileReader f;
 		// FileReader defaults to including the current directory
 		// Next add all user defined directories
-		{
-			// TODO
+		for (const auto& include_path : opt.include_paths) {
+			f.add_directory(include_path);
 		}
 		// Finally add stdlib path last so it's checked last
 		{

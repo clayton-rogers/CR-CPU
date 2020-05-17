@@ -38,6 +38,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --no-main             When linking, does not include the default jump to main()\n"
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
 				"  --map                 Also output in map format\n"
+				"  -I<dir>               Add dir to the list of paths searched for includes\n"
 				<< std::endl;
 
 			opt.should_exit = true;
@@ -58,6 +59,9 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.output_map = true;
 		} else if ("-S" == arg) {
 			opt.output_assembly = true;
+		} else if (arg.at(0) == '-' && arg.at(1) == 'I') {
+			auto path = arg.substr(2);
+			opt.include_paths.push_back(path);
 		} else {
 			// if it's none of the options, assume filename
 			opt.filenames.push_back(arg);

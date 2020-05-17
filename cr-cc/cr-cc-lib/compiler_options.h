@@ -14,5 +14,6 @@ struct Compiler_Options {
 	bool output_assembly = false;
 	int link_address = 0x200;
 	std::vector<std::string> filenames;
+	std::vector<std::string> include_paths;
 	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
 };

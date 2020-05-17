@@ -133,6 +133,8 @@ TEST_CASE("Whole C program", "[c]") {
 	
 	// For the actual program
 	fr.add_directory("./test_data/whole_program/");
+	// For the sub lib
+	fr.add_directory("./test_data/whole_program/sub");
 	// For main.s
 	fr.add_directory("./stdlib/");
 
@@ -140,6 +142,7 @@ TEST_CASE("Whole C program", "[c]") {
 	objs.push_back(compile_tu("main.s", fr));
 	objs.push_back(compile_tu("main.c", fr));
 	objs.push_back(compile_tu("add.c", fr));
+	objs.push_back(compile_tu("sub.c", fr));
 
 	auto exe = link(std::move(objs), 0x200);
 
@@ -154,7 +157,7 @@ TEST_CASE("Whole C program", "[c]") {
 
 	// Check that the program produced the desired result
 	const int actual_program_output = sim.get_state().ra;
-	const int expected_program_output = 123;
+	const int expected_program_output = 77;
 
 	CHECK(actual_program_output == expected_program_output);
 }
