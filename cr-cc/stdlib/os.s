@@ -6,74 +6,35 @@
 .constant     16 CLOCKS_PER_MICRO
 
 
+._top:
+# From the last execution, we might have left a value in ra,
+# so output it on the LEDs
+loada    .IO_OFFSET[1]
+store ra .IO_OFFSET[1]
+
 # Preamble to setup stack pointer
-loadi sp .OS_RAM_SIZE
-loadi.h sp .OS_RAM_SIZE
-sub sp, 1
+loadi sp .RAM_SIZE
+loadi.h sp .RAM_SIZE
 
-# The MAIN is called then if it returns,
-# processor is halted
-loada ._main
-call ._main
-halt
-
-
-# ====================================================================
-# YOUR MAIN GOES HERE
-# ====================================================================
 .static 0x13 WELCOME_STR "Welcome to CR-CPU!"
-.static 0x18 PROMPT_TEXT "READY. PASTE PROGRAM > "
-._main:
-	# set LEDs to RA to display return code
-	call.r ._set_led
+.static 0x16 PROMPT_TEXT "PASTE SREC PROGRAM > "
 
-	loadi sp .OS_RAM_SIZE
-	loadi.h sp .OS_RAM_SIZE
-	sub sp, 1
-	loadi ra, .WELCOME_STR
-	loadi.h ra, .WELCOME_STR
-	call.r .put_line
-	loadi ra, .PROMPT_TEXT
-	loadi.h ra, .PROMPT_TEXT
-	call.r .put_line
+loadi ra, .WELCOME_STR
+loadi.h ra, .WELCOME_STR
+call.r .put_line
+loadi ra, .PROMPT_TEXT
+loadi.h ra, .PROMPT_TEXT
+call.r .put_line
 
-	call.r ._load_srec_uart ### TODO REMOVE comment
-	loadi sp .RAM_SIZE
-	loadi.h sp .RAM_SIZE
-	loadi rb ._main
-	loadi.h rb ._main
-	push rb # store actual return address
-	push ra # store the fake ret addr to execute on stack
-	ret # jmps to top location on the stack
-
-	# should never get this far
-	halt
-
-	# TODO actually call into the loaded code
-
-
-	# TODO REMOVE
-	loadi rb 0
-	.main_top:
-		mov ra rb
-		call.r ._set_led
-		call.r ._read_uart
-		add rb 1
-	#	# high byte first into rb
-	#	call.r ._read_uart
-	#	mov rb ra
-	#	call.r ._read_uart
-	#	call.r ._hex_to_number
-	#	call.r ._set_led
-	jmp.r .main_top
-	# TODO REMOVE END
-ret
-
-# ====================================================================
-# END MAIN
-# ====================================================================
-
-
+loadi ra ._top
+loadi.h ra ._top
+# store the top address on the stack
+# this is where the program will go when the client code ret's
+push ra
+call.r ._load_srec_uart
+push ra
+ret # jump to the load address of the srec
+halt # should never get here
 
 # ====================================================================
 # OS Library code
