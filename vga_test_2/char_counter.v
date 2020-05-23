@@ -10,7 +10,7 @@
 // several clocks to get the character and pixel maps
 module char_counter (
     input  wire       CLK,
-    output reg [10:0] character = 0, // 0 .. 1920 (80*24)
+    output reg [10:0] character_pos = 0, // 0 .. 1920 (80*24)
     output reg [3:0]  x = ADVANCE,   // 0 .. 7    font is 8x16
     output reg [4:0]  y = 0,         // 0 .. 15
     output wire       n_blank    // high when character should be displayed
@@ -91,16 +91,16 @@ module char_counter (
   always @ ( posedge CLK ) begin
     // On the falling edge of n_blank
     if (last_n_blank && !n_blank) begin
-      character <= character + 1;
+      character_pos <= character_pos + 1;
     end
     if (pixel_counter == SCREEN_WIDTH && y < FONT_Y) begin
-      character <= character - CHAR_PER_LINE;
+      character_pos <= character_pos - CHAR_PER_LINE;
     end
     if (pixel_counter == SCREEN_WIDTH && y == FONT_Y) begin
-      character <= character + CHAR_PER_LINE;
+      character_pos <= character_pos + CHAR_PER_LINE;
     end
     if (line_counter == NUMBER_LINES-1) begin
-      character <= 0;
+      character_pos <= 0;
     end
   end
 
