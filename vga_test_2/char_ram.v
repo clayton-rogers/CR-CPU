@@ -5,32 +5,30 @@
 module char_ram (
   input wire        CLK,
   input wire [10:0] character_pos,
-  output reg  [7:0] character = 8'h00, // expected to be ascii
+  output wire [7:0] character, // expected to be ascii
 
   input wire [10:0] write_character_pos,
   input wire  [7:0] write_character,
   input wire        write_strobe
 );
 
-  reg [7:0] mem [2048-1:0];
-  initial begin
-    mem[0] = 0;
-    mem[1] = 1;
-    mem[2] = 1;
-    mem[3] = 0;
-    mem[4] = 1;
-  end
+  reg [7:0] mem [2048-1:0]; // Should default to all 0
+  initial $readmemh("empty_char_buf.hex", mem);
+
 
   // Write
   always @ ( posedge CLK ) begin
-    if (write_strobe) begin
+    if (write_strobe)
       mem[write_character_pos] <= write_character;
-    end
   end
 
   // Read
+  reg [7:0] char_out = 8'h00;
   always @ ( posedge CLK ) begin
-    character <= mem[character_pos];
+    char_out <= mem[character_pos];
   end
+
+  // Seems to be required to infer a ram block
+  assign character = char_out;
 
 endmodule
