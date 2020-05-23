@@ -13,6 +13,13 @@ module char_ram (
 );
 
   reg [7:0] mem [2048-1:0];
+  initial begin
+    mem[0] = 0;
+    mem[1] = 1;
+    mem[2] = 1;
+    mem[3] = 0;
+    mem[4] = 1;
+  end
 
   // Write
   always @ ( posedge CLK ) begin
