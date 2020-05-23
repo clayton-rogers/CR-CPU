@@ -17,6 +17,9 @@ sync_gen sync_gen_inst (
           .h_sync(h_sync),
           .on_screen(on_screen));
 
+char_counter char_counter_inst (
+  .CLK(clk));
+
 
 initial begin
 $dumpfile(`DUMPSTR(`VCD_OUTPUT));
