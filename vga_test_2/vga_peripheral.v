@@ -10,7 +10,7 @@ module vga_peripheral (
   );
 
 
-  reg [7:0]  write_char = 8'h00;
+  reg [7:0]  write_char = 8'h01;
   reg [10:0] char_addr = 11'h000;
   reg        write_strobe = 1'b0;
 
@@ -26,12 +26,13 @@ module vga_peripheral (
         .write_char_strobe(write_strobe)
         );
 
-  localparam MAX_COUNT = 5; // TODO put back to 40000000
+  localparam MAX_COUNT = 20000;
+  localparam MAX_CHAR = 1920;
   reg [26:0] sub_count = 0;
   reg [10:0] seconds = 0;
   always @ ( posedge CLK ) begin
     sub_count <= sub_count + 1;
-    if (seconds == 1920-1) begin
+    if (seconds == MAX_CHAR-1) begin
       seconds <= 0;
     end
     if (sub_count == MAX_COUNT-1) begin
@@ -49,7 +50,7 @@ module vga_peripheral (
   always @ ( posedge CLK ) begin
     write_strobe <= 1'b1;
     char_addr <= seconds;
-    if (seconds == 1920-1) begin
+    if (seconds == MAX_CHAR-1) begin
       write_char <= write_char + 1;
       if (write_char == 4) begin
         write_char <= 0;

@@ -7,7 +7,7 @@ module bitmap_ram (
   input  wire [6:0] character, // only lower 128 ascii is supported
   input  wire [2:0] x,
   input  wire [3:0] y,
-  output wire       pixel,
+  output reg        pixel,
 
   input wire  [7:0] write_data,
   input wire [10:0] write_addr,
@@ -119,12 +119,9 @@ module bitmap_ram (
   end
 
   // Read
-  reg pixel_out = 1'b0;
   wire [10:0] read_addr = { character, y };
   always @ ( posedge CLK ) begin
-    pixel_out <= mem[read_addr][x];
+    pixel <= mem[read_addr][x];
   end
-
-  assign pixel = pixel_out;
 
 endmodule
