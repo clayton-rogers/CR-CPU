@@ -31,6 +31,9 @@ struct Result {
 	int divr = 0;
 	int divf = 0;
 	int divq = 0;
+
+	double phase_detector_input_freq = 0.0;
+	double pll_vco_freq = 0.0;
 };
 
 bool operator<(const Result& a, const Result& b) {
@@ -44,12 +47,15 @@ int main() {
 	for (int divr = 0; divr <= DIVR_MAX; ++divr) {
 		for (int divf = 0; divf <= DIVF_MAX; ++divf) {
 			for (int divq = 0; divq <= DIVQ_MAX; ++divq) {
+				const auto output_clock = calc_clock(divf, divq, divr);
 				results.push_back(
 					{
-						calc_clock(divf, divq, divr),
+						output_clock,
 						divr,
 						divf,
-						divq
+						divq,
+						INPUT_FREQ / (divr+1),
+						output_clock * std::exp2(divq)
 					}
 				);
 			}
@@ -63,7 +69,17 @@ int main() {
 			<< " DIVR: " << result.divr
 			<< " DIVF: " << result.divf
 			<< " DIVQ: " << result.divq
-			<< std::endl;
+			<< " phase_detec: " << result.phase_detector_input_freq
+			<< " VCO: " << result.pll_vco_freq;
+
+		// See page 3-16 of datasheet for ICE40 LP/HX
+		if (result.phase_detector_input_freq < 10.0 || result.phase_detector_input_freq > 133.0) {
+			std::cout << " WARNING: phase detector out of range 10 .. 133 MHz ";
+		}
+		if (result.pll_vco_freq < 533 || result.pll_vco_freq > 1066.0) {
+			std::cout << " WARNING: vco out of range 533 .. 1056 MHz";
+		}
+		std::cout << std::endl;
 	}
 
 }
