@@ -9,8 +9,7 @@ module vga_peripheral (
   output wire h_sync
   );
 
-
-  reg [7:0]  write_char = 8'h01;
+  reg [7:0]  write_char = 8'h00;
   reg [10:0] char_addr = 11'h000;
   reg        write_strobe = 1'b0;
 
@@ -26,35 +25,23 @@ module vga_peripheral (
         .write_char_strobe(write_strobe)
         );
 
-  localparam MAX_COUNT = 20000;
-  localparam MAX_CHAR = 1920;
-  reg [26:0] sub_count = 0;
-  reg [10:0] seconds = 0;
-  always @ ( posedge CLK ) begin
-    sub_count <= sub_count + 1;
-    if (seconds == MAX_CHAR-1) begin
-      seconds <= 0;
-    end
-    if (sub_count == MAX_COUNT-1) begin
-      sub_count <= 0;
-      seconds <= seconds + 1;
+  localparam CLK_PER_HALF_HZ = 20000000;
+  reg [25:0] counter = 26'h0000000;
+  always @ (posedge CLK) begin
+    counter <= counter + 1;
+    if (counter == CLK_PER_HALF_HZ-1) begin
+      counter <= 0;
     end
   end
 
+  wire draw_char = counter == 1;
 
-  // 0 = blank
-  // 1 = M
-  // 2 = solid
-  // 3 = box
-  // 4 = 9
-  always @ ( posedge CLK ) begin
-    write_strobe <= 1'b1;
-    char_addr <= seconds;
-    if (seconds == MAX_CHAR-1) begin
+  always @ (posedge CLK) begin
+    write_strobe <= 1'b0;
+    if (draw_char) begin
+      write_strobe <= 1'b1;
       write_char <= write_char + 1;
-      if (write_char == 4) begin
-        write_char <= 0;
-      end
+      char_addr <= char_addr + 1;
     end
   end
 
