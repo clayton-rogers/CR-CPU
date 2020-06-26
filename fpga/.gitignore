@@ -7,3 +7,5 @@ hardware.out
 hardware.rpt
 top_tb.out
 top_tb.vcd
+
+.tags
