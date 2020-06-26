@@ -7,3 +7,5 @@ hardware.rpt
 
 *.out
 *.vcd
+
+.tags
