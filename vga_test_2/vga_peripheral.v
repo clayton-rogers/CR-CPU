@@ -25,7 +25,7 @@ module vga_peripheral (
         .write_char_strobe(write_strobe)
         );
 
-  localparam CLK_PER_HALF_HZ = 20000000;
+  localparam CLK_PER_HALF_HZ = 2000000;
   reg [25:0] counter = 26'h0000000;
   always @ (posedge CLK) begin
     counter <= counter + 1;
