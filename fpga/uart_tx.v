@@ -22,7 +22,7 @@ always @ ( posedge i_clk ) begin
   if (busy)
     counter <= counter + 1;
 
-  if (counter == CLOCKS_PER_BAUD) begin
+  if (counter == CLOCKS_PER_BAUD[12:0]) begin
     internal_data <= {1'b1, internal_data[9:1]};
     state <= state - 1;
     counter <= 1;

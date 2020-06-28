@@ -4,7 +4,12 @@ module cpu (
   input i_clk,
   output [7:0] cpu_output,
   input        uart_rx_unsafe,
-  output       uart_tx //
+  output       uart_tx,
+  output wire vga_red,
+  output wire vga_green,
+  output wire vga_blue,
+  output wire vga_v_sync,
+  output wire vga_h_sync
   );
   parameter FILENAME = "top.hex";
 
@@ -71,5 +76,21 @@ module cpu (
     .i_rx_unsafe(uart_rx_unsafe),
     .o_tx(uart_tx)
     );
+  
+  // character based VGA adaptor
+  vga_peripheral #(.BASE_ADDR(16'h8400))
+  vga (
+    .i_clk(i_clk),
+    .read_addr(read_addr),
+    .read_data(read_data),
+    .write_addr(write_addr),
+    .write_data(write_data),
+    .write_strobe(write_strobe),
+    .red(vga_red),
+    .green(vga_green),
+    .blue(vga_blue),
+    .v_sync(vga_v_sync),
+    .h_sync(vga_h_sync)
+  );
 
 endmodule

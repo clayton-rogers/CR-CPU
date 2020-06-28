@@ -16,7 +16,13 @@ module top (
     output PIN_13,
 
     output PIN_14, // uart tx
-    input  PIN_15  // uart rx
+    input  PIN_15,  // uart rx
+
+    output PIN_20, // blue
+    output PIN_21, // green
+    output PIN_22, // red
+    output PIN_23, // v_sync
+    output PIN_24  // h_sync
     );
 
     localparam INPUT_CLOCK     = 16_000_000;
@@ -48,7 +54,12 @@ module top (
       .i_clk(CLK),
       .cpu_output(core_output),
       .uart_rx_unsafe(PIN_15),
-      .uart_tx(PIN_14)
+      .uart_tx(PIN_14),
+      .vga_red(PIN_22),
+      .vga_green(PIN_21),
+      .vga_blue(PIN_20),
+      .vga_v_sync(PIN_23),
+      .vga_h_sync(PIN_24)
     );
 
 endmodule

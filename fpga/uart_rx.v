@@ -32,7 +32,7 @@ always @ ( posedge i_clk ) begin
 
     // if it's been low for at lease half a cycle then
     // this is a start bit
-    if (counter == CLOCKS_PER_BAUD/2) begin
+    if (counter == CLOCKS_PER_BAUD[12:0]/2) begin
       counter <= 0;
       state <= WAIT_FOR_BIT_0;
     end
@@ -41,7 +41,7 @@ always @ ( posedge i_clk ) begin
     counter <= counter + 1;
 
     // Check if it's time to sample again
-    if (counter == CLOCKS_PER_BAUD) begin
+    if (counter == CLOCKS_PER_BAUD[12:0]) begin
       state <= state + 1;
       counter <= 0;
       if (state == WAIT_FOR_STOP_BIT) begin
