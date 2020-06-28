@@ -50,15 +50,22 @@ always @ ( posedge i_clk ) begin // 16 MHz
   end
 end
 
-
-// TODO temp only
-assign red = 1'b0;
-assign green = 1'b0;
-assign blue = 1'b0;
-assign v_sync = 1'b0;
-assign h_sync = 1'b0;
-
-
+// NOTE: This module runs on 40 MHz, unlike the rest of the CPU
+// Technically the write signals entering this module are
+// crossing a clock boundary. There isn't a double flip flop
+// between the domains. Belive this is ok, because the clocks
+// are synchronous? It seems to work like this at least.
+vga vga_inst (
+      .CLK(clk),
+      .red(red),
+      .green(green),
+      .blue(blue),
+      .v_sync(v_sync),
+      .h_sync(h_sync),
+      .write_char(char_to_write),
+      .write_char_pos(cursor_pos),
+      .write_char_strobe(vga_write)
+      );
 
 // ==========================================================================
 // Extra junk required for the cpu bus
