@@ -187,7 +187,7 @@ void Simulator_Core::step() {
 			}
 			break;
 		}
-		default: throw std::out_of_range("Simulator_Core::step(): extra_low must be 0 .. 3");
+		default: throw std::out_of_range("Simulator_Core::step(): extra_low for push/pop must be 0 .. 1");
 		}
 		break;
 	}
