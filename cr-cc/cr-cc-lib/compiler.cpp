@@ -160,6 +160,8 @@ int compile(Compiler_Options opt) {
 
 			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
 				<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
+			std::cout << "PC: 0x" << std::hex << sim.get_state().pc
+				<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
 			std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
 			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (total_steps - sim.get_state().steps_remaining) << std::endl;
 		}
