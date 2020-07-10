@@ -3,7 +3,7 @@
 #include <iostream>
 
 
-const std::string Compiler_Options::DEFAULT_OUTPUT_FILENAME = "out.";
+const std::string Compiler_Options::DEFAULT_OUTPUT_FILENAME = "out";
 
 Compiler_Options parse_args(int arc, char** argv) {
 	std::vector<std::string> args;
@@ -37,6 +37,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  -S                    Also output the assembly\n"
 				"  --sim                 Simulates the program on an emulator\n"
 				"  --no-main             When linking, does not include the default jump to main()\n"
+				"  --no-stdlib           When linking, do not include stdlib, also does not include stdlib headers\n"
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
 				"  --map                 Also output in map format\n"
 				"  -I<dir>               Add dir to the list of paths searched for includes\n"
@@ -47,13 +48,15 @@ Compiler_Options parse_args(int arc, char** argv) {
 		} else if ("-v" == arg || "--verbose" == arg) {
 			opt.verbose = true;
 		} else if ("-o" == arg) {
-			opt.output_filename = args.at(++i) + ".";
+			opt.output_filename = args.at(++i);
 		} else if ("-c" == arg) {
 			opt.compile_only = true;
 		} else if ("--sim" == arg) {
 			opt.should_sim = true;
 		} else if ("--no-main" == arg) {
 			opt.include_main = false;
+		} else if ("--no-stdlib" == arg) {
+			opt.include_stdlib = false;
 		} else if ("--link-addr" == arg) {
 			opt.link_address = std::stoi(args.at(++i), nullptr, 0);
 		} else if ("--map" == arg) {
@@ -63,6 +66,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 		} else if ("--lib" == arg) {
 			opt.output_lib = true;
 			opt.include_main = false;
+			opt.include_stdlib = false;
 		} else if (arg.at(0) == '-' && arg.at(1) == 'I') {
 			auto path = arg.substr(2);
 			opt.include_paths.push_back(path);

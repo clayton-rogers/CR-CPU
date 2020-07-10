@@ -66,7 +66,7 @@ int compile(Compiler_Options opt) {
 			f.add_directory(include_path);
 		}
 		// Finally add stdlib path last so it's checked last
-		{
+		if (opt.include_stdlib) {
 			auto stdlib_path = std::getenv(STDLIB_ENV_VAR);
 			if (stdlib_path) {
 				f.add_directory(std::string(stdlib_path));
@@ -83,14 +83,15 @@ int compile(Compiler_Options opt) {
 		}
 
 		for (const auto& filename : opt.filenames) {
-			const auto container = compile_tu(filename, f);
-			objs.push_back(container);
 
 			if (get_file_extension(filename) == "c" && opt.output_assembly) {
 				const auto assembly = c_to_asm(filename, f);
 				const auto asm_filename = get_base_filename(filename) + ".s";
 				write_file(asm_filename, assembly);
 			}
+
+			const auto container = compile_tu(filename, f);
+			objs.push_back(container);
 
 			if (opt.compile_only) {
 				const auto output_filename = get_base_filename(filename) + ".o";
@@ -128,17 +129,17 @@ int compile(Compiler_Options opt) {
 
 		{
 			auto stream = exe.to_stream();
-			write_bin_file(opt.output_filename + "bin", stream);
+			write_bin_file(opt.output_filename + ".bin", stream);
 		}
 		if (opt.output_map) {
 			const auto map = to_map(exe);
 			const auto map_stream = map.to_stream();
-			const auto map_filename = opt.output_filename + "map";
+			const auto map_filename = opt.output_filename + ".map";
 			write_bin_file(map_filename, map_stream);
 		}
-		write_file(opt.output_filename + "hex", machine_inst_to_hex(machine_code));
+		write_file(opt.output_filename + ".hex", machine_inst_to_hex(machine_code));
 		auto srec = machine_inst_to_srec(machine_code, exe.load_address);
-		write_file(opt.output_filename + "srec", srec);
+		write_file(opt.output_filename + ".srec", srec);
 
 		if (opt.verbose) {
 			std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS

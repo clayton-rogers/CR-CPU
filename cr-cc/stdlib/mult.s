@@ -3,15 +3,15 @@
 # mult(ra, rb)
 #   multiplies two numbers
 #   takes up to 168 clocks
-.mult:
-.export mult
+.__mult:
+.export __mult
 push rp
 # sp + 1 = return address
 # sp + 0 = saved rp
 
     # first make sure smaller number is in ra, since it's faster
 	loadi rp 0x00
-	
+
 	push ra
 	push rb
 	sub ra rb
@@ -24,7 +24,7 @@ push rp
 	pop ra
 	pop rb
 	jmp.r .mult_top
-	
+
 	# loop over every bit of ra
 	.mult_top:
 	jmp.r.z .mult_exit
@@ -37,9 +37,9 @@ push rp
 	shftl rb 1
 	shftr ra 1
 	jmp.r .mult_top
-	
+
 .mult_exit:
-mov ra rp	
+mov ra rp
 pop rp
 ret
 

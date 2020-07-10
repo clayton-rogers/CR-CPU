@@ -66,10 +66,13 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			auto test_program = compile_tu(item, fr);
 			auto init_main = compile_tu("./stdlib/main.s", fr); // this is what calls the main fn
 			auto program_loader = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
+			auto stream = read_bin_file("./stdlib/stdlib.a");
+			auto stdlib = Object::Object_Container::from_stream(stream);
 
 			std::vector<Object::Object_Container> objs;
 			objs.push_back(init_main);
 			objs.push_back(test_program);
+			objs.push_back(stdlib); // link stdlib for those couple that need it
 			auto exe = link(std::move(objs), 0x200);
 
 			// Load the compiled code into the simulator and see that the return is correct

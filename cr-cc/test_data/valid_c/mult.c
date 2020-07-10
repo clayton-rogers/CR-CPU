@@ -1,5 +1,4 @@
-// ret: 0
-// mult unimplemented
+// ret: 6
 int main() {
     return 2 * 3;
 }

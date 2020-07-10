@@ -19,8 +19,17 @@ jobs:
       run: |
         cd cr-cc
         make
-        
+        mkdir build
+        mv cc build/cr-cc
+        mv test build/cr-cc-test
+
+    - name: Build stdlib
+      run: |
+        cd cr-cc/stdlib
+        PATH=../build:$PATH
+        make
+
     - name: Run unit test
       run: |
         cd cr-cc
-        ./test  "*,[.]" --benchmark-no-analysis
+        ./build/cr-cc-test  "*,[.]" --benchmark-no-analysis

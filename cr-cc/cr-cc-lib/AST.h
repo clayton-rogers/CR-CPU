@@ -47,6 +47,9 @@ namespace AST {
 		std::string generate_code() const override;
 
 		Label_Maker label_maker;
+		bool used_mult = false;
+		bool used_div = false;
+
 		// TODO static vars
 	private:
 		using Type_Map_Type = std::map<std::string, Type*>;

@@ -7,7 +7,7 @@ stdlib.a: $(OBJS)
 	$(CC) --lib -o $@ $^
 
 $(OBJS): %.o: %.s
-	$(CC) -c -o $@ $<
+	$(CC) --no-stdlib -c -o $@ $<
 
 clean:
 	rm -f stdlib.a

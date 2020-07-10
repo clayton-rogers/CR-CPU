@@ -9,6 +9,7 @@ struct Compiler_Options {
 	bool should_sim = false;
 	bool compile_only = false;
 	bool include_main = true;
+	bool include_stdlib = true;
 	bool should_exit = false;
 	bool output_lib = false;
 	bool output_map = false;

@@ -157,12 +157,20 @@ namespace AST {
 			ss << "sub ra, rb # binary exp sub\n";
 			break;
 		case Type::multiplication:
-			ss << "loadi ra 0\n"; // "return 0" for unit tests
-			ss << "halt # binary exp mult\n"; // TODO no multiplication
+			// mult and div are not instructions but function calls
+			// if they're used we have to make sure there's an .external
+			// directive for them
+			scope->env->used_mult = true;
+			ss << "loada .__mult\n";
+			ss << "call .__mult\n";
 			break;
 		case Type::division:
-			ss << "loadi ra 0\n"; // "return 0" for unit tests
-			ss << "halt # binary exp div\n"; // TODO no division
+			// mult and div are not instructions but function calls
+			// if they're used we have to make sure there's an .external
+			// directive for them
+			scope->env->used_div = true;
+			ss << "loada .__div\n";
+			ss << "call .__div\n";
 			break;
 		case Type::logical_and:
 			ss << "and ra, rb # binary exp logical and\n";
@@ -350,6 +358,16 @@ namespace AST {
 			if (fn.second->is_defined()) {
 				ss << fn.second->generate_code();
 			}
+		}
+
+		// generate extern for mult and div if needed
+		// TODO probably proper way to do this is to add them to the function map
+		ss << "\n";
+		if (used_mult) {
+			ss << ".extern __mult\n";
+		}
+		if (used_div) {
+			ss << ".extern __div\n";
 		}
 
 		return ss.str();
