@@ -121,6 +121,13 @@ int compile(Compiler_Options opt) {
 			return 0;
 		}
 
+		if (opt.output_lib) {
+			auto lib = make_lib(objs);
+			auto stream = lib.to_stream();
+			write_bin_file(opt.output_filename, stream);
+			return 0;
+		}
+
 		auto exe = link(std::move(objs), opt.link_address);
 
 		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;

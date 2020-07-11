@@ -33,6 +33,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  -v, --verbose         Enable verbose output\n"
 				"  -o <filename>         Outputs to a particular filename\n"
 				"  -c                    Only compiles the file(s) to objects, does not link\n"
+				"  --lib                 Output as a library\n"
 				"  -S                    Also output the assembly\n"
 				"  --sim                 Simulates the program on an emulator\n"
 				"  --no-main             When linking, does not include the default jump to main()\n"
@@ -59,6 +60,9 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.output_map = true;
 		} else if ("-S" == arg) {
 			opt.output_assembly = true;
+		} else if ("--lib" == arg) {
+			opt.output_lib = true;
+			opt.include_main = false;
 		} else if (arg.at(0) == '-' && arg.at(1) == 'I') {
 			auto path = arg.substr(2);
 			opt.include_paths.push_back(path);
