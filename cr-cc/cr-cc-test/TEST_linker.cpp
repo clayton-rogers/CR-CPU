@@ -148,80 +148,225 @@ TEST_CASE("Test linker", "[link]") {
 	}
 }
 
-TEST_CASE("Test lib creation", "[link]") {
+TEST_CASE("Test library creation", "[link][temp]") {
 	using namespace Object;
 
-	Object_Container item1;
-	item1.load_address = 0;
-	{
-		Object_Type obj;
-		obj.machine_code.push_back(0xfa12);
-		obj.machine_code.push_back(0x1011);
-		obj.machine_code.push_back(0xabcd);
+	SECTION("Test that libraries can be created") {
+		Object_Container item1;
+		item1.load_address = 0;
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0xabcd);
 
-		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 0 });
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::HI_BYTE, 0 });
 
-		item1.contents = obj;
+			item1.contents = obj;
+		}
+
+		Object_Container item2;
+		item2.load_address = 0;
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x4561);
+			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0x1011);
+
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+
+			obj.exported_symbols.emplace_back(
+				Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
+
+			item2.contents = obj;
+		}
+
+		Object_Container item3;
+		item3.load_address = 0;
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x4787);
+			obj.machine_code.push_back(0x1241);
+			obj.machine_code.push_back(0x7893);
+
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::HI_BYTE, 123 });
+			obj.relocations.emplace_back(
+				Relocation{ HI_LO_TYPE::LO_BYTE, 11 });
+
+			obj.exported_symbols.emplace_back(
+				Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });
+			obj.exported_symbols.emplace_back(
+				Exported_Symbol{ "fun3", Symbol_Type::FUNCTION, 0x0244 });
+
+			item3.contents = obj;
+		}
+
+		std::vector<Object_Container> items;
+		items.push_back(item1);
+		items.push_back(item2);
+		items.push_back(item3);
+
+		auto lib = make_lib(items);
+
+		const auto& lib_contents = std::get<Library_Type>(lib.contents);
+		const auto& item1_contents = std::get<Object_Type>(item1.contents);
+		const auto& item2_contents = std::get<Object_Type>(item2.contents);
+		const auto& item3_contents = std::get<Object_Type>(item3.contents);
+
+		CHECK(lib_contents.objects.at(0) == item1_contents);
+		CHECK(lib_contents.objects.at(1) == item2_contents);
+		CHECK(lib_contents.objects.at(2) == item3_contents);
 	}
 
-	Object_Container item2;
-	item2.load_address = 0;
-	{
-		Object_Type obj;
-		obj.machine_code.push_back(0xfa12);
-		obj.machine_code.push_back(0x1011);
-		obj.machine_code.push_back(0x1011);
-		obj.machine_code.push_back(0x1011);
+	SECTION("TEST that libraries can be linked") {
+		std::vector<Object_Container> lib_items(3);
 
-		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
-		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0xabcd);
+			obj.machine_code.push_back(0xac00);
+			obj.machine_code.push_back(0xad00);
 
-		obj.exported_symbols.emplace_back(
-			Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "funa", Symbol_Type::FUNCTION, 0x01 }
+			);
 
-		item2.contents = obj;
+			obj.external_references.push_back(
+				External_Reference{ "funb", HI_LO_TYPE::LO_BYTE, {0x00, 0x03} }
+			);
+			obj.external_references.push_back(
+				External_Reference{ "funb", HI_LO_TYPE::HI_BYTE, {0x04} }
+			);
+
+			lib_items.at(0).load_address = 0;
+			lib_items.at(0).contents = obj;
+		}
+
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1011);
+
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "funb", Symbol_Type::FUNCTION, 0x03 }
+			);
+
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::LO_BYTE, {0x01} }
+			);
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::HI_BYTE, {0x02} }
+			);
+
+
+			lib_items.at(1).load_address = 0;
+			lib_items.at(1).contents = obj;
+		}
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1011);
+
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "unusedfn", Symbol_Type::FUNCTION, 0x00 }
+			);
+
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::LO_BYTE, {0x01} }
+			);
+			obj.external_references.push_back(
+				External_Reference{ "funa", HI_LO_TYPE::HI_BYTE, {0x02} }
+			);
+
+			lib_items.at(2).load_address = 0;
+			lib_items.at(2).contents = obj;
+		}
+
+		const auto lib = make_lib(lib_items);
+
+		// Main object will reference items from the lib
+		Object_Container main_item;
+		{
+			Object_Type obj;
+			obj.machine_code.push_back(0xfa13);
+			obj.machine_code.push_back(0x4716);
+			obj.machine_code.push_back(0x7818);
+			obj.machine_code.push_back(0x1214);
+
+			// no exported symbols
+
+			// External reference the second item in the lib, which
+			// references the first to check that repeatedly checking
+			// all items in the lib works.
+			obj.external_references.push_back(
+				External_Reference{ "funb", HI_LO_TYPE::LO_BYTE, {0x01} }
+			);
+
+			main_item.load_address = 0;
+			main_item.contents = obj;
+		}
+
+		SECTION("Link library first") {
+			std::vector<Object_Container> items_to_be_linked
+			{ lib, main_item };
+
+			// Undefined reference to "funb"
+			CHECK_THROWS(link(std::move(items_to_be_linked), 0));
+		}
+
+		SECTION("Link library second") {
+			std::vector<Object_Container> items_to_be_linked
+			{ main_item, lib };
+
+			const auto exe = link(std::move(items_to_be_linked), 0x0100);
+			const auto& exe_contents = std::get<Executable>(exe.contents);
+			const auto& code = exe_contents.machine_code;
+
+			const Stream_Type expected_code{
+				// main obj
+				0xfa13,
+				0x4709, // external ref lo to funb
+				0x7818,
+				0x1214,
+
+				// item 2 (pulled in due to requirement for funb)
+				0xfa12,
+				0x1007, // external ref lo to funa
+				0x1001, // external ref hi to funa
+				0x1011, // funb = 0x0107
+
+				// item 1 (pulled in due to requirement for funa)
+				0xfa09, // external ref lo to funb
+				0x1000, // funa = 0x0109
+				0xabcd,
+				0xac09, // external ref lo to funb
+				0xad01, // external ref hi to funb
+			};
+
+			CHECK(code == expected_code);
+
+			const auto& debug_external_ref = exe_contents.exported_symbols;
+			CHECK(debug_external_ref.at(0).name == "funa");
+			CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
+			CHECK(debug_external_ref.at(0).offset == 0x0107);
+			CHECK(debug_external_ref.at(1).name == "funb");
+			CHECK(debug_external_ref.at(1).type == Symbol_Type::FUNCTION);
+			CHECK(debug_external_ref.at(1).offset == 0x0109);
+		}
 	}
-
-	Object_Container item3;
-	item3.load_address = 0;
-	{
-		Object_Type obj;
-		obj.machine_code.push_back(0xfa12);
-		obj.machine_code.push_back(0x4787);
-		obj.machine_code.push_back(0x1241);
-		obj.machine_code.push_back(0x7893);
-
-		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 123 });
-		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 11 });
-
-		obj.exported_symbols.emplace_back(
-			Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });
-		obj.exported_symbols.emplace_back(
-			Exported_Symbol{ "fun3", Symbol_Type::FUNCTION, 0x0244 });
-
-		item3.contents = obj;
-	}
-
-	std::vector<Object_Container> items;
-	items.push_back(item1);
-	items.push_back(item2);
-	items.push_back(item3);
-
-	auto lib = make_lib(items);
-
-	const auto& lib_contents = std::get<Library_Type>(lib.contents);
-	const auto& item1_contents = std::get<Object_Type>(item1.contents);
-	const auto& item2_contents = std::get<Object_Type>(item2.contents);
-	const auto& item3_contents = std::get<Object_Type>(item3.contents);
-
-	CHECK(lib_contents.objects.at(0) == item1_contents);
-	CHECK(lib_contents.objects.at(1) == item2_contents);
-	CHECK(lib_contents.objects.at(2) == item3_contents);
 }
 
 TEST_CASE("Test map creation", "[link]") {

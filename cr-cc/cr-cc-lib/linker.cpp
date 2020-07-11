@@ -194,6 +194,8 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 Object::Object_Container make_lib(const std::vector<Object::Object_Container>& objects)
 {
 	Library_Type library;
+
+	// TODO check that there are no duplicate exported symbols
 	
 	for (const auto& obj : objects) {
 		library.objects.push_back(std::get<Object_Type>(obj.contents));
