@@ -223,3 +223,39 @@ TEST_CASE("Test lib creation", "[link]") {
 	CHECK(lib_contents.objects.at(1) == item2_contents);
 	CHECK(lib_contents.objects.at(2) == item3_contents);
 }
+
+TEST_CASE("Test map creation", "[link]") {
+	using namespace Object;
+
+	Object_Container item;
+	item.load_address = 0x2313;
+	{
+		Object_Type obj;
+		obj.machine_code.push_back(0xfa12);
+		obj.machine_code.push_back(0x4787);
+		obj.machine_code.push_back(0x1241);
+		obj.machine_code.push_back(0x7893);
+
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::LO_BYTE, 0 });
+
+		obj.exported_symbols.emplace_back(
+			Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });
+		obj.exported_symbols.emplace_back(
+			Exported_Symbol{ "fun3", Symbol_Type::FUNCTION, 0x0244 });
+
+		item.contents = obj;
+	}
+
+	const auto exe = link({ item }, 0);
+
+	const auto map = to_map(exe);
+
+	const auto& obj_contents = std::get<Executable>(exe.contents);
+	const auto& map_contents = std::get<Map>(map.contents);
+	
+	CHECK(obj_contents.exported_symbols.at(0) == map_contents.exported_symbols.at(0));
+	CHECK(obj_contents.exported_symbols.at(1) == map_contents.exported_symbols.at(1));
+}

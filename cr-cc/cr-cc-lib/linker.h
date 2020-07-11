@@ -10,5 +10,5 @@ Object::Object_Container link(std::vector<Object::Object_Container>&& objects, i
 // Wraps up multple objects into a library
 Object::Object_Container make_lib(const std::vector<Object::Object_Container>& objects);
 
-// Converts a object to a map (i.e. strips everything except for the exports)
+// Converts a executable to a map (i.e. strips everything except for the exports)
 Object::Object_Container to_map(const Object::Object_Container& obj);
