@@ -147,3 +147,79 @@ TEST_CASE("Test linker", "[link]") {
 		CHECK(code.at(8) == 0x1011);
 	}
 }
+
+TEST_CASE("Test lib creation", "[link]") {
+	using namespace Object;
+
+	Object_Container item1;
+	item1.load_address = 0;
+	{
+		Object_Type obj;
+		obj.machine_code.push_back(0xfa12);
+		obj.machine_code.push_back(0x1011);
+		obj.machine_code.push_back(0xabcd);
+
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::HI_BYTE, 0 });
+
+		item1.contents = obj;
+	}
+
+	Object_Container item2;
+	item2.load_address = 0;
+	{
+		Object_Type obj;
+		obj.machine_code.push_back(0xfa12);
+		obj.machine_code.push_back(0x1011);
+		obj.machine_code.push_back(0x1011);
+		obj.machine_code.push_back(0x1011);
+
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+
+		obj.exported_symbols.emplace_back(
+			Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
+
+		item2.contents = obj;
+	}
+
+	Object_Container item3;
+	item3.load_address = 0;
+	{
+		Object_Type obj;
+		obj.machine_code.push_back(0xfa12);
+		obj.machine_code.push_back(0x4787);
+		obj.machine_code.push_back(0x1241);
+		obj.machine_code.push_back(0x7893);
+
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::HI_BYTE, 123 });
+		obj.relocations.emplace_back(
+			Relocation{ HI_LO_TYPE::LO_BYTE, 11 });
+
+		obj.exported_symbols.emplace_back(
+			Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });
+		obj.exported_symbols.emplace_back(
+			Exported_Symbol{ "fun3", Symbol_Type::FUNCTION, 0x0244 });
+
+		item3.contents = obj;
+	}
+
+	std::vector<Object_Container> items;
+	items.push_back(item1);
+	items.push_back(item2);
+	items.push_back(item3);
+
+	auto lib = make_lib(items);
+
+	const auto& lib_contents = std::get<Library_Type>(lib.contents);
+	const auto& item1_contents = std::get<Object_Type>(item1.contents);
+	const auto& item2_contents = std::get<Object_Type>(item2.contents);
+	const auto& item3_contents = std::get<Object_Type>(item3.contents);
+
+	CHECK(lib_contents.objects.at(0) == item1_contents);
+	CHECK(lib_contents.objects.at(1) == item2_contents);
+	CHECK(lib_contents.objects.at(2) == item3_contents);
+}

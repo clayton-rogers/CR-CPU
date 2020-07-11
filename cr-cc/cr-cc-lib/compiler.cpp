@@ -49,19 +49,6 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 
 }
 
-static Object::Object_Container to_map(const Object::Object_Container& obj) {
-	auto object = std::get<Object::Executable>(obj.contents);
-
-	Object::Map map_contents;
-	map_contents.exported_symbols = object.exported_symbols;
-
-	Object::Object_Container map;
-	map.contents = map_contents;
-	map.load_address = obj.load_address;
-
-	return map;
-}
-
 int compile(Compiler_Options opt) {
 	if (opt.should_exit) {
 		return 1;

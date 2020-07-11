@@ -204,3 +204,16 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 
 	return output;
 }
+
+Object::Object_Container to_map(const Object::Object_Container& obj) {
+	auto object = std::get<Executable>(obj.contents);
+
+	Map map_contents;
+	map_contents.exported_symbols = object.exported_symbols;
+
+	Object_Container map;
+	map.contents = map_contents;
+	map.load_address = obj.load_address;
+
+	return map;
+}
