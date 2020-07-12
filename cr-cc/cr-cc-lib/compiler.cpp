@@ -40,7 +40,7 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 	} else if (file_extension == "s") {
 		auto assembly = f.read_file_from_directories(filename);
 		return assemble(assembly);
-	} else if (file_extension == "o" || file_extension == "map") {
+	} else if (file_extension == "o" || file_extension == "map" || file_extension == "a") {
 		const auto stream = f.read_bin_file_from_directories(filename);
 		return Object::Object_Container::from_stream(stream);
 	} else {
@@ -113,6 +113,13 @@ int compile(Compiler_Options opt) {
 			auto stream = lib.to_stream();
 			write_bin_file(opt.output_filename, stream);
 			return 0;
+		}
+
+		// Automatically link with stdlib
+		{
+			auto stream = f.read_bin_file_from_directories("stdlib.a");
+			auto stdlib = Object::Object_Container::from_stream(stream);
+			objs.push_back(stdlib);
 		}
 
 		auto exe = link(std::move(objs), opt.link_address);
