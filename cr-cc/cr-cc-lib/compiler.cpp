@@ -115,6 +115,13 @@ int compile(Compiler_Options opt) {
 			return 0;
 		}
 
+		// Automatically link with stdlib
+		{
+			auto stream = f.read_bin_file_from_directories("stdlib.a");
+			auto stdlib = Object::Object_Container::from_stream(stream);
+			objs.push_back(stdlib);
+		}
+
 		auto exe = link(std::move(objs), opt.link_address);
 
 		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
