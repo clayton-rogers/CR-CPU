@@ -338,33 +338,34 @@ TEST_CASE("Test library creation", "[link][temp]") {
 			const Stream_Type expected_code{
 				// main obj
 				0xfa13,
-				0x4709, // external ref lo to funb
+				0x4707, // external ref lo to funb
 				0x7818,
 				0x1214,
 
 				// item 2 (pulled in due to requirement for funb)
 				0xfa12,
-				0x1007, // external ref lo to funa
+				0x1009, // external ref lo to funa
 				0x1001, // external ref hi to funa
 				0x1011, // funb = 0x0107
 
 				// item 1 (pulled in due to requirement for funa)
-				0xfa09, // external ref lo to funb
+				0xfa07, // external ref lo to funb
 				0x1000, // funa = 0x0109
 				0xabcd,
-				0xac09, // external ref lo to funb
+				0xac07, // external ref lo to funb
 				0xad01, // external ref hi to funb
 			};
 
 			CHECK(code == expected_code);
 
 			const auto& debug_external_ref = exe_contents.exported_symbols;
-			CHECK(debug_external_ref.at(0).name == "funa");
+			CHECK(debug_external_ref.at(0).name == "funb");
 			CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
 			CHECK(debug_external_ref.at(0).offset == 0x0107);
-			CHECK(debug_external_ref.at(1).name == "funb");
+			CHECK(debug_external_ref.at(1).name == "funa");
 			CHECK(debug_external_ref.at(1).type == Symbol_Type::FUNCTION);
 			CHECK(debug_external_ref.at(1).offset == 0x0109);
+			
 		}
 	}
 }

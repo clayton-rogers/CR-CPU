@@ -10,7 +10,7 @@ using namespace Object;
 static void handle_object(
 	///std::vector<std::uint16_t>& output_machine_code,
 	Object_Type& output_object,
-	Object_Type& input_object,
+	Object_Type& input_object, // Gets modified, cannot be const
 	std::uint16_t objects_load_address,
 	std::uint16_t link_addr
 	)
@@ -108,6 +108,42 @@ static void handle_map(
 		input_map.exported_symbols.cend());
 }
 
+static void handle_lib(
+	Object_Type& output_object,
+	Library_Type& library,
+	const std::uint16_t link_address
+	)
+{
+	bool at_least_one_obj_used = true;
+	const int size_of_lib = static_cast<int>(library.objects.size());
+	// Keep track of which objects have already been used
+	std::vector<bool> object_used(size_of_lib);
+
+	while (at_least_one_obj_used) {
+		at_least_one_obj_used = false;
+
+		for (int i = 0; i < size_of_lib; ++i) {
+			if (object_used.at(i)) { continue; }
+
+			auto& obj = library.objects.at(i);
+
+			// If this object exports a symbol that is needed, then link it
+			for (const auto& symbol : obj.exported_symbols) {
+				for(const auto & extern_ref : output_object.external_references) {
+					if (symbol.name == extern_ref.name) {
+						at_least_one_obj_used = true;
+						object_used.at(i) = true;
+						handle_object(output_object, obj, 0, link_address);
+						goto after;
+					}
+				}
+			}
+			after:
+			;
+		}
+	}
+}
+
 static void apply_references(Object_Type& object, std::uint16_t link_addr)
 {
 	std::unordered_map<std::string, Exported_Symbol> symbol_table;
@@ -162,8 +198,11 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 			break;
 		}
 		case Object_Container::LIBRARY:
-			throw std::logic_error("link(): libraries not implemented yet");
+		{
+			auto& lib = std::get<Library_Type>(item.contents);
+			handle_lib(collector_object, lib, real_link_addr);
 			break;
+		}
 		case Object_Container::MAP:
 		{
 			auto& map = std::get<Map>(item.contents);
