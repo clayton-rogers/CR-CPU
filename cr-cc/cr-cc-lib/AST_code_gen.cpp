@@ -6,6 +6,8 @@
 
 namespace AST {
 
+	static constexpr int MAX_SHORT_JUMP = 128;
+
 	static std::string output_byte(int a) {
 		if (a < 0 || a > 0xFF) {
 			throw std::logic_error("Cannot generate byte for " + a);
@@ -75,6 +77,54 @@ namespace AST {
 		ss << "loadi ra, 1\n";
 		ss << l_end << ":\n";
 		return ss.str();
+	}
+
+	// Returns the approx number of instructions in a section of code
+	static int get_code_length(const std::string code) {
+		const char* current_char = code.c_str();
+		const int size = static_cast<int>(code.size());
+		int count = 0;
+		for (int i = 0; i < size; ++i) {
+			if (*current_char == '\n') {
+				++count;
+			}
+			++current_char;
+		}
+		return count;
+	}
+
+	enum class Jump_Type {
+		unconditional,
+		if_zero_false,
+		if_not_zero_true,
+		if_greater_equal_zero,
+	};
+	std::string operator+(std::string lhs, Jump_Type rhs) {
+		std::vector<std::string> map =
+		{
+			"",
+			".z",
+			".nz",
+			".gz",
+		};
+
+		return lhs + map.at(static_cast<int>(rhs));
+	}
+
+	// Generates a long or short jump depending on the code size
+	static std::string gen_jump(std::string label,
+								Jump_Type type_of_jmp,
+								std::string comment,
+								int jump_size) {
+		std::string jump;
+		if (jump_size > MAX_SHORT_JUMP) {
+			jump += "loada " + label + "\n";
+			jump += "jmp" + type_of_jmp + " " + label + " " + comment + "\n";
+		} else {
+			jump += "jmp.r" + type_of_jmp + " " + label + " " + comment + "\n";
+		}
+
+		return jump;
 	}
 
 	std::string Unary_Expression::generate_code() const {
@@ -232,7 +282,10 @@ namespace AST {
 		if (ret_expression) {
 			ss << ret_expression->generate_code();
 		}
-		ss << "jmp.r " << scope->env->label_maker.get_fn_end_label() << " # return <exp>\n";
+		// Don't know how far the return will be so need to use long jmp
+		const auto end_label = scope->env->label_maker.get_fn_end_label();
+		ss << "loada " << end_label << "\n";
+		ss << "jmp " << end_label << " # return <exp>\n";
 		return ss.str();
 	}
 
@@ -517,18 +570,26 @@ namespace AST {
 		// evaluate the condition
 		ss << condition->generate_code();
 		if (has_else) {
-			auto else_label = scope->env->label_maker.get_next_label();
-			auto end_label = scope->env->label_maker.get_next_label();
-			ss << "jmp.r.z " << else_label << " # if else statement\n";
-			ss << true_statement->generate_code();
-			ss << "jmp.r " << end_label << " # skip else\n";
+			const auto else_label = scope->env->label_maker.get_next_label();
+			const auto end_label = scope->env->label_maker.get_next_label();
+			const auto true_code = true_statement->generate_code();
+			const auto true_code_size = get_code_length(true_code);
+			const auto false_code = false_statement->generate_code();
+			const auto false_code_size = get_code_length(false_code);
+
+			ss << gen_jump(else_label, Jump_Type::if_zero_false, "# if else statement", true_code_size);
+			ss << true_code;
+			ss << gen_jump(end_label, Jump_Type::unconditional, "# skip else", false_code_size);
 			ss << else_label << ": # else\n";
-			ss << false_statement->generate_code();
+			ss << false_code;
 			ss << end_label << ": # end if\n";
 		} else {
-			auto end_label = scope->env->label_maker.get_next_label();
-			ss << "jmp.r.z " << end_label << " # if statement\n";
-			ss << true_statement->generate_code();
+			const auto end_label = scope->env->label_maker.get_next_label();
+			const auto true_code = true_statement->generate_code();
+			const auto true_code_size = get_code_length(true_code);
+
+			ss << gen_jump(end_label, Jump_Type::if_zero_false, "# if statement", true_code_size);
+			ss << true_code;
 			ss << end_label << ": # end if\n";
 		}
 
@@ -538,15 +599,23 @@ namespace AST {
 	std::string Conditional_Expression::generate_code() const {
 		std::stringstream ss;
 
+		// WTF are you doing if you need a long jmp for a ternary?
+		// but we'll implement it anyways since we're here.
+
 		// This should be very similar to the if statement above
 		ss << condition->generate_code();
-		auto else_label = scope->env->label_maker.get_next_label();
-		auto end_label = scope->env->label_maker.get_next_label();
-		ss << "jmp.r.z " << else_label << " # conditional expression\n";
-		ss << true_exp->generate_code();
-		ss << "jmp.r " << end_label << " # skip else\n";
+		const auto else_label = scope->env->label_maker.get_next_label();
+		const auto end_label = scope->env->label_maker.get_next_label();
+		const auto true_code = true_exp->generate_code();
+		const auto true_code_size = get_code_length(true_code);
+		const auto false_code = false_exp->generate_code();
+		const auto false_code_size = get_code_length(false_code);
+
+		ss << gen_jump(else_label, Jump_Type::if_zero_false, "# conditional expression", true_code_size);
+		ss << true_code;
+		ss << gen_jump(end_label, Jump_Type::unconditional, "# skip else", false_code_size);
 		ss << else_label << ": # else\n";
-		ss << false_exp->generate_code();
+		ss << false_code;
 		ss << end_label << ": # end conditional expression\n";
 
 		return ss.str();
@@ -602,7 +671,7 @@ namespace AST {
 
 	std::string Declaration_Statement::generate_code() const {
 		// Don't actually do anything for a declaration, just
-		// mark the var as available to the rest subsequent code.
+		// mark the var as available to the subsequent code.
 		scope->declare_var(var_name);
 		return "";
 	}
@@ -619,11 +688,15 @@ namespace AST {
 		// Check the condition, if false(zero) skip to end
 		ss << label.top << ": # while statement\n";
 		ss << condition->generate_code();
-		ss << "jmp.r.z " << label.after << "\n";
-		ss << contents->generate_code();
-		ss << "jmp.r " << label.top << " # end of while statement\n";
-		ss << label.after << ":\n";
 
+		// We need to use a long jmp if the size of the inside is too long
+		const auto while_contents = contents->generate_code();
+		const auto while_contents_size = get_code_length(while_contents);
+		ss << gen_jump(label.after, Jump_Type::if_zero_false, "", while_contents_size);
+		ss << while_contents;
+		ss << gen_jump(label.top, Jump_Type::unconditional, " # end of while statement", while_contents_size);
+		ss << label.after << ":\n";
+		
 		scope->pop_loop();
 
 		return ss.str();
@@ -639,11 +712,13 @@ namespace AST {
 		scope->push_loop(label);
 
 		// Check the condition, if false(zero) skip to end
+		const auto do_while_contents = contents->generate_code() + condition->generate_code();
+		const auto do_while_contents_size = get_code_length(do_while_contents);
+		
 		ss << label.top << ": # do while statement\n";
-		ss << contents->generate_code();
-		ss << condition->generate_code();
+		ss << do_while_contents;
 		ss << "jmp.r.z " << label.after << "\n";
-		ss << "jmp.r " << label.top << " # end of while statement\n";
+		ss << gen_jump(label.top, Jump_Type::unconditional, "# end of do while statement", do_while_contents_size);
 		ss << label.after << ":\n";
 
 		scope->pop_loop();
@@ -656,7 +731,7 @@ namespace AST {
 		scope->set_current_scope(scope_id);
 
 		// label.top is where a continue should go
-		// label.end is where and end should go
+		// label.after is where a break should go
 		// in the case of a for loop, a continue should execute the optional increment expression (which is not at the top)
 		VarMap::Loop_Labels label;
 		std::string actual_top = scope->env->label_maker.get_next_label();
@@ -670,20 +745,20 @@ namespace AST {
 
 		scope->push_loop(label);
 
+		const auto condition_code = maybe_condition_statement ? maybe_condition_statement->generate_code() : "loadi ra, 1\n";
+		const auto condition_code_size = get_code_length(condition_code);
+		const auto contents_code = contents->generate_code();
+		const auto contents_code_size = get_code_length(contents_code);
+		const auto end_of_loop_code = maybe_end_of_loop_expression ? maybe_end_of_loop_expression->generate_code() : "";
+		const auto end_of_loop_code_size = get_code_length(end_of_loop_code);
+
 		ss << actual_top << ": # top of for loop\n";
-		if (maybe_condition_statement) {
-			ss << maybe_condition_statement->generate_code();
-		} else {
-			// If the for loop condition is omitted, then it it assumed to be one (true)
-			ss << "loadi ra, 1\n";
-		}
-		ss << "jmp.r.z " << label.after << " # for loop condition\n";
-		ss << contents->generate_code();
+		ss << condition_code;
+		ss << gen_jump(label.after, Jump_Type::if_zero_false, "# for loop condition", contents_code_size + end_of_loop_code_size);
+		ss << contents_code;
 		ss << label.top << ": # for increment expression\n";
-		if (maybe_end_of_loop_expression) {
-			ss << maybe_end_of_loop_expression->generate_code();
-		}
-		ss << "jmp.r " << actual_top << " # end of for statement\n";
+		ss << end_of_loop_code;
+		ss << gen_jump(actual_top, Jump_Type::unconditional, "# end of for statement", condition_code_size + contents_code_size + end_of_loop_code_size);
 		ss << label.after << ":\n";
 
 		scope->pop_loop();
@@ -694,10 +769,18 @@ namespace AST {
 	}
 
 	std::string Break_Statement::generate_code() const {
-		return "jmp.r " + scope->get_after_label() + " # break\n";
+		// No way to know how far a break jump has to go, so always long jump
+		std::string ret;
+		ret += "loada " + scope->get_after_label() + "\n";
+		ret += "jmp " + scope->get_after_label() + " # break\n";
+		return ret;
 	}
 
 	std::string Continue_Statement::generate_code() const {
-		return "jmp.r " + scope->get_top_label() + " # continue\n";
+		// No way to know how far a continue jump has to go, so always long jump
+		std::string ret;
+		ret += "loada " + scope->get_top_label() + "\n";
+		ret += "jmp " + scope->get_top_label() + " # continue\n";
+		return ret;
 	}
 }
