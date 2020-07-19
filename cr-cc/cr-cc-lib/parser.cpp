@@ -267,8 +267,9 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::factor_tail,
 		{
-			{{TokenType::star, TokenType::factor}, {}},
-			{{TokenType::div, TokenType::factor}, {}},
+			{{TokenType::star, TokenType::factor}, {}}, // mult
+			{{TokenType::div, TokenType::factor}, {}}, // div
+			{{TokenType::percent, TokenType::factor}, {}}, // modulo
 		}
 	},
 	{TokenType::factor,

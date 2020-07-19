@@ -154,6 +154,8 @@ namespace AST {
 			return Type::multiplication;
 		case TokenType::div:
 			return Type::division;
+		case TokenType::percent:
+			return Type::remainder;
 		case TokenType::and_op:
 			return Type::logical_and;
 		case TokenType::or_op:

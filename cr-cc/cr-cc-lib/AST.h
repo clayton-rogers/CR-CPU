@@ -49,6 +49,7 @@ namespace AST {
 		Label_Maker label_maker;
 		bool used_mult = false;
 		bool used_div = false;
+		bool used_mod = false;
 
 		// TODO static vars
 	private:
@@ -211,6 +212,7 @@ namespace AST {
 			subtraction,
 			multiplication,
 			division,
+			remainder,
 			logical_and,
 			logical_or,
 			equal,

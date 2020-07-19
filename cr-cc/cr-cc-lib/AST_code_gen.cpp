@@ -222,6 +222,12 @@ namespace AST {
 			ss << "loada .__div\n";
 			ss << "call .__div\n";
 			break;
+		case Type::remainder:
+			// mod is also a function and not an instruction
+			scope->env->used_mod = true;
+			ss << "loada .__rem\n";
+			ss << "call .__rem\n";
+			break;
 		case Type::logical_and:
 			ss << "and ra, rb # binary exp logical and\n";
 			break;
@@ -421,6 +427,9 @@ namespace AST {
 		}
 		if (used_div) {
 			ss << ".extern __div\n";
+		}
+		if (used_mod) {
+			ss << ".extern __rem\n";
 		}
 
 		return ss.str();
