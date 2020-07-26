@@ -171,3 +171,42 @@ TEST_CASE("Test file io filename methods", "[c]") {
 	CHECK(get_base_filename(filename) == std::string("test"));
 	CHECK(get_file_extension(filename) == std::string("txt"));
 }
+
+TEST_CASE("Linker with multi segment files", "[link]") {
+	// These two relocation files are specially crafted so that addresses
+	// that need relocation span a page boundary.
+	//
+	// Ex.
+	// Originally the reference was to 0x0006
+	// The relocation offset is 0x00FE
+	//
+	// If you handle the two bytes separately you get:
+	// 00 + 00 =  00 high byte
+	// 06 + FE = 104 low byte
+	// Thus giving 0x0004 when it should be 0x0104
+	// Issue was cause by the overflow of the low byte not incrementing the high byte
+
+	using namespace Object;
+
+	FileReader f;
+	f.add_directory("./test_data/relocation/");
+	f.add_directory("./stdlib/"); // for main.s
+
+
+	std::vector<Object_Container> objs;
+	objs.push_back(compile_tu("main.s", f));
+	objs.emplace_back(compile_tu("relocation_asm1.s", f));
+	objs.emplace_back(compile_tu("relocation_asm2.s", f));
+
+	auto exe = link(std::move(objs), 0x200);
+
+	auto program_loader = compile_tu("program_loader.s", f);
+
+	Simulator sim;
+	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+	sim.load(0, std::get<Object_Type>(program_loader.contents).machine_code);
+
+	sim.run_until_halted(20000);
+	CHECK(sim.get_state().is_halted == true);
+	CHECK(sim.get_state().ra == 0x0000);
+}
