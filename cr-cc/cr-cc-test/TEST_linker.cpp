@@ -15,12 +15,12 @@ TEST_CASE("Test linker", "[link]") {
 		item1.load_address = 0;
 		{
 			Object_Type obj;
-			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0xfa00);
 			obj.machine_code.push_back(0x1011);
 			obj.machine_code.push_back(0xabcd);
 
 			obj.relocations.emplace_back(
-				Relocation{HI_LO_TYPE::HI_BYTE, 0} );
+				Relocation{HI_LO_TYPE::HI_BYTE, 0, 0x1200} );
 
 			item1.contents = obj;
 		}
@@ -30,14 +30,14 @@ TEST_CASE("Test linker", "[link]") {
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa12);
-			obj.machine_code.push_back(0x1011);
-			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0x1000);
+			obj.machine_code.push_back(0x1000);
 			obj.machine_code.push_back(0x1011);
 
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+				Relocation{ HI_LO_TYPE::HI_BYTE, 1, 0x1100 });
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+				Relocation{ HI_LO_TYPE::LO_BYTE, 2, 0x0011 });
 
 			obj.exported_symbols.emplace_back(
 				Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
@@ -148,7 +148,7 @@ TEST_CASE("Test linker", "[link]") {
 	}
 }
 
-TEST_CASE("Test library creation", "[link][temp]") {
+TEST_CASE("Test library creation", "[link]") {
 	using namespace Object;
 
 	SECTION("Test that libraries can be created") {
@@ -156,12 +156,12 @@ TEST_CASE("Test library creation", "[link][temp]") {
 		item1.load_address = 0;
 		{
 			Object_Type obj;
-			obj.machine_code.push_back(0xfa12);
+			obj.machine_code.push_back(0xfa00);
 			obj.machine_code.push_back(0x1011);
 			obj.machine_code.push_back(0xabcd);
 
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::HI_BYTE, 0 });
+				Relocation{ HI_LO_TYPE::HI_BYTE, 0, 0x1200});
 
 			item1.contents = obj;
 		}
@@ -171,14 +171,14 @@ TEST_CASE("Test library creation", "[link][temp]") {
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa12);
-			obj.machine_code.push_back(0x4561);
-			obj.machine_code.push_back(0x1011);
+			obj.machine_code.push_back(0x4500);
+			obj.machine_code.push_back(0x1000);
 			obj.machine_code.push_back(0x1011);
 
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+				Relocation{ HI_LO_TYPE::HI_BYTE, 1, 0x6100 });
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::LO_BYTE, 2 });
+				Relocation{ HI_LO_TYPE::LO_BYTE, 2, 0x1100 });
 
 			obj.exported_symbols.emplace_back(
 				Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
@@ -196,9 +196,9 @@ TEST_CASE("Test library creation", "[link][temp]") {
 			obj.machine_code.push_back(0x7893);
 
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::HI_BYTE, 123 });
+				Relocation{ HI_LO_TYPE::HI_BYTE, 123, 0x0011 }); // doesn't matter
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::LO_BYTE, 11 });
+				Relocation{ HI_LO_TYPE::LO_BYTE, 11, 0x0033 }); // doesn't matter
 
 			obj.exported_symbols.emplace_back(
 				Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });
@@ -377,15 +377,15 @@ TEST_CASE("Test map creation", "[link]") {
 	item.load_address = 0x2313;
 	{
 		Object_Type obj;
-		obj.machine_code.push_back(0xfa12);
-		obj.machine_code.push_back(0x4787);
+		obj.machine_code.push_back(0xfa00);
+		obj.machine_code.push_back(0x4700);
 		obj.machine_code.push_back(0x1241);
 		obj.machine_code.push_back(0x7893);
 
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 1 });
+			Relocation{ HI_LO_TYPE::HI_BYTE, 1, 0x8700});
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 0 });
+			Relocation{ HI_LO_TYPE::LO_BYTE, 0, 0x0012 });
 
 		obj.exported_symbols.emplace_back(
 			Exported_Symbol{ "fun2", Symbol_Type::FUNCTION, 0x0241 });

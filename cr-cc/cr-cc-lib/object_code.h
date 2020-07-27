@@ -28,7 +28,12 @@ namespace Object {
 
 	struct Relocation {
 		HI_LO_TYPE type;
-		std::uint16_t offset;
+		std::uint16_t location;
+		std::uint16_t new_offset;
+		Relocation(HI_LO_TYPE type, std::uint16_t location, std::uint16_t offset) :
+			type(type), location(location), new_offset(offset) {}
+		Relocation() :
+			type(HI_LO_TYPE::LO_BYTE), location(0), new_offset(0) {}
 	};
 
 	struct Exported_Symbol {
@@ -65,7 +70,7 @@ namespace Object {
 	public:
 		// Static
 		static const std::uint16_t MAGIC = 0x5243; // ascii "CR"
-		static const std::uint16_t OBJECT_VERSION = 4;
+		static const std::uint16_t OBJECT_VERSION = 5;
 
 		// Members
 		std::uint16_t load_address = 0;

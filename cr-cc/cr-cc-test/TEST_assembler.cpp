@@ -2,6 +2,7 @@
 #include "file_io.h"
 #include "utilities.h"
 #include "simulator.h"
+#include "linker.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -63,8 +64,10 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"loadi rb, 0xFF", "A4FF "},
 		{"loadi rp 32",    "A820 "},
 		{"loadi.h sp 0xEE", "AEEE "},
-		{".static 1 buf \n .static 1 a \n .static 2 b \n loadi ra, .a \n loadi.h ra, .a \n loadi rb,.b[1]", "A004 A200 A406 0000 0000 0000 0000 "},
-		{".static 256 buf \n .static 1 a \n loadi ra, .a \n loadi.h ra,.a", "A002 A201 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 " },
+		{".static 1 buf \n .static 1 a \n .static 2 b \n loadi ra, .a \n loadi.h ra, .a \n loadi rb,.b[1]",
+			"A004 A200 A406 0000 0000 0000 0000 "},
+		{".static 256 buf \n .static 1 a \n loadi ra, .a \n loadi.h ra,.a",
+			"A002 A201 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 " },
 		{"push rp", "B800 "},
 		{"pop sp", "BD00 "},
 		{"nop \n call .fn \n nop \n .fn: \n nop", "F000 C203 F000 F000 "}, // call abs
@@ -96,15 +99,27 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{".constant 0x00ff const \n loadi ra, .const[1] \n loadi.h ra, .const[1]", "A000 A201 "}, // array offsets should roll over into high byte
 		{".label: \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
 		{".label: \n .export label \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
-		{".extern label \n loadi ra, .label \n loadi.h ra .label ", "A000 A200 "},
-		{".extern label \n loadi ra, .label \n loadi.h ra .label \n .extern label", "A000 A200 "}, // duplicate labels are allowed
+		{".extern label \n loadi ra, .label \n loadi.h ra .label ", "A003 A200 F000 F000 "}, // value of label is sizeof(code) + 1
+		{".extern label \n loadi ra, .label \n loadi.h ra .label \n .extern label", "A003 A200 F000 F000 "}, // duplicate extern labels are allowed
 	};
 
 	for (const auto& test_point : test_points) {
 		INFO(test_point.input);
 
-		auto object_file = assemble(test_point.input);
-		std::string output = machine_inst_to_simple_hex(std::get<Object::Object_Type>(object_file.contents).machine_code);
+		std::vector<Object::Object_Container> objs;
+		objs.emplace_back(assemble(test_point.input));
+
+		const std::string extern_label_definition = "nop \n .label: \n .export label \n nop"; // no code produced
+		// We make this a lib so it will only be linked if it is actually required
+		std::vector<Object::Object_Container> lib_objs;
+		lib_objs.emplace_back(assemble(extern_label_definition));
+		objs.emplace_back(make_lib(lib_objs));
+
+		// Use linker just to apply relocations amd extern label
+		const auto exe = link(std::move(objs), 0);
+
+		std::string output = machine_inst_to_simple_hex(
+			std::get<Object::Executable>(exe.contents).machine_code);
 
 		CHECK(output == test_point.expected_out);
 	}
@@ -211,10 +226,13 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		REQUIRE(program.length() != 0);
 
-		auto object_file = assemble(program);
+		std::vector<Object::Object_Container> objs;
+		objs.emplace_back(assemble(program));
+		// Use linker just to apply relocations
+		auto exe = link(std::move(objs), 0);
 
 		Simulator sim;
-		sim.load(0, std::get<Object::Object_Type>(object_file.contents).machine_code);
+		sim.load(0, std::get<Object::Executable>(exe.contents).machine_code);
 		sim.run_until_halted(200);
 
 		// Check that the simulated assembled program actually does as expected
@@ -242,26 +260,27 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 	std::string input = read_file("./test_data/relocation_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
+	auto exe = link( { object_file }, 0);
 
 	// Check that we have the required relocations
 	{
 		const auto& reloc = object.relocations;
 
-		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x10 });
-		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x11 });
-		CHECK(reloc.at(2) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x12 });
-		CHECK(reloc.at(3) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x13 });
-		CHECK(reloc.at(4) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x14 });
-		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x15 });
-		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x16 });
+		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x10, 0x04 });
+		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x11, 0x04 });
+		CHECK(reloc.at(2) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x12, 0x04 });
+		CHECK(reloc.at(3) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x13, 0x04 });
+		CHECK(reloc.at(4) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x14, 0x04 });
+		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x15, 0x04 });
+		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x16, 0x04 });
 
-		CHECK(reloc.at(7) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x17 });
-		CHECK(reloc.at(8) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x18 });
-		CHECK(reloc.at(9) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x19 });
-		CHECK(reloc.at(10) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1A });
-		CHECK(reloc.at(11) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1B });
-		CHECK(reloc.at(12) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x1C });
-		CHECK(reloc.at(13) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1D });
+		CHECK(reloc.at(7)  == Relocation{ HI_LO_TYPE::HI_BYTE, 0x17, 0x1E });
+		CHECK(reloc.at(8)  == Relocation{ HI_LO_TYPE::LO_BYTE, 0x18, 0x1E });
+		CHECK(reloc.at(9)  == Relocation{ HI_LO_TYPE::LO_BYTE, 0x19, 0x1E });
+		CHECK(reloc.at(10) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1A, 0x1E });
+		CHECK(reloc.at(11) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1B, 0x1E });
+		CHECK(reloc.at(12) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x1C, 0x1E });
+		CHECK(reloc.at(13) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1D, 0x1E });
 	}
 	// Check the output machine code
 	{
@@ -273,7 +292,7 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 			"D000 C21E 921E 721E 621E A200 A01E "
 			"4323 "
 			;
-		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
+		std::string actual_machine_code = machine_inst_to_simple_hex(std::get<Executable>(exe.contents).machine_code);
 
 		CHECK(expected_machine_code == actual_machine_code);
 	}
@@ -311,6 +330,7 @@ TEST_CASE("Assembler object Exported referencs", "[asm]") {
 	std::string input = read_file("./test_data/exported_references_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
+	auto exe = link({ object_file }, 0);
 
 	// Check that we have the required external refs
 	{
@@ -323,14 +343,14 @@ TEST_CASE("Assembler object Exported referencs", "[asm]") {
 	{
 		const auto& reloc = object.relocations;
 
-		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x06 });
-		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x07 });
+		CHECK(reloc.at(0) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x06, 0x02 });
+		CHECK(reloc.at(1) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x07, 0x02 });
 	}
 	// Check the output machine code
 	{
 		std::string expected_machine_code =
 			"F000 F000 0100 C100 A00A A40B D000 C202 C100 ";
-		std::string actual_machine_code = machine_inst_to_simple_hex(object.machine_code);
+		std::string actual_machine_code = machine_inst_to_simple_hex(std::get<Executable>(exe.contents).machine_code);
 
 		CHECK(expected_machine_code == actual_machine_code);
 	}

@@ -65,7 +65,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			auto test_program = compile_tu(item, fr);
 			auto init_main = compile_tu("./stdlib/main.s", fr); // this is what calls the main fn
-			auto program_loader = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
+			auto program_loader_o = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
 			auto stream = read_bin_file("./stdlib/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 
@@ -75,10 +75,12 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			objs.push_back(stdlib); // link stdlib for those couple that need it
 			auto exe = link(std::move(objs), 0x200);
 
+			auto program_loader_exe = link({ program_loader_o }, 0);
+
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
 			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-			sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 
 			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
@@ -149,11 +151,12 @@ TEST_CASE("Whole C program", "[c]") {
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader = compile_tu("program_loader.s", fr);
+	auto program_loader_o = compile_tu("program_loader.s", fr);
+	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
 	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-	sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+	sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);
@@ -200,11 +203,12 @@ TEST_CASE("Linker with multi segment files", "[link]") {
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader = compile_tu("program_loader.s", f);
+	auto program_loader_o = compile_tu("program_loader.s", f);
+	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
 	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-	sim.load(0, std::get<Object_Type>(program_loader.contents).machine_code);
+	sim.load(0, std::get<Executable>(program_loader_exe.contents).machine_code);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);
