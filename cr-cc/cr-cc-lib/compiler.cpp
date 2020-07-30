@@ -151,10 +151,11 @@ int compile(Compiler_Options opt) {
 		}
 
 		if (opt.should_sim) {
-			auto program_loader = compile_tu("program_loader.s", f);
+			auto program_loader_o = compile_tu("program_loader.s", f);
+			auto program_loader_exe = link({ program_loader_o }, 0);
 
 			Simulator sim;
-			sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 			sim.load(exe.load_address, machine_code);
 
 			const int total_steps = 16000000;// up to one second of operation

@@ -144,33 +144,35 @@ External_Reference from_stream(Stream_Type_Iterator& s) {
 }
 
 static Stream_Type to_stream(const Relocation& relocation) {
-	std::uint16_t value = relocation.offset;
-
-	// We cheat with relocations an assume that they will always be smaller than 32k
-	// so that we can use the upper bit for the type of relocation
-	if (value > 0x7FFF) {
-		throw std::logic_error("Internal error: relocation offset too great");
+	std::uint16_t location = relocation.location;
+	if (location > 0x7fff) {
+		throw std::logic_error("Relocation::to_stream(): Code size too large");
 	}
+
+	// We cheat with relocations an assume that the code size will always
+	// be smaller than 32k so that we can use the upper bit for the type of relocation
 	if (relocation.type == HI_LO_TYPE::HI_BYTE) {
-		value |= 0x8000;
+		location |= 0x8000;
 	}
 
-	return Stream_Type{ value };
+	// Each relocation takes two slots
+	return Stream_Type{ location, relocation.new_offset };
 }
 
 template<>
 Relocation from_stream(Stream_Type_Iterator& s) {
-	auto value = s.get_next();
+	auto location = s.get_next();
 
 	Relocation relocation;
-	if (0x8000 & value) {
+	if (0x8000 & location) {
 		relocation.type = HI_LO_TYPE::HI_BYTE;
-		value &= 0x7FFF;
+		location &= 0x7FFF;
 	} else {
 		relocation.type = HI_LO_TYPE::LO_BYTE;
 	}
 
-	relocation.offset = value;
+	relocation.location = location;
+	relocation.new_offset = s.get_next();
 
 	return relocation;
 }
@@ -452,7 +454,9 @@ bool Object::operator==(const Map& a, const Map& b) {
 bool Object::operator==(const Object::Relocation& a, const Object::Relocation& b) {
 	if (a.type != b.type) {
 		return false;
-	} else if (a.offset != b.offset) {
+	} else if (a.new_offset != b.new_offset) {
+		return false;
+	} else if (a.location != b.location) {
 		return false;
 	} else {
 		return true;

@@ -613,9 +613,12 @@ static std::uint16_t instruction_to_machine(
 	};
 
 	auto handle_external_ref_if_needed = [&extern_label_map, instruction_number](std::string label, HI_LO_TYPE type) {
+		// If this isn't an extern label, then nothing to do
 		if (extern_label_map.count(label) == 0) {
 			return;
 		}
+		// If it is, record the location so when then extern reference is known,
+		// it can be filled in
 		if (type == HI_LO_TYPE::HI_BYTE) {
 			extern_label_map.at(label).hi_references.push_back(instruction_number);
 		} else {
@@ -629,6 +632,7 @@ static std::uint16_t instruction_to_machine(
 	machine |= opcode_to_machine.at(inst.opcode) << 12;
 
 	// Bottom 8 bits are always constant if it exists
+	// (This is the gory-est code of the whole project. GOOD LUCK!)
 	for (Argument a : inst.args) {
 		if (a.type == ARG_TYPE::CONST) {
 			int const_value = 0;
@@ -646,13 +650,27 @@ static std::uint16_t instruction_to_machine(
 						}
 					} else {
 						if (need_relocation(a.label_value)) {
-							relocations.push_back(Relocation{ HI_LO_TYPE::LO_BYTE, u16(instruction_number) });
+							// if relocation is required, then the target is stored in the relocation
+							relocations.push_back(
+								Relocation{
+									HI_LO_TYPE::LO_BYTE,
+									u16(instruction_number),
+									u16(get_label(a.label_value))});
+							const_value = 0;
+						} else {
+							const_value = get_label(a.label_value);
 						}
 						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
-						const_value = get_label(a.label_value);
 					}
 					const_value &= 0xFF;
 					break;
+
+					// LOADA
+					// LOAD
+					// STORE - constant or var label
+					// ARITHMETIC - constant only
+					// (Not sure if this is correct?)
+					// (TODO spell out the case statement)
 				default:
 				{
 					// else must be a variable label
@@ -672,16 +690,28 @@ static std::uint16_t instruction_to_machine(
 					const_value = get_label(label_str) + offset;
 					if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
 						if (need_relocation(label_str)) {
-							relocations.push_back(Relocation{ HI_LO_TYPE::HI_BYTE, u16(instruction_number) });
+							relocations.push_back(
+								Relocation{
+									HI_LO_TYPE::HI_BYTE,
+									u16(instruction_number),
+									u16(const_value)});
+							const_value = 0;
+						} else {
+							const_value >>= 8;
 						}
 						handle_external_ref_if_needed(label_str, HI_LO_TYPE::HI_BYTE);
-						const_value >>= 8;
 					} else {
 						if (need_relocation(label_str)) {
-							relocations.push_back(Relocation{ HI_LO_TYPE::LO_BYTE, u16(instruction_number) });
+							relocations.push_back(
+								Relocation{
+									HI_LO_TYPE::LO_BYTE,
+									u16(instruction_number),
+									u16(const_value)});
+							const_value = 0;
+						} else {
+							const_value &= 0xFF;
 						}
 						handle_external_ref_if_needed(label_str, HI_LO_TYPE::LO_BYTE);
-						const_value &= 0xFF;
 					}
 				}
 				break;

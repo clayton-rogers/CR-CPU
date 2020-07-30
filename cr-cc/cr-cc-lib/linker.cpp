@@ -22,27 +22,20 @@ static void handle_object(
 	// First handle any code relocations
 	{
 		for (const auto& reloc : input_object.relocations) {
-			std::uint16_t offset = input_object.machine_code.at(reloc.offset);
+			std::uint16_t code = input_object.machine_code.at(reloc.location);
 
-			// mask out the byte we care about
-			offset &= 0xFF;
+			// Calculate the final address and mask only the bit we need
+			std::uint16_t final_address = relocation_offset + reloc.new_offset;
 			if (reloc.type == HI_LO_TYPE::HI_BYTE) {
-				offset <<= 8;
-			}
-
-			// apply the offset and mask back the byte we want
-			offset += relocation_offset;
-			if (reloc.type == HI_LO_TYPE::HI_BYTE) {
-				offset >>= 8;
+				final_address >>= 8;
 			} else {
-				offset &= 0xFF;
+				final_address &= 0xFF;
 			}
 
-			// write the byte back to the machine code
-			std::uint16_t word = input_object.machine_code.at(reloc.offset);
-			word &= 0xFF00; // delete the old value
-			word |= offset; // apply new value
-			input_object.machine_code.at(reloc.offset) = word;
+			// Apply it to the code which should have zero in the immediate
+			code |= final_address;
+
+			input_object.machine_code.at(reloc.location) = code;
 		}
 	}
 

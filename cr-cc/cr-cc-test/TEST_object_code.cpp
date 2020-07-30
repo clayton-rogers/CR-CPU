@@ -24,9 +24,9 @@ TEST_CASE("Test object serialization", "[obj]") {
 			External_Reference{ "add_fn", HI_LO_TYPE::HI_BYTE, {0xab41, 0xc8e2} });
 
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234 });
+			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234, 0x1234 });
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF });
+			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF, 0x7FFF });
 
 		obj.machine_code.push_back(0xfa12);
 		obj.machine_code.push_back(0x1234);
@@ -66,9 +66,9 @@ TEST_CASE("Test library serialization", "[obj]") {
 			External_Reference{ "add_fn", HI_LO_TYPE::HI_BYTE, {0xab41, 0xc8e2} });
 
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234 });
+			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234, 0x1234 });
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF });
+			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF, 0x7FFF });
 
 		obj.machine_code.push_back(0xfa12);
 		obj.machine_code.push_back(0x1234);
@@ -94,9 +94,9 @@ TEST_CASE("Test library serialization", "[obj]") {
 			External_Reference{ "add_fn", HI_LO_TYPE::HI_BYTE, {0xab41, 0xc8e2} });
 
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234 });
+			Relocation{ HI_LO_TYPE::HI_BYTE, 0x1234, 0x1234 });
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF });
+			Relocation{ HI_LO_TYPE::LO_BYTE, 0x7FFF, 0x7fff });
 
 		obj.machine_code.push_back(0xfa12);
 		obj.machine_code.push_back(0x1234);

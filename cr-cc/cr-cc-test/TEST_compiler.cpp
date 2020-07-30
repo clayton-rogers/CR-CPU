@@ -65,7 +65,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			auto test_program = compile_tu(item, fr);
 			auto init_main = compile_tu("./stdlib/main.s", fr); // this is what calls the main fn
-			auto program_loader = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
+			auto program_loader_o = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
 			auto stream = read_bin_file("./stdlib/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 
@@ -75,10 +75,12 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			objs.push_back(stdlib); // link stdlib for those couple that need it
 			auto exe = link(std::move(objs), 0x200);
 
+			auto program_loader_exe = link({ program_loader_o }, 0);
+
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
 			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-			sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 
 			sim.run_until_halted(20000);
 			CHECK(sim.get_state().is_halted == true);
@@ -149,11 +151,12 @@ TEST_CASE("Whole C program", "[c]") {
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader = compile_tu("program_loader.s", fr);
+	auto program_loader_o = compile_tu("program_loader.s", fr);
+	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
 	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-	sim.load(0, std::get<Object::Object_Type>(program_loader.contents).machine_code);
+	sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);
@@ -170,4 +173,44 @@ TEST_CASE("Test file io filename methods", "[c]") {
 
 	CHECK(get_base_filename(filename) == std::string("test"));
 	CHECK(get_file_extension(filename) == std::string("txt"));
+}
+
+TEST_CASE("Linker with multi segment files", "[link]") {
+	// These two relocation files are specially crafted so that addresses
+	// that need relocation span a page boundary.
+	//
+	// Ex.
+	// Originally the reference was to 0x0006
+	// The relocation offset is 0x00FE
+	//
+	// If you handle the two bytes separately you get:
+	// 00 + 00 =  00 high byte
+	// 06 + FE = 104 low byte
+	// Thus giving 0x0004 when it should be 0x0104
+	// Issue was cause by the overflow of the low byte not incrementing the high byte
+
+	using namespace Object;
+
+	FileReader f;
+	f.add_directory("./test_data/relocation/");
+	f.add_directory("./stdlib/"); // for main.s
+
+
+	std::vector<Object_Container> objs;
+	objs.push_back(compile_tu("main.s", f));
+	objs.emplace_back(compile_tu("relocation_asm1.s", f));
+	objs.emplace_back(compile_tu("relocation_asm2.s", f));
+
+	auto exe = link(std::move(objs), 0x200);
+
+	auto program_loader_o = compile_tu("program_loader.s", f);
+	auto program_loader_exe = link({ program_loader_o }, 0);
+
+	Simulator sim;
+	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
+	sim.load(0, std::get<Executable>(program_loader_exe.contents).machine_code);
+
+	sim.run_until_halted(20000);
+	CHECK(sim.get_state().is_halted == true);
+	CHECK(sim.get_state().ra == 0x0000);
 }
