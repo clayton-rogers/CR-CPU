@@ -1,5 +1,5 @@
 CC=cr-cc
-SRCS=mult.s div.s vga.s
+SRCS=mult.s div.s vga.s print_num.s
 OBJS=$(subst .s,.o,$(SRCS))
 all: stdlib.a
 
