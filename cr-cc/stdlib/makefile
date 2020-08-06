@@ -11,7 +11,10 @@ stdlib.a: $(OBJS)
 	$(CC) --lib -o $@ $^
 
 $(ASM_OBJS): %.o: %.s
-	$(CC) -c -o $@ $<
+	$(CC) --no-stdlib -c -o $@ $<
+
+$(C_OBJS): %.o: %.c
+	$(CC) --no-stdlib -c -o $@ $<
 
 clean:
 	rm -f stdlib.a
