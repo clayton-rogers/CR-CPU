@@ -16,12 +16,19 @@ using RuleList = std::vector<Rule>;
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::translation_unit,
 		{
-			{{TokenType::function}, TokenType::function_tail},
+			{{TokenType::external_declaration}, TokenType::external_declaration_tail},
+			//{{TokenType::function}, TokenType::function_tail},
 		}
 	},
-	{TokenType::function_tail,
+	{TokenType::external_declaration_tail,
+		{
+			{{TokenType::external_declaration}, {}},
+		}
+	},
+	{TokenType::external_declaration,
 		{
 			{{TokenType::function}, {}},
+			{{TokenType::declaration}, {}},
 		}
 	},
 	{TokenType::function,

@@ -43,7 +43,8 @@ namespace AST {
 		env.create_type(my_void);
 
 		// Parse each function and type definition
-		for (const auto& node : root.children) {
+		for (const auto& external_declaration_node : root.children) {
+			const auto& node = external_declaration_node.children.at(0);
 			switch (node.token.token_type) {
 			case TokenType::function:
 			{
@@ -60,6 +61,11 @@ namespace AST {
 				fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DEFINITION);
 				env.add_function(fn);
 
+				break;
+			}
+			case TokenType::declaration:
+			{
+				throw std::logic_error("AST::AST(): Global scoped declarations not currently supported");
 				break;
 			}
 			default:

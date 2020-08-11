@@ -97,7 +97,6 @@ enum class TokenType {
 	function,
 	function_declaration,
 	function_definition,
-	function_tail,
 	parameter_list,
 	parameter_list_tail,
 	parameter_declaration,
@@ -142,7 +141,8 @@ enum class TokenType {
 	function_call,
 	argument_expression_list,
 	argument_expression_list_tail,
-
+	external_declaration,
+	external_declaration_tail,
 
 	last_token,
 };
