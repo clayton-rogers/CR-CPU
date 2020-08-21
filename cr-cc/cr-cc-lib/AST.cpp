@@ -65,7 +65,40 @@ namespace AST {
 			}
 			case TokenType::declaration:
 			{
-				throw std::logic_error("AST::AST(): Global scoped declarations not currently supported");
+				auto type = parse_type(node.get_child_with_type(TokenType::type_specifier), std::make_shared<VarMap>(&env));
+				auto init_decl = node
+					.get_child_with_type(TokenType::init_declarator_list)
+					.get_child_with_type(TokenType::init_declarator);
+				auto name = init_decl.get_child_with_type(TokenType::identifier).token.value;
+				std::uint16_t value = 0;
+				bool has_value = false;
+				if (init_decl.contains_child_with_type(TokenType::equals)) {
+					// The init expression must be constant, nothing else is acceptable
+					try {
+						// TODO got to be a better way to do this....
+						auto value_str = init_decl
+							.get_child_with_type(TokenType::expression)
+							.get_child_with_type(TokenType::conditional_exp)
+							.get_child_with_type(TokenType::logical_or_exp)
+							.get_child_with_type(TokenType::logical_and_exp)
+							.get_child_with_type(TokenType::equality_exp)
+							.get_child_with_type(TokenType::relational_exp)
+							.get_child_with_type(TokenType::additive_exp)
+							.get_child_with_type(TokenType::term)
+							.get_child_with_type(TokenType::factor)
+							.get_child_with_type(TokenType::constant).token.value;
+						int value_int = std::stoi(value_str);
+						if (value_int > 0xFFFF || value_int < -0x7FFF) {
+							throw std::logic_error("Contstant literal out of range: " + value_int);
+						}
+						value = static_cast<std::uint16_t>(value_int);
+						has_value = true;
+					} catch (const std::logic_error& /*e*/) {
+						throw std::logic_error("global declared with a non-constant expression");
+					}
+				}
+				env.create_static_var(type, name, has_value, value);
+
 				break;
 			}
 			default:
@@ -245,34 +278,29 @@ namespace AST {
 		}
 	}
 
-	int VarMap::get_var_offset(std::string name, Scope_Id* found_id) {
-		Scope_Id id = current_scope;
-		while (id != NULL_SCOPE) {
-			// On catch vars that exist at the current or parents scopes
-			// and which have been declared
-			if (scopes.at(id).offset_map.count(name) == 1 &&
-				scopes.at(id).offset_map.at(name).is_declared == true) {
-				if (found_id != nullptr) {
-					*found_id = id;
-				}
-				return scopes.at(id).offset_map.at(name).offset + stack_offset;
-			}
-			id = scopes.at(id).parent;
+	void Environment::add_function(std::shared_ptr<Function> new_function)	{
+
+		auto existing_symbol = get_symbol_with_name(new_function->get_name());
+		const bool symbol_exists = existing_symbol != nullptr;
+
+		// If this is a new function, just add it to the map
+		if (!symbol_exists) {
+			Global_Symbol s;
+			s.name = new_function->get_name();
+			s.type = Global_Symbol::Type::FUNCTION;
+			s.function = new_function;
+			global_symbol_table.push_back(s);
+			return;
 		}
 
-		throw std::logic_error("Referenced unknown variable: " + name);
-	}
-
-	void Environment::add_function(std::shared_ptr<Function> new_function)	{
-		// If this is a new function, just add it to the map
-		if (function_map.count(new_function->get_name()) == 0) {
-			function_map[new_function->get_name()] = new_function;
-			return;
+		// Check that we don't already have a global var by the same name
+		if (symbol_exists && existing_symbol->type == Global_Symbol::Type::VARIABLE) {
+			throw std::logic_error("Redeclaration of symbol: " + existing_symbol->name);
 		}
 
 		// If we already know about this function, then check that the new
 		// declaration/definition is acceptable
-		auto existing_fn = function_map.at(new_function->get_name());
+		auto existing_fn = existing_symbol->function;
 		if (!existing_fn->signature_matches(*new_function)) {
 			throw std::logic_error("Tried to declare a function with incompatible signature: " + existing_fn->get_name());
 		}
@@ -282,7 +310,70 @@ namespace AST {
 
 		// If this new function now contains a definition, replace our copy of it.
 		if (!existing_fn->is_defined() && new_function->is_defined()) {
-			function_map.at(new_function->get_name()) = new_function;
+			existing_symbol->function = new_function;
 		}
+	}
+
+	void Environment::create_static_var(const Type* type, const std::string& name, bool value_provided, std::uint16_t value) {
+
+		// Check this symbol has not been previously declared
+		auto existing_symbol = get_symbol_with_name(name);
+		const bool var_already_exists = existing_symbol != nullptr;
+		
+		// global vars may not have the same name as functions
+		if (var_already_exists && existing_symbol->type == Global_Symbol::Type::FUNCTION) {
+			throw std::logic_error("Tried to declare a global var with same name as function");
+		}
+
+		if (var_already_exists) {
+			const bool var_has_value = existing_symbol->static_var.has_non_default_value;
+			if (!var_has_value && value_provided) {
+				existing_symbol->static_var.has_non_default_value = true;
+				existing_symbol->static_var.value = value;
+			}
+			if (var_has_value && value_provided) {
+				throw std::logic_error("Tried to create a duplicate static var with name: " + name);
+			}
+		} else {
+			// If var doesn't exist then just add it
+			Global_Symbol s;
+			s.name = name;
+			s.type = Global_Symbol::Type::VARIABLE;
+			s.static_var = Static_Var{ type, name, value_provided, value };
+			global_symbol_table.push_back(s);
+		}
+	}
+
+	const Type* Environment::get_static_var(const std::string& name) {
+
+		auto symbol = get_declared_symbol_with_name(name);
+		if (symbol != nullptr && symbol->type == Global_Symbol::Type::VARIABLE) {
+			return symbol->static_var.type;
+		}
+
+		return nullptr;
+	}
+
+	Environment::Global_Symbol* Environment::get_symbol_with_name(const std::string& name) {
+		for (auto& symbol : global_symbol_table) {
+			if (symbol.name == name) {
+				return &symbol;
+			}
+		}
+
+		return nullptr;
+	}
+
+	Environment::Global_Symbol* Environment::get_declared_symbol_with_name(const std::string& name) {
+		for (auto& symbol : global_symbol_table) {
+			if (!symbol.is_declared) {
+				break;
+			}
+			if (symbol.name == name) {
+				return &symbol;
+			}
+		}
+
+		return nullptr;
 	}
 }

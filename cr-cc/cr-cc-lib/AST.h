@@ -24,40 +24,14 @@ namespace AST {
 		virtual bool is_complete() const = 0;
 	};
 
-	class Function;
-	class Expression;
+	class Environment;
 
-	class Environment : public Compilable {
-	public:
-		Environment() = default;
-		~Environment() {
-			for (const auto& t : type_map) {
-				delete t.second;
-			}
-		}
-		Environment(const Environment&&) = delete; // no move or copy
-
-		const Type* get_type(std::string name) const;
-		void create_type(Type* type);
-
-		void add_function(std::shared_ptr<Function> function);
-		void check_function(
-			const std::string& name,
-			const std::vector<std::shared_ptr<Expression>>& args);
-		std::string generate_code() const override;
-
-		Label_Maker label_maker;
-		bool used_mult = false;
-		bool used_div = false;
-		bool used_mod = false;
-
-		// TODO static vars
-	private:
-		using Type_Map_Type = std::map<std::string, Type*>;
-		Type_Map_Type type_map;
-
-		using Function_Map_Type = std::map<std::string, std::shared_ptr<Function>>;
-		Function_Map_Type function_map;
+	struct Static_Var {
+		const Type* type;
+		std::string name;
+		bool has_non_default_value;
+		std::uint16_t value;
+		// label for var will be the same as the name
 	};
 
 	//class Variable {
@@ -88,7 +62,8 @@ namespace AST {
 
 	class VarMap {
 	public:
-		using Scope_Id = std::size_t;
+		using Scope_Id = std::size_t; // TODO change to signed type so -1 can be special?
+		static const Scope_Id MAGIC_NO_SCOPE = 10000; // Magic value indicating no scope was found
 		struct Loop_Labels {
 			std::string top;
 			std::string after;
@@ -103,7 +78,9 @@ namespace AST {
 		void create_stack_var(const Type* type, const std::string& name);
 		void create_stack_var_at_offset(int offset, const std::string& name);
 		void declare_var(const std::string& name);
-		int get_var_offset(std::string name, Scope_Id* found_id = nullptr);
+
+		std::string store_word(const std::string& name, const std::string& source_reg);
+		std::string load_word(const std::string& name, const std::string& dest_reg);
 
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
@@ -151,6 +128,7 @@ namespace AST {
 		int stack_offset = 0;// size of temporaries
 
 		void increment_all_vars(int offset);
+		int get_var_offset(const std::string& name, Scope_Id* found_id);
 	};
 	const Type* parse_type(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
@@ -357,7 +335,7 @@ namespace AST {
 		std::string generate_code() const override;
 	};
 
-	class Function :public Compilable {
+	class Function : public Compilable {
 	public:
 		enum class Parse_Type {
 			DECLARATION,
@@ -368,7 +346,7 @@ namespace AST {
 		virtual ~Function() {};
 		std::string generate_code() const;
 
-		std::string get_name() { return name; }
+		std::string get_name() const { return name; }
 		bool signature_matches(const Function& other) const;
 		bool signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const;
 		bool is_defined() const { return is_fn_defined; }
@@ -387,14 +365,64 @@ namespace AST {
 
 		std::vector<Arg_Type> arguments;
 		bool is_fn_defined; // if not defined, contents will be empty
-		// TODO track whether function is called and don't generate if it isn't
+		// TODO track whether function is static and not called, and delete if not
 		std::shared_ptr<Compount_Statement> contents;
 	};
 
-	class AST final : public Compilable {
+	class Environment {
+	public:
+		Environment() = default;
+		~Environment() {
+			for (const auto& t : type_map) {
+				delete t.second;
+			}
+		}
+		Environment(const Environment&&) = delete; // no move or copy
+
+		const Type* get_type(std::string name) const;
+		void create_type(Type* type);
+
+		void add_function(std::shared_ptr<Function> function);
+		void check_function(
+			const std::string& name,
+			const std::vector<std::shared_ptr<Expression>>& args);
+		std::string generate_code();
+
+		void create_static_var(const Type* type, const std::string& name, bool value_provided, std::uint16_t value);
+		const Type* get_static_var(const std::string& name);
+
+		Label_Maker label_maker;
+		bool used_mult = false;
+		bool used_div = false;
+		bool used_mod = false;
+
+	private:
+		using Type_Map_Type = std::map<std::string, Type*>;
+		Type_Map_Type type_map;
+
+		struct Global_Symbol {
+			std::string name;
+			bool is_declared = false;
+
+			enum class Type {
+				FUNCTION,
+				VARIABLE,
+			};
+			Type type;
+
+			std::shared_ptr<Function> function;
+			Static_Var static_var;
+		};
+		using Global_Symbol_Table_Type = std::vector<Global_Symbol>;
+		Global_Symbol_Table_Type global_symbol_table;
+		Global_Symbol* get_symbol_with_name(const std::string& name);
+		Global_Symbol* get_declared_symbol_with_name(const std::string& name);
+	};
+
+	class AST {
 	public:
 		AST(const ParseNode& root);
-		std::string generate_code() const override;
+		std::string generate_code();
 	private:
 		Environment env;
 	};
