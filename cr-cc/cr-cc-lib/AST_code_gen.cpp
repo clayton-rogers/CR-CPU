@@ -386,13 +386,11 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string AST::generate_code() const {
+	std::string AST::generate_code() {
 		std::stringstream ss;
 		ss << '\n';
 
 		// generate any required constants, i.e. memory layouts???
-
-		// generate any global vars at global scope
 
 		// Defer code gen to environment
 		ss << env.generate_code();
@@ -400,22 +398,20 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Environment::generate_code() const {
+	std::string Environment::generate_code() {
 		std::stringstream ss;
 
-		// Extern functions must be declared in the assembly before they are used.
-
-		// generate code for extern functions
-		for (const auto& fn : function_map) {
-			if (!fn.second->is_defined()) {
-				ss << fn.second->generate_code();
-			}
-		}
-
-		// generate code for functions defined here
-		for (const auto& fn : function_map) {
-			if (fn.second->is_defined()) {
-				ss << fn.second->generate_code();
+		// generate code for all global symbols (functions and vars)
+		for (auto& symbol : global_symbol_table) {
+			symbol.is_declared = true;
+			switch (symbol.type) {
+				case Global_Symbol::Type::FUNCTION:
+					ss << symbol.function->generate_code();
+					break;
+				case Global_Symbol::Type::VARIABLE:
+					ss << "\n";
+					ss << ".static 1 " << symbol.static_var.name << " " << std::to_string(symbol.static_var.value) << "\n";
+					break;
 			}
 		}
 
@@ -439,11 +435,12 @@ namespace AST {
 		const std::string& name,
 		const std::vector<std::shared_ptr<Expression>>& args)
 	{
-		if (function_map.count(name) != 1) {
+		auto symbol = get_symbol_with_name(name);
+		if (symbol == nullptr || symbol->type != Global_Symbol::Type::FUNCTION) {
 			throw std::logic_error("Called a function that has not been declared: " + name);
 		}
 		
-		auto function = function_map.at(name);
+		auto function = symbol->function;
 
 		if (!function->signature_matches(name, args)) {
 			throw std::logic_error("Function call has mismatched signature: " + name);
@@ -556,9 +553,7 @@ namespace AST {
 		ss << exp->generate_code();
 
 		// Result is now in ra, store in memory location
-		VarMap::Scope_Id id;
-		const int var_offset = scope->get_var_offset(var_name, &id);
-		ss << "store.sp ra, " + output_signed_byte(var_offset) << " # store " << var_name << "_" << id << "\n";
+		ss << scope->store_word(var_name, "ra");
 
 		return ss.str();
 	}
@@ -566,11 +561,77 @@ namespace AST {
 	std::string Variable_Expression::generate_code() const {
 		std::stringstream ss;
 
-		VarMap::Scope_Id id;
-		const int var_offset = scope->get_var_offset(var_name, &id);
-		ss << "load.sp ra, " << output_signed_byte(var_offset) << " # load " << var_name << "_" << id << "\n";
+		// Emit instruction to load var directly into ra
+		return scope->load_word(var_name, "ra");
+	}
 
-		return ss.str();
+	int VarMap::get_var_offset(const std::string& name, Scope_Id* found_id) {
+		Scope_Id id = current_scope;
+		while (id != NULL_SCOPE) {
+			// Only catch vars that exist at the current or parents scopes
+			// and which have been declared
+			if (scopes.at(id).offset_map.count(name) == 1 &&
+				scopes.at(id).offset_map.at(name).is_declared == true) {
+
+				*found_id = id;
+				return scopes.at(id).offset_map.at(name).offset + stack_offset;
+			}
+			id = scopes.at(id).parent;
+		}
+
+		// if we got this far then we did not find the var
+		*found_id = MAGIC_NO_SCOPE;
+		return 0; // return value doesn't matter
+	}
+
+	std::string VarMap::store_word(const std::string& name, const std::string& source_reg) {
+		Scope_Id id;
+
+		// Try for stack var first
+		{
+			int offset = get_var_offset(name, &id);
+			if (id != MAGIC_NO_SCOPE) {
+				return "store.sp " + source_reg + ", " + output_signed_byte(offset) +
+					" # store " + name + "_" + std::to_string(id) + "\n";
+			}
+		}
+
+		// Else try for global var
+		{
+			const Type* type = env->get_static_var(name);
+			if (type != nullptr) {
+				return "loada ." + name + " # store global setup\n" +
+					"store " + source_reg + " ." + name + " # store global\n";
+			}
+		}
+
+		// If we've gotten this far then the var doesn't exist
+		throw std::logic_error("Referenced unknown var: " + name);
+	}
+
+	std::string VarMap::load_word(const std::string& name, const std::string& dest_reg) {
+		Scope_Id id;
+
+		// Try for stack var first
+		{
+			int offset = get_var_offset(name, &id);
+			if (id != MAGIC_NO_SCOPE) {
+				return "load.sp " + dest_reg + ", " + output_signed_byte(offset) +
+					" # load " + name + "_" + std::to_string(id) + "\n";
+			}
+		}
+
+		// Else try for global var
+		{
+			const Type* type = env->get_static_var(name);
+			if (type != nullptr) {
+				return "loada ." + name + " # load global setup\n" +
+					"load " + dest_reg + " ." + name + " # load global\n";
+			}
+		}
+
+		// If we've got this far then the var doesn't exist
+		throw std::logic_error("Referenced unknown var: " + name);
 	}
 
 	std::string If_Statement::generate_code() const {

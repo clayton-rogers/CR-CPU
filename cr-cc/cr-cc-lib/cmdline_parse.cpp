@@ -51,6 +51,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.output_filename = args.at(++i);
 		} else if ("-c" == arg) {
 			opt.compile_only = true;
+			opt.include_main = false;
 		} else if ("--sim" == arg) {
 			opt.should_sim = true;
 		} else if ("--no-main" == arg) {
