@@ -74,26 +74,21 @@ namespace AST {
 				bool has_value = false;
 				if (init_decl.contains_child_with_type(TokenType::equals)) {
 					// The init expression must be constant, nothing else is acceptable
-					try {
-						// TODO got to be a better way to do this....
-						auto value_str = init_decl
-							.get_child_with_type(TokenType::expression)
-							.get_child_with_type(TokenType::conditional_exp)
-							.get_child_with_type(TokenType::logical_or_exp)
-							.get_child_with_type(TokenType::logical_and_exp)
-							.get_child_with_type(TokenType::equality_exp)
-							.get_child_with_type(TokenType::relational_exp)
-							.get_child_with_type(TokenType::additive_exp)
-							.get_child_with_type(TokenType::term)
-							.get_child_with_type(TokenType::factor)
-							.get_child_with_type(TokenType::constant).token.value;
-						int value_int = std::stoi(value_str);
-						if (value_int > 0xFFFF || value_int < -0x7FFF) {
-							throw std::logic_error("Contstant literal out of range: " + value_int);
+
+					auto next = init_decl.get_child_with_type(TokenType::expression);
+					while (next.children.size() != 0) {
+						next = next.children.at(0);
+						if (next.token.token_type == TokenType::constant) {
+							int value_int = std::stoi(next.token.value);
+							if (value_int > 0xFFFF || value_int < -0x7FFF) {
+								throw std::logic_error("Contstant literal out of range: " + value_int);
+							}
+							value = static_cast<std::uint16_t>(value_int);
+							has_value = true;
+							break;
 						}
-						value = static_cast<std::uint16_t>(value_int);
-						has_value = true;
-					} catch (const std::logic_error& /*e*/) {
+					}
+					if (!has_value) {
 						throw std::logic_error("global declared with a non-constant expression");
 					}
 				}

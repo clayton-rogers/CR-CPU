@@ -34,6 +34,7 @@ namespace AST {
 		case TokenType::logical_and_exp:
 		case TokenType::logical_or_exp:
 		case TokenType::expression:
+		case TokenType::shift_exp:
 			break;
 		case TokenType::factor:
 			return parse_factor(node, scope);
@@ -172,6 +173,10 @@ namespace AST {
 			return Type::greater_than;
 		case TokenType::ge_op:
 			return Type::greater_than_or_equal;
+		case TokenType::left_op:
+			return Type::shift_left;
+		case TokenType::right_op:
+			return Type::shift_right;
 		default:
 			throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
 				+ tokenType_to_string(type));

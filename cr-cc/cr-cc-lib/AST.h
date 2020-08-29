@@ -199,6 +199,8 @@ namespace AST {
 			less_than_or_equal,
 			greater_than,
 			greater_than_or_equal,
+			shift_left,
+			shift_right,
 		};
 		Binary_Expression(
 			TokenType type,

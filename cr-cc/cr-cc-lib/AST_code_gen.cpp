@@ -270,6 +270,12 @@ namespace AST {
 			ss << "sub ra, rb # binary greater than equal\n";
 			ss << gen_is_positive(scope);
 			break;
+		case Type::shift_left:
+			ss << "shftl ra, rb # binary shift left\n";
+			break;
+		case Type::shift_right:
+			ss << "shftr ra, rb # binary shift right\n";
+			break;
 		default:
 			throw std::logic_error("Should never get here binary_expression::generate_code");
 		}
