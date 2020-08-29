@@ -245,15 +245,26 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::relational_exp,
 		{
+			{{TokenType::shift_exp}, TokenType::shift_exp_tail},
+		}
+	},
+	{TokenType::shift_exp_tail,
+		{
+			{{TokenType::less_than, TokenType::shift_exp}, {}},
+			{{TokenType::greater_than, TokenType::shift_exp}, {}},
+			{{TokenType::le_op, TokenType::shift_exp}, {}},
+			{{TokenType::ge_op, TokenType::shift_exp}, {}},
+		}
+	},
+	{TokenType::shift_exp,
+		{
 			{{TokenType::additive_exp}, TokenType::additive_exp_tail},
 		}
 	},
-	{TokenType::additive_exp_tail,
+	{ TokenType::additive_exp_tail,
 		{
-			{{TokenType::less_than, TokenType::additive_exp}, {}},
-			{{TokenType::greater_than, TokenType::additive_exp}, {}},
-			{{TokenType::le_op, TokenType::additive_exp}, {}},
-			{{TokenType::ge_op, TokenType::additive_exp}, {}},
+			{{TokenType::left_op, TokenType::additive_exp}, {}},
+			{{TokenType::right_op, TokenType::additive_exp}, {}},
 		}
 	},
 	{TokenType::additive_exp,

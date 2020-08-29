@@ -133,6 +133,8 @@ enum class TokenType {
 	relational_exp_tail,
 	additive_exp,
 	additive_exp_tail,
+	shift_exp,
+	shift_exp_tail,
 	unary_expression,
 	term,
 	term_tail,
