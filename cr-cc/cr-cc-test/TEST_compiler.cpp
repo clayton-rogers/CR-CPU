@@ -57,6 +57,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 	for (const auto& item : dir_list) {
 		INFO(item);
 		FileReader fr;
+		fr.add_directory("./stdlib/");
 		fr.add_directory(DIR);
 
 		// Catching the exception in the test allows us to continue
@@ -82,7 +83,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
 			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 
-			sim.run_until_halted(20000);
+			sim.run_until_halted(55000); // longest test is currently isqrt.c
 			CHECK(sim.get_state().is_halted == true);
 
 			// Check that the program produced the desired result
