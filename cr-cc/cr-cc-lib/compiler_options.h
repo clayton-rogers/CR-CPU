@@ -18,4 +18,5 @@ struct Compiler_Options {
 	std::vector<std::string> filenames;
 	std::vector<std::string> include_paths;
 	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
+	int sim_steps = 1000000;
 };

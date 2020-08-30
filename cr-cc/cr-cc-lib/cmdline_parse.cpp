@@ -36,6 +36,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --lib                 Output as a library\n"
 				"  -S                    Also output the assembly\n"
 				"  --sim                 Simulates the program on an emulator\n"
+				"  --sim-steps <number>  When simulating, simulates this number of clocks (default: 1000000)"
 				"  --no-main             When linking, does not include the default jump to main()\n"
 				"  --no-stdlib           When linking, do not include stdlib, also does not include stdlib headers\n"
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
@@ -54,6 +55,8 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.include_main = false;
 		} else if ("--sim" == arg) {
 			opt.should_sim = true;
+		} else if ("--sim-steps" == arg) {
+			opt.sim_steps = std::stoi(args.at(++i), nullptr, 0);
 		} else if ("--no-main" == arg) {
 			opt.include_main = false;
 		} else if ("--no-stdlib" == arg) {

@@ -157,16 +157,14 @@ int compile(Compiler_Options opt) {
 			Simulator sim;
 			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
 			sim.load(exe.load_address, machine_code);
-
-			const int total_steps = 16000000;// up to one second of operation
-			sim.run_until_halted(total_steps);
+			sim.run_until_halted(opt.sim_steps);
 
 			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
 				<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
 			std::cout << "PC: 0x" << std::hex << sim.get_state().pc
 				<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
 			std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
-			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (total_steps - sim.get_state().steps_remaining) << std::endl;
+			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (opt.sim_steps - sim.get_state().steps_remaining) << std::endl;
 		}
 
 	} catch (const std::logic_error& e) {
