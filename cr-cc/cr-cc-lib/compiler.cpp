@@ -138,7 +138,7 @@ int compile(Compiler_Options opt) {
 			write_bin_file(map_filename, map_stream);
 		}
 		write_file(opt.output_filename + ".hex", machine_inst_to_hex(machine_code));
-		auto srec = machine_inst_to_srec(machine_code, exe.load_address);
+		auto srec = exe_to_srec(exe);
 		write_file(opt.output_filename + ".srec", srec);
 
 		if (opt.verbose) {
@@ -155,8 +155,8 @@ int compile(Compiler_Options opt) {
 			auto program_loader_exe = link({ program_loader_o }, 0);
 
 			Simulator sim;
-			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
-			sim.load(exe.load_address, machine_code);
+			sim.load(program_loader_exe);
+			sim.load(exe);
 			sim.run_until_halted(opt.sim_steps);
 
 			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra

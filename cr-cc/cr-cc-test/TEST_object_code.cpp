@@ -7,7 +7,6 @@ TEST_CASE("Test object serialization", "[obj]") {
 	using namespace Object;
 
 	Object_Container container;
-	container.load_address = 0xfa56;
 	{
 		Object_Type obj;
 
@@ -47,7 +46,6 @@ TEST_CASE("Test library serialization", "[obj]") {
 	using namespace Object;
 
 	Object_Container container;
-	container.load_address = 0xfa56;
 
 	Library_Type lib;
 	{
@@ -127,9 +125,10 @@ TEST_CASE("Test executable serialization", "[obj]") {
 	using namespace Object;
 
 	Object_Container container;
-	container.load_address = 0xfa56;
 	{
 		Executable exe;
+
+		exe.load_address = 0xfa56;
 
 		exe.exported_symbols.emplace_back(
 			Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
@@ -159,16 +158,15 @@ TEST_CASE("Test map serialization", "[obj]") {
 	using namespace Object;
 
 	Object_Container container;
-	container.load_address = 0xfa56;
 	{
-		Map exe;
+		Map map;
 
-		exe.exported_symbols.emplace_back(
+		map.exported_symbols.emplace_back(
 			Exported_Symbol{ "fun", Symbol_Type::FUNCTION, 0x03 });
-		exe.exported_symbols.emplace_back(
+		map.exported_symbols.emplace_back(
 			Exported_Symbol{ "global_variable", Symbol_Type::VARIABLE, 0x3213 });
 
-		container.contents = exe;
+		container.contents = map;
 	}
 
 	auto stream = container.to_stream();

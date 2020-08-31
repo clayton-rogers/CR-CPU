@@ -11,13 +11,12 @@ static void handle_object(
 	///std::vector<std::uint16_t>& output_machine_code,
 	Object_Type& output_object,
 	Object_Type& input_object, // Gets modified, cannot be const
-	std::uint16_t objects_load_address,
 	std::uint16_t link_addr
 	)
 {
-	const std::uint16_t relocation_offset = u16(output_object.machine_code.size())
-		+ link_addr
-		- objects_load_address;
+	const std::uint16_t relocation_offset =
+		u16(output_object.machine_code.size())
+		+ link_addr;
 
 	// First handle any code relocations
 	{
@@ -126,7 +125,7 @@ static void handle_lib(
 					if (symbol.name == extern_ref.name) {
 						at_least_one_obj_used = true;
 						object_used.at(i) = true;
-						handle_object(output_object, obj, 0, link_address);
+						handle_object(output_object, obj, link_address);
 						goto after;
 					}
 				}
@@ -187,7 +186,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 		case Object_Container::OBJECT:
 		{
 			auto& object = std::get<Object_Type>(item.contents);
-			handle_object(collector_object, object, item.load_address, real_link_addr);
+			handle_object(collector_object, object, real_link_addr);
 			break;
 		}
 		case Object_Container::LIBRARY:
@@ -213,12 +212,12 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 	apply_references(collector_object, real_link_addr);
 
 	Executable exe{
+		real_link_addr,
 		collector_object.machine_code,
 		collector_object.exported_symbols
 	};
 	Object_Container output;
 	output.contents = exe; // set the variant
-	output.load_address = real_link_addr;
 
 	return output;
 }
@@ -247,7 +246,6 @@ Object::Object_Container to_map(const Object::Object_Container& obj) {
 
 	Object_Container map;
 	map.contents = map_contents;
-	map.load_address = obj.load_address;
 
 	return map;
 }

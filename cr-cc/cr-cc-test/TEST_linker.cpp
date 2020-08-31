@@ -12,7 +12,6 @@ TEST_CASE("Test linker", "[link]") {
 
 	SECTION("Relocations") {
 		Object_Container item1;
-		item1.load_address = 0;
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa00);
@@ -26,7 +25,6 @@ TEST_CASE("Test linker", "[link]") {
 		}
 
 		Object_Container item2;
-		item2.load_address = 0;
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa12);
@@ -49,11 +47,11 @@ TEST_CASE("Test linker", "[link]") {
 		items.push_back(item1);
 		items.push_back(item2);
 
-		auto output = link(std::move(items), 0x200);
+		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
+		auto output = link(std::move(items), DEFAULT_LOAD_ADDR);
 
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
-		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
-		CHECK(output.load_address == DEFAULT_LOAD_ADDR);
+		CHECK(std::get<Executable>(output.contents).load_address == DEFAULT_LOAD_ADDR);
 		
 		const auto& debug_external_ref = std::get<Executable>(output.contents).exported_symbols;
 		CHECK(debug_external_ref.at(0).name == "fun");
@@ -93,7 +91,6 @@ TEST_CASE("Test linker", "[link]") {
 				External_Reference{ "funb", HI_LO_TYPE::HI_BYTE, {0x04} }
 			);
 
-			items.at(0).load_address = 0;
 			items.at(0).contents = obj;
 		}
 
@@ -116,15 +113,14 @@ TEST_CASE("Test linker", "[link]") {
 			);
 
 
-			items.at(1).load_address = 0;
 			items.at(1).contents = obj;
 		}
 
-		auto output = link(std::move(items), 0x200);
+		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
+		auto output = link(std::move(items), DEFAULT_LOAD_ADDR);
 
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
-		static const std::uint16_t DEFAULT_LOAD_ADDR = 0x200;
-		CHECK(output.load_address == DEFAULT_LOAD_ADDR);
+		CHECK(std::get<Executable>(output.contents).load_address == DEFAULT_LOAD_ADDR);
 
 		const auto& debug_external_ref = std::get<Executable>(output.contents).exported_symbols;
 		CHECK(debug_external_ref.at(0).name == "funa");
@@ -153,7 +149,6 @@ TEST_CASE("Test library creation", "[link]") {
 
 	SECTION("Test that libraries can be created") {
 		Object_Container item1;
-		item1.load_address = 0;
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa00);
@@ -167,7 +162,6 @@ TEST_CASE("Test library creation", "[link]") {
 		}
 
 		Object_Container item2;
-		item2.load_address = 0;
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa12);
@@ -187,7 +181,6 @@ TEST_CASE("Test library creation", "[link]") {
 		}
 
 		Object_Container item3;
-		item3.load_address = 0;
 		{
 			Object_Type obj;
 			obj.machine_code.push_back(0xfa12);
@@ -247,7 +240,6 @@ TEST_CASE("Test library creation", "[link]") {
 				External_Reference{ "funb", HI_LO_TYPE::HI_BYTE, {0x04} }
 			);
 
-			lib_items.at(0).load_address = 0;
 			lib_items.at(0).contents = obj;
 		}
 
@@ -270,7 +262,6 @@ TEST_CASE("Test library creation", "[link]") {
 			);
 
 
-			lib_items.at(1).load_address = 0;
 			lib_items.at(1).contents = obj;
 		}
 		{
@@ -291,7 +282,6 @@ TEST_CASE("Test library creation", "[link]") {
 				External_Reference{ "funa", HI_LO_TYPE::HI_BYTE, {0x02} }
 			);
 
-			lib_items.at(2).load_address = 0;
 			lib_items.at(2).contents = obj;
 		}
 
@@ -315,7 +305,6 @@ TEST_CASE("Test library creation", "[link]") {
 				External_Reference{ "funb", HI_LO_TYPE::LO_BYTE, {0x01} }
 			);
 
-			main_item.load_address = 0;
 			main_item.contents = obj;
 		}
 
@@ -374,7 +363,6 @@ TEST_CASE("Test map creation", "[link]") {
 	using namespace Object;
 
 	Object_Container item;
-	item.load_address = 0x2313;
 	{
 		Object_Type obj;
 		obj.machine_code.push_back(0xfa00);

@@ -54,6 +54,7 @@ namespace Object {
 	};
 
 	struct Executable {
+		std::uint16_t load_address = 0;
 		std::vector<std::uint16_t> machine_code;
 
 		// For Debug only:
@@ -70,10 +71,9 @@ namespace Object {
 	public:
 		// Static
 		static const std::uint16_t MAGIC = 0x5243; // ascii "CR"
-		static const std::uint16_t OBJECT_VERSION = 5;
+		static const std::uint16_t OBJECT_VERSION = 6;
 
 		// Members
-		std::uint16_t load_address = 0;
 		std::variant<Object_Type, Library_Type, Executable, Map> contents;
 		enum Variant_Type {
 			OBJECT,

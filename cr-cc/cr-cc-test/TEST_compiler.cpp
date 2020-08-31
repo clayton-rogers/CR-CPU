@@ -80,8 +80,8 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
-			sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-			sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
+			sim.load(exe);
+			sim.load(program_loader_exe);
 
 			sim.run_until_halted(55000); // longest test is currently isqrt.c
 			CHECK(sim.get_state().is_halted == true);
@@ -156,8 +156,8 @@ TEST_CASE("Whole C program", "[c]") {
 	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
-	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-	sim.load(0, std::get<Object::Executable>(program_loader_exe.contents).machine_code);
+	sim.load(exe);
+	sim.load(program_loader_exe);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);
@@ -208,8 +208,8 @@ TEST_CASE("Linker with multi segment files", "[link]") {
 	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
-	sim.load(exe.load_address, std::get<Object::Executable>(exe.contents).machine_code);
-	sim.load(0, std::get<Executable>(program_loader_exe.contents).machine_code);
+	sim.load(exe);
+	sim.load(program_loader_exe);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);

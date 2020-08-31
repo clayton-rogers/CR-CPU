@@ -258,6 +258,7 @@ Library_Type from_stream(Stream_Type_Iterator& s) {
 
 static Stream_Type to_stream(const Executable& exe) {
 	Stream_Type s;
+	s.push_back(exe.load_address);
 	s.push_back(u16(exe.machine_code.size()));
 	for (const auto& instruction : exe.machine_code) {
 		s.push_back(instruction);
@@ -273,6 +274,7 @@ static Stream_Type to_stream(const Executable& exe) {
 template<>
 Executable from_stream(Stream_Type_Iterator& s) {
 	Executable exe;
+	exe.load_address = s.get_next();
 	const int machine_code_size = s.get_next();
 	for (int i = 0; i < machine_code_size; ++i) {
 		exe.machine_code.push_back(
@@ -321,7 +323,7 @@ Stream_Type Object_Container::to_stream() const
 	stream.push_back(MAGIC);
 	stream.push_back(OBJECT_VERSION);
 	stream.push_back(u16(contents.index())); // type of object
-	stream.push_back(load_address);
+	stream.push_back(0); // reserved, formerly load addr
 	stream.push_back(0); // reserved
 	stream.push_back(0); // reserved
 	stream.push_back(0); // reserved
@@ -377,7 +379,6 @@ Object_Container Object_Container::from_stream(const Stream_Type& s) {
 	check_header(s);
 
 	Object_Container c;
-	c.load_address = s.at(3);
 	const auto size = s.at(7);
 	int offset = 8; // size of header
 
@@ -424,9 +425,7 @@ const std::uint16_t Object_Container::OBJECT_VERSION;
 // Operators
 // **********************************************************************
 bool Object::operator==(const Object_Container& a, const Object_Container& b) {
-	return
-		a.load_address == b.load_address &&
-		a.contents == b.contents;
+	return a.contents == b.contents;
 }
 
 bool Object::operator==(const Object_Type& a, const Object_Type& b) {
@@ -443,6 +442,7 @@ bool Object::operator==(const Library_Type& a, const Library_Type& b) {
 
 bool Object::operator==(const Executable& a, const Executable& b) {
 	return
+		a.load_address == b.load_address &&
 		a.machine_code == b.machine_code &&
 		a.exported_symbols == b.exported_symbols;
 }

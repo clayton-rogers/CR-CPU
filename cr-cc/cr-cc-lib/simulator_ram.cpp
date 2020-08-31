@@ -10,7 +10,7 @@ void Simulator_Ram::step() {
 	}
 }
 
-void Simulator_Ram::load_ram(std::uint16_t addr, std::vector<std::uint16_t> machine_code) {
+void Simulator_Ram::load_ram(std::uint16_t addr, const std::vector<std::uint16_t>& machine_code) {
 	for (std::uint16_t i = 0; i < machine_code.size(); ++i) {
 		ram.at(i + addr) = machine_code.at(i);
 	}
