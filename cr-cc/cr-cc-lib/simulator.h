@@ -6,6 +6,8 @@
 #include "simulator_ram.h"
 #include "simulator_timer.h"
 
+#include "object_code.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -27,7 +29,7 @@ public:
 		std::uint16_t output;
 		int steps_remaining;
 	};
-	void load(std::uint16_t addr, std::vector<std::uint16_t> machine_code);
+	void load(const Object::Object_Container& obj);
 
 	void step();
 	void run_until_halted(const int number_steps);

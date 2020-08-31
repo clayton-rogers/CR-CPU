@@ -62,8 +62,13 @@ std::string machine_inst_to_hex(const std::vector<std::uint16_t>& machine_instru
 	return ss.str();
 }
 
+std::string exe_to_srec(const Object::Object_Container& obj) {
 
-std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instructions, std::uint16_t address) {
+	if (obj.contents.index() != Object::Object_Container::EXECUTABLE) {
+		throw std::logic_error("Tried to output invalid object as srec");
+	}
+	const auto exe = std::get<Object::Executable>(obj.contents);
+
 	// Line format of srec is:
 	// S0 0F 0000 68656C6C6F20202020200000 3C
 	// type, num bytes, addr, data, check sum
@@ -104,20 +109,20 @@ std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instr
 	ss << write_line(0, 0, { 0x43,0x52,0x2D,0x43,0x50,0x55,0x00 }) << '\n'; // "CR-CPU"
 
 	// Length
-	const int number_of_data_lines = static_cast<int>((machine_instructions.size()-1) / 16 + 1); // 32 bytes per line, 16 words
+	const int number_of_data_lines = static_cast<int>((exe.machine_code.size()-1) / 16 + 1); // 32 bytes per line, 16 words
 
 	// Data
 	for (int i = 0; i < number_of_data_lines; ++i) {
 		std::vector<std::uint8_t> data;
 		for (int j = 0; j < 16; ++j) {
 			int offset = i * 16 + j;
-			if (offset == static_cast<int>(machine_instructions.size())) {
+			if (offset == static_cast<int>(exe.machine_code.size())) {
 				break;
 			}
-			data.push_back(machine_instructions.at(offset) >> 8);
-			data.push_back(machine_instructions.at(offset) & 0xFF);
+			data.push_back(exe.machine_code.at(offset) >> 8);
+			data.push_back(exe.machine_code.at(offset) & 0xFF);
 		}
-		ss << write_line(1, static_cast<uint16_t>(i * 16 + address), data) << '\n';
+		ss << write_line(1, static_cast<uint16_t>(i * 16 + exe.load_address), data) << '\n';
 	}
 
 	// Length

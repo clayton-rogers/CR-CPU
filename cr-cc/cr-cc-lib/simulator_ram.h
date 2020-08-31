@@ -14,7 +14,7 @@ public:
 		: bus(bus)
 	{}
 
-	void load_ram(std::uint16_t addr, std::vector<std::uint16_t> machine_code);
+	void load_ram(std::uint16_t addr, const std::vector<std::uint16_t>& machine_code);
 
 	void step();
 

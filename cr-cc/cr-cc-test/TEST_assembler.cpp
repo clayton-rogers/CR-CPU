@@ -232,7 +232,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 		auto exe = link(std::move(objs), 0);
 
 		Simulator sim;
-		sim.load(0, std::get<Object::Executable>(exe.contents).machine_code);
+		sim.load(exe);
 		sim.run_until_halted(200);
 
 		// Check that the simulated assembled program actually does as expected

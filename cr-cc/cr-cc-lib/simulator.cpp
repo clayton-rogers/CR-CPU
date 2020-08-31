@@ -1,7 +1,11 @@
 #include "simulator.h"
 
-void Simulator::load(std::uint16_t addr, std::vector<std::uint16_t> machine_code) {
-	ram.load_ram(addr, machine_code);
+void Simulator::load(const Object::Object_Container& obj) {
+	if (obj.contents.index() != Object::Object_Container::EXECUTABLE) {
+		throw std::logic_error("Tried to load invalid object into simulator");
+	}
+	const auto exe = std::get<Object::Executable>(obj.contents);
+	ram.load_ram(exe.load_address, exe.machine_code);
 }
 
 void Simulator::step() {

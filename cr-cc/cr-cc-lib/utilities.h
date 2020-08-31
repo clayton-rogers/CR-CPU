@@ -1,5 +1,7 @@
 #pragma once
 
+#include "object_code.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -12,4 +14,4 @@ std::string machine_inst_to_simple_hex(const std::vector<std::uint16_t>& machine
 
 std::string machine_inst_to_hex(const std::vector<std::uint16_t>& machine_instructions);
 
-std::string machine_inst_to_srec(const std::vector<std::uint16_t>& machine_instructions, std::uint16_t address);
+std::string exe_to_srec(const Object::Object_Container& obj);

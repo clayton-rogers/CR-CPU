@@ -1065,8 +1065,6 @@ Object_Container assemble(const std::string& assembly) {
 			label.second.offset += size_of_text;
 		}
 
-		//as.out.load_address = static_cast<std::uint16_t>(as.text_offset);
-		as.out.load_address = 0;
 		generate_machine_code(&as);
 		return as.out;
 
