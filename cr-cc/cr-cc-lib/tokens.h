@@ -145,6 +145,7 @@ enum class TokenType {
 	argument_expression_list_tail,
 	external_declaration,
 	external_declaration_tail,
+	pointer,
 
 	last_token,
 };

@@ -105,8 +105,15 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::init_declarator,
 		{
+			{{TokenType::pointer, TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized pointer
+			{{TokenType::pointer, TokenType::identifier}, {}}, // non initialized pointer
 			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized
 			{{TokenType::identifier}, {}}, // non initialized
+		}
+	},
+	{TokenType::pointer,
+		{
+			{{TokenType::star}, {TokenType::star}},
 		}
 	},
 	{TokenType::statement,
