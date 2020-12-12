@@ -2,6 +2,8 @@
 
 #include "parser.h"
 #include "label_maker.h"
+#include "type.h"
+#include "AST_declaration.h"
 
 #include <vector>
 #include <map>
@@ -16,22 +18,10 @@ namespace AST {
 		virtual std::string generate_code() const = 0;
 	};
 
-	class Type {
-	public:
-		virtual ~Type() {}
-		virtual int get_size() const = 0;
-		virtual std::string get_name() const = 0;
-		virtual bool is_complete() const = 0;
-	};
-
 	class Environment;
 
 	struct Static_Var {
-		const Type* type;
-		std::string name;
-		bool has_non_default_value;
-		std::uint16_t value;
-		// label for var will be the same as the name
+		Declaration declaration;
 	};
 
 	//class Variable {
@@ -75,7 +65,7 @@ namespace AST {
 		void close_scope();
 		void set_current_scope(Scope_Id scope);
 
-		void create_stack_var(const Type* type, const std::string& name);
+		void create_stack_var(const Declaration& declaration);
 		void create_stack_var_at_offset(int offset, const std::string& name);
 		void declare_var(const std::string& name);
 
@@ -130,7 +120,6 @@ namespace AST {
 		void increment_all_vars(int offset);
 		int get_var_offset(const std::string& name, Scope_Id* found_id);
 	};
-	const Type* parse_type(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
 	class Expression : public Compilable {
 	public:
@@ -179,6 +168,8 @@ namespace AST {
 	public:
 		Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
+
+		std::uint16_t get_value() const { return constant_value; }
 	private:
 		std::uint16_t constant_value;
 	};
@@ -246,8 +237,6 @@ namespace AST {
 		std::shared_ptr<VarMap> scope;
 	};
 	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
-	// A single declaration may generate any number of statments (and any number of variables)
-	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
 	class Return_Statement : public Statement {
 	public:
@@ -278,6 +267,7 @@ namespace AST {
 
 	class Declaration_Statement : public Statement {
 	public:
+		Declaration_Statement(const std::string& name, std::shared_ptr<VarMap> scope) : Statement(scope), var_name(name) {}
 		Declaration_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
@@ -354,7 +344,7 @@ namespace AST {
 		bool is_defined() const { return is_fn_defined; }
 	private:
 		struct Arg_Type {
-			const Type* type;
+			std::shared_ptr<Type> type;
 			std::string name;
 			std::shared_ptr<Expression> maybe_init_value;
 		};
@@ -362,7 +352,7 @@ namespace AST {
 		Environment* env;
 		std::shared_ptr<VarMap> scope;
 
-		const Type* return_type;
+		std::shared_ptr<Type> return_type;
 		std::string name;
 
 		std::vector<Arg_Type> arguments;
@@ -374,15 +364,8 @@ namespace AST {
 	class Environment {
 	public:
 		Environment() = default;
-		~Environment() {
-			for (const auto& t : type_map) {
-				delete t.second;
-			}
-		}
+		~Environment() = default;
 		Environment(const Environment&&) = delete; // no move or copy
-
-		const Type* get_type(std::string name) const;
-		void create_type(Type* type);
 
 		void add_function(std::shared_ptr<Function> function);
 		void check_function(
@@ -390,8 +373,8 @@ namespace AST {
 			const std::vector<std::shared_ptr<Expression>>& args);
 		std::string generate_code();
 
-		void create_static_var(const Type* type, const std::string& name, bool value_provided, std::uint16_t value);
-		const Type* get_static_var(const std::string& name);
+		void create_static_var(const Declaration& declaration);
+		std::shared_ptr<Variable> get_static_var(const std::string& name);
 
 		Label_Maker label_maker;
 		bool used_mult = false;
@@ -399,8 +382,8 @@ namespace AST {
 		bool used_mod = false;
 
 	private:
-		using Type_Map_Type = std::map<std::string, Type*>;
-		Type_Map_Type type_map;
+		using Struct_Map_Type = std::map<std::string, std::shared_ptr<Type>>;
+		Struct_Map_Type struct_map;
 
 		struct Global_Symbol {
 			std::string name;
@@ -427,5 +410,6 @@ namespace AST {
 		std::string generate_code();
 	private:
 		Environment env;
+		std::shared_ptr<VarMap> global_scope;
 	};
 }

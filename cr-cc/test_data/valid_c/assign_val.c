@@ -1,6 +1,7 @@
-// ret: 3
+// ret: 6
 int main() {
     int a;
     int b = a = 3;
-    return b;
+    // ensure that both a and b have been assigned
+	return b + a;
 }

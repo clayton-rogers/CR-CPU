@@ -92,7 +92,7 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::parameter_list, "parameter_list"},
 	{TokenType::parameter_list_tail, "parameter_list_tail"},
 	{TokenType::parameter_declaration, "parameter_declaration"},
-	{TokenType::type_specifier, "type_specifier"},
+	{TokenType::declaration_specifier, "declaration_specifier"},
 	{TokenType::compound_statement, "compound_statement"},
 	{TokenType::block_item, "block_item"},
 	{TokenType::block_item_list, "block_item_list"},

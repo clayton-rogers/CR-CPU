@@ -100,7 +100,7 @@ enum class TokenType {
 	parameter_list,
 	parameter_list_tail,
 	parameter_declaration,
-	type_specifier,
+	declaration_specifier,
 	compound_statement,
 	block_item,
 	block_item_list,
