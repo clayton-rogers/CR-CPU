@@ -12,7 +12,7 @@ jobs:
     - name: Get resources
       run: |
         cd cr-cc
-        wget https://raw.githubusercontent.com/catchorg/Catch2/master/single_include/catch2/catch.hpp
+        wget https://raw.githubusercontent.com/catchorg/Catch2/v2.x/single_include/catch2/catch.hpp
         mv catch.hpp cr-cc-test/catch.h
 
     - name: Build
