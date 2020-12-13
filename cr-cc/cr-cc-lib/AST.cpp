@@ -4,43 +4,9 @@
 
 namespace AST {
 
-	const Type* parse_type(const ParseNode& node, std::shared_ptr<VarMap> scope) {
-		node.check_type(TokenType::type_specifier);
-
-		const auto& child = node.children.at(0);
-
-		switch (child.token.token_type) {
-		case TokenType::key_int:
-			return scope->env->get_type("int");
-		default:
-			throw std::logic_error("Tried to parse_type with invalid type: " +
-				tokenType_to_string(child.token.token_type));
-		}
-	}
-
-	// Class functions
-	class Int_Type : public Type {
-	public:
-		int get_size() const override { return 1; }
-		std::string get_name() const override { return "int"; }
-		bool is_complete() const override { return true; }
-	};
-
-	class Void_Type : public Type {
-	public:
-		int get_size() const override { return 0; }
-		std::string get_name() const override { return "void"; }
-		bool is_complete() const override { return true; }
-	};
-
-	AST::AST(const ParseNode& root) {
+	AST::AST(const ParseNode& root) :
+		global_scope(std::make_shared<VarMap>(&env)) {
 		root.check_type(TokenType::translation_unit);
-
-		// Set up default types
-		Type* my_int = new Int_Type();
-		env.create_type(my_int);
-		Type* my_void = new Void_Type();
-		env.create_type(my_void);
 
 		// Parse each function and type definition
 		for (const auto& external_declaration_node : root.children) {
@@ -65,34 +31,11 @@ namespace AST {
 			}
 			case TokenType::declaration:
 			{
-				auto type = parse_type(node.get_child_with_type(TokenType::type_specifier), std::make_shared<VarMap>(&env));
-				auto init_decl = node
-					.get_child_with_type(TokenType::init_declarator_list)
-					.get_child_with_type(TokenType::init_declarator);
-				auto name = init_decl.get_child_with_type(TokenType::identifier).token.value;
-				std::uint16_t value = 0;
-				bool has_value = false;
-				if (init_decl.contains_child_with_type(TokenType::equals)) {
-					// The init expression must be constant, nothing else is acceptable
+				auto declarations = parse_declaration(node, global_scope);
 
-					auto next = init_decl.get_child_with_type(TokenType::expression);
-					while (next.children.size() != 0) {
-						next = next.children.at(0);
-						if (next.token.token_type == TokenType::constant) {
-							int value_int = std::stoi(next.token.value);
-							if (value_int > 0xFFFF || value_int < -0x7FFF) {
-								throw std::logic_error("Contstant literal out of range: " + value_int);
-							}
-							value = static_cast<std::uint16_t>(value_int);
-							has_value = true;
-							break;
-						}
-					}
-					if (!has_value) {
-						throw std::logic_error("global declared with a non-constant expression");
-					}
+				for (const auto& declaration : declarations) {
+					env.create_static_var(declaration);
 				}
-				env.create_static_var(type, name, has_value, value);
 
 				break;
 			}
@@ -124,7 +67,10 @@ namespace AST {
 			is_fn_defined = false;
 		}
 
-		return_type = parse_type(actual_node.get_child_with_type(TokenType::type_specifier), scope);
+		{
+			auto declaration_specifer = parse_declaration_specifier(actual_node.get_child_with_type(TokenType::declaration_specifier));
+			return_type = std::make_shared<Type>(declaration_specifer, Abstract_Declarator());;
+		}
 
 		name = actual_node.get_child_with_type(TokenType::identifier).token.value;
 
@@ -136,16 +82,13 @@ namespace AST {
 				if (parameter_declaration.token.token_type == TokenType::comma) {
 					continue; // comma's are expected in parameter lists
 				}
+				Declaration declaration = parse_parameter_declaration(parameter_declaration, scope);
 				Arg_Type arg;
-				arg.type = parse_type(parameter_declaration.get_child_with_type(TokenType::type_specifier), scope);
-				// A function declaration parameter may not have a declarator. Ex:
-				// int foo(int, int)
-				if (parameter_declaration.contains_child_with_type(TokenType::init_declarator)) {
-					const auto& init_declarator = parameter_declaration.get_child_with_type(TokenType::init_declarator);
-					arg.name = init_declarator.get_child_with_type(TokenType::identifier).token.value;
-					if (init_declarator.contains_child_with_type(TokenType::equals)) {
-						arg.maybe_init_value = parse_expression(init_declarator.get_child_with_type(TokenType::expression), scope);
-					}
+
+				arg.type = declaration.variable->type;
+				arg.maybe_init_value = declaration.initialiser;
+				if (declaration.variable->identifier.length() != 0) {
+					arg.name = declaration.variable->identifier;
 				} else {
 					arg.name = std::string("__unamed_var_") + std::to_string(unnamed_var_count++);
 				}
@@ -181,7 +124,7 @@ namespace AST {
 		if (arguments.size() != other.arguments.size()) return false;
 
 		for (size_t i = 0; i < arguments.size(); ++i) {
-			if (arguments.at(i).type != other.arguments.at(i).type) return false;
+			if (!arguments.at(i).type->is_same(other.arguments.at(i).type)) return false;
 		}
 
 		return true;
@@ -193,7 +136,7 @@ namespace AST {
 
 		// TODO should also check expression type when that exists
 		//for (size_t i = 0; i < arguments.size(); ++i) {
-		//	if (arguments.at(i).type != other.arguments.at(i).type) return false;
+		//	if (!arguments.at(i).type->is_same(other.arguments.at(i).type)) return false;
 		//}
 
 		return true;
@@ -227,9 +170,12 @@ namespace AST {
 		current_scope = scope;
 	}
 
-	void VarMap::create_stack_var(const Type* type, const std::string& name) {
-		//int var_offset = size_of_var_map;
-		size_of_var_map += type->get_size();
+	void VarMap::create_stack_var(const Declaration& declaration) {
+
+		const std::string& name = declaration.variable->identifier;
+		const int size = declaration.variable->type->get_size();
+
+		size_of_var_map += size;
 
 		// Double check that the var doesn't exist already
 		if (scopes.at(current_scope).offset_map.count(name) == 1) {
@@ -238,10 +184,10 @@ namespace AST {
 
 		Var v;
 		v.is_declared = false;
-		v.offset = -type->get_size(); // once all args are incremented, this will be zero
+		v.offset = -size; // once all args are incremented, this will be zero
 		scopes.at(current_scope).offset_map[name] = v;
 
-		increment_all_vars(type->get_size());
+		increment_all_vars(size);
 	}
 
 	void VarMap::increment_all_vars(int offset) {
@@ -309,11 +255,13 @@ namespace AST {
 		}
 	}
 
-	void Environment::create_static_var(const Type* type, const std::string& name, bool value_provided, std::uint16_t value) {
+	void Environment::create_static_var(const Declaration& declaration) {
 
 		// Check this symbol has not been previously declared
-		auto existing_symbol = get_symbol_with_name(name);
+		Global_Symbol* existing_symbol = get_symbol_with_name(declaration.variable->identifier);
 		const bool var_already_exists = existing_symbol != nullptr;
+		const bool init_value_provided = declaration.initialiser.get() != nullptr;
+		const std::string& name = declaration.variable->identifier;
 		
 		// global vars may not have the same name as functions
 		if (var_already_exists && existing_symbol->type == Global_Symbol::Type::FUNCTION) {
@@ -321,29 +269,29 @@ namespace AST {
 		}
 
 		if (var_already_exists) {
-			const bool var_has_value = existing_symbol->static_var.has_non_default_value;
-			if (!var_has_value && value_provided) {
-				existing_symbol->static_var.has_non_default_value = true;
-				existing_symbol->static_var.value = value;
+			const bool existing_var_has_value = existing_symbol->static_var.declaration.initialiser.get() != nullptr;
+
+			if (!existing_var_has_value && init_value_provided) {
+				existing_symbol->static_var.declaration.initialiser = declaration.initialiser;
 			}
-			if (var_has_value && value_provided) {
+			if (existing_var_has_value && init_value_provided) {
 				throw std::logic_error("Tried to create a duplicate static var with name: " + name);
 			}
 		} else {
-			// If var doesn't exist then just add it
+			// If var doesn't exist then just create a new global symbol for it
 			Global_Symbol s;
 			s.name = name;
 			s.type = Global_Symbol::Type::VARIABLE;
-			s.static_var = Static_Var{ type, name, value_provided, value };
+			s.static_var = Static_Var{ declaration };
 			global_symbol_table.push_back(s);
 		}
 	}
 
-	const Type* Environment::get_static_var(const std::string& name) {
+	std::shared_ptr<Variable> Environment::get_static_var(const std::string& name) {
 
 		auto symbol = get_declared_symbol_with_name(name);
 		if (symbol != nullptr && symbol->type == Global_Symbol::Type::VARIABLE) {
-			return symbol->static_var.type;
+			return symbol->static_var.declaration.variable;
 		}
 
 		return nullptr;

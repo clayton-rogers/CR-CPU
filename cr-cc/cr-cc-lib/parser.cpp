@@ -39,14 +39,14 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::function_declaration,
 		{
-			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::semi_colon}, {}},
-			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::semi_colon}, {}},
+			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::semi_colon}, {}},
+			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::function_definition,
 		{
-			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::compound_statement}, {}},
-			{{TokenType::type_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::compound_statement}, {}},
+			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::compound_statement}, {}},
+			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::compound_statement}, {}},
 		}
 	},
 	{TokenType::parameter_list,
@@ -61,13 +61,13 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::parameter_declaration,
 		{
-			{{TokenType::type_specifier, TokenType::init_declarator}, {}},
-			{{TokenType::type_specifier}, {}},
+			{{TokenType::declaration_specifier, TokenType::init_declarator}, {}},
+			{{TokenType::declaration_specifier}, {}},
 		}
 	},
-	{TokenType::type_specifier,
+	{TokenType::declaration_specifier,
 		{
-			{{TokenType::key_int}, {}},// TODO add other types
+			{{TokenType::key_int}, {}},// TODO add other types and specifiers
 		}
 	},
 	{TokenType::compound_statement,
@@ -90,7 +90,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::declaration,
 		{
 			//{{TokenType::type_specifier, TokenType::semi_colon}, {}},// TODO for struct declaration
-			{{TokenType::type_specifier, TokenType::init_declarator_list, TokenType::semi_colon}, {}},
+			{{TokenType::declaration_specifier, TokenType::init_declarator_list, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::init_declarator_list,
@@ -105,8 +105,15 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::init_declarator,
 		{
+			{{TokenType::pointer, TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized pointer
+			{{TokenType::pointer, TokenType::identifier}, {}}, // non initialized pointer
 			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized
 			{{TokenType::identifier}, {}}, // non initialized
+		}
+	},
+	{TokenType::pointer,
+		{
+			{{TokenType::star}, TokenType::star},
 		}
 	},
 	{TokenType::statement,

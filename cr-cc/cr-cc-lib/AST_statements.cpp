@@ -2,6 +2,21 @@
 
 namespace AST {
 
+	static void add_declarations_to_stack(const std::vector<Declaration>& declaration_list, std::vector<std::shared_ptr<Statement>>* out_statement_list, std::shared_ptr<VarMap> scope) {
+		for (const auto& declaration : declaration_list) {
+			// Add var to the current scope
+			out_statement_list->push_back(std::make_shared<Declaration_Statement>(declaration.variable->identifier, scope));
+			scope->create_stack_var(declaration);
+
+			// If the var has an initializer, create a fake expression statement for it
+			if (declaration.initialiser) {
+				auto assign_exp =
+					std::make_shared<Assignment_Expression>(declaration.variable->identifier, declaration.initialiser, scope);
+				out_statement_list->push_back(std::make_shared<Expression_Statement>(assign_exp, scope));
+			}
+		}
+	}
+
 	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::statement);
 
@@ -35,42 +50,6 @@ namespace AST {
 			throw std::logic_error("Tried to parse_statement with invalid type: " +
 				tokenType_to_string(child.token.token_type));
 		}
-	}
-
-	std::vector<std::shared_ptr<Statement>> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope) {
-		node.check_type(TokenType::declaration);
-
-		std::vector<std::shared_ptr<Statement>> ret;
-
-		const Type* type_of_dec = parse_type(node.get_child_with_type(TokenType::type_specifier), scope);
-
-		const auto& declarator_list = node.get_child_with_type(TokenType::init_declarator_list);
-		for (const auto& declarator : declarator_list.children) {
-			switch (declarator.token.token_type) {
-			case TokenType::init_declarator:
-			{
-				// Add the var to the current scope
-				std::string name = declarator.get_child_with_type(TokenType::identifier).token.value;
-				ret.push_back(std::make_shared<Declaration_Statement>(declarator.get_child_with_type(TokenType::identifier), scope));
-				scope->create_stack_var(type_of_dec, name);
-
-				// If the var has an initializer, create a fake expression statement for it
-				if (declarator.contains_child_with_type(TokenType::equals)) {
-					auto init_exp = parse_expression(declarator.get_child_with_type(TokenType::expression), scope);
-					auto assign_exp = std::make_shared<Assignment_Expression>(name, init_exp, scope);
-					ret.push_back(std::make_shared<Expression_Statement>(assign_exp, scope));
-				}
-			}
-			break;
-			case TokenType::comma: // commas are expected
-				break;
-			default:
-				throw std::logic_error("parse_declaration got invalid declarator: "
-					+ tokenType_to_string(declarator.token.token_type));
-			}
-		}
-
-		return ret;
 	}
 
 	Return_Statement::Return_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -119,10 +98,8 @@ namespace AST {
 				// Code blocks can optionally have a list of declarations
 				case TokenType::declaration:
 				{
-					auto list_of_statements = parse_declaration(block_item, scope);
-					for (const auto& statement : list_of_statements) {
-						this->statement_list.push_back(statement);
-					}
+					auto declarations = parse_declaration(block_item, scope);
+					add_declarations_to_stack(declarations, &statement_list, scope);
 				}
 				break;
 				// Code blocks can optionally have a list of statements
@@ -189,7 +166,8 @@ namespace AST {
 		// init expression/declaration
 		const ParseNode& init_expression_node = node.children.at(2);
 		if (init_expression_node.contains_child_with_type(TokenType::declaration)) {
-			maybe_set_up_statements = parse_declaration(init_expression_node.children.at(0), scope);
+			auto declarations = parse_declaration(init_expression_node.children.at(0), scope);
+			add_declarations_to_stack(declarations, &maybe_set_up_statements, scope);
 		} else if (init_expression_node.contains_child_with_type(TokenType::expression)) {
 			// optional init expression exists
 			const auto optional_expression = parse_expression(init_expression_node.children.at(0), scope);

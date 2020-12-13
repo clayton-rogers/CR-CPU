@@ -93,6 +93,23 @@ namespace AST {
 		return count;
 	}
 
+	static std::string expression_to_byte_array(std::shared_ptr<Expression> expression) {
+
+		// For now will only support numeric constants.
+		// In the future should support any const expression
+		// And symbolic references
+		// Also arrays, struct, etc.
+		// TODO initialiser
+
+		Expression* exp_ptr = expression.get();
+		Constant_Expression* const_exp_ptr = dynamic_cast<Constant_Expression*>(exp_ptr);
+		if (nullptr == const_exp_ptr) {
+			throw std::logic_error("Static initialisation must be a constant expression");
+		}
+
+		return std::to_string(const_exp_ptr->get_value());
+	}
+
 	enum class Jump_Type {
 		unconditional,
 		if_zero_false,
@@ -372,7 +389,7 @@ namespace AST {
 				// restore rb, drop arg ra
 				ss << "add sp, 1 # drop arg ra\n";
 				ss << "pop rb # restore caller rb\n";
-			} else if (arguments.size() == 0 && env->get_type("void") == return_type) {
+			} else if (arguments.size() == 0 && return_type->get_size() == 0) {
 				// restore caller ra and rb
 				ss << "pop ra # restore caller ra\n";
 				ss << "pop rb # restore caller rb\n";
@@ -416,7 +433,12 @@ namespace AST {
 					break;
 				case Global_Symbol::Type::VARIABLE:
 					ss << "\n";
-					ss << ".static 1 " << symbol.static_var.name << " " << std::to_string(symbol.static_var.value) << "\n";
+					ss << ".static " << symbol.static_var.declaration.variable->type->get_size()
+						<< " " << symbol.static_var.declaration.variable->identifier << " ";
+					if (symbol.static_var.declaration.initialiser) {
+						ss << expression_to_byte_array(symbol.static_var.declaration.initialiser);
+					}
+					ss << "\n";
 					break;
 			}
 		}
@@ -451,18 +473,6 @@ namespace AST {
 		if (!function->signature_matches(name, args)) {
 			throw std::logic_error("Function call has mismatched signature: " + name);
 		}
-	}
-
-	const Type* Environment::get_type(std::string name) const {
-		if (type_map.count(name) == 1) {
-			return type_map.at(name);
-		} else {
-			throw std::logic_error("Failed to find type: " + name);
-		}
-	}
-
-	void Environment::create_type(Type* type) {
-		type_map[type->get_name()] = type;
 	}
 
 	std::string VarMap::gen_scope_entry() {
@@ -604,7 +614,7 @@ namespace AST {
 
 		// Else try for global var
 		{
-			const Type* type = env->get_static_var(name);
+			auto type = env->get_static_var(name);
 			if (type != nullptr) {
 				return "loada ." + name + " # store global setup\n" +
 					"store " + source_reg + " ." + name + " # store global\n";
@@ -629,8 +639,8 @@ namespace AST {
 
 		// Else try for global var
 		{
-			const Type* type = env->get_static_var(name);
-			if (type != nullptr) {
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
 				return "loada ." + name + " # load global setup\n" +
 					"load " + dest_reg + " ." + name + " # load global\n";
 			}

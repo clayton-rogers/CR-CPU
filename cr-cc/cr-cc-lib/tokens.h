@@ -100,7 +100,7 @@ enum class TokenType {
 	parameter_list,
 	parameter_list_tail,
 	parameter_declaration,
-	type_specifier,
+	declaration_specifier,
 	compound_statement,
 	block_item,
 	block_item_list,
@@ -145,6 +145,7 @@ enum class TokenType {
 	argument_expression_list_tail,
 	external_declaration,
 	external_declaration_tail,
+	pointer,
 
 	last_token,
 };
