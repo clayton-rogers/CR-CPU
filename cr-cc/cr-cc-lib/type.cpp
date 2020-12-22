@@ -49,9 +49,12 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 		size = calc_struct_size(specifiers);
 	} else {
 		broad_type = Broad_Type::INTEGRAL;
-		size = INT_SIZE;
-		if (specifier_type != Specifiers::INT) {
-			throw std::logic_error("Got integral type other than int");
+		if (specifier_type == Specifiers::INT) {
+			size = INT_SIZE;
+		} else if (specifier_type == Specifiers::VOID) {
+			size = 0;
+		} else {
+			throw std::logic_error("Got integral type other than int or void");
 		}
 	}
 }
@@ -140,3 +143,6 @@ bool Declaration_Specifier::contains(Specifiers specifier) {
 
 	return false;
 }
+
+const std::shared_ptr<Type> VOID_TYPE = std::make_shared<Type>(Declaration_Specifier{ { Specifiers::VOID } }, Abstract_Declarator());
+const std::shared_ptr<Type> INT_TYPE = std::make_shared<Type>(Declaration_Specifier{ { Specifiers::INT } }, Abstract_Declarator());

@@ -125,6 +125,7 @@ namespace AST {
 	public:
 		Expression(std::shared_ptr<VarMap> scope) : scope(scope) {}
 		virtual ~Expression() {}
+		virtual std::shared_ptr<Type> get_type() const = 0;
 	protected:
 		std::shared_ptr<VarMap> scope;
 	};
@@ -136,6 +137,7 @@ namespace AST {
 		Assignment_Expression(std::string name, std::shared_ptr<Expression> exp, std::shared_ptr<VarMap> scope)
 			: Expression(scope), var_name(name), exp(exp) {}
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override { return exp->get_type(); }
 	private:
 		std::string var_name;
 		std::shared_ptr<Expression> exp;
@@ -146,21 +148,23 @@ namespace AST {
 	public:
 		Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override;
 	private:
 		std::string var_name;
 	};
 
 	class Unary_Expression : public Expression {
 	public:
-		enum class Type {
+		enum class Unary_Type {
 			negation,
 			bitwise_complement,
 			logical_negation,
 		};
 		Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override { return sub->get_type(); }
 	private:
-		Type type;
+		Unary_Type type;
 		std::shared_ptr<Expression> sub;
 	};
 
@@ -170,13 +174,14 @@ namespace AST {
 		std::string generate_code() const override;
 
 		std::uint16_t get_value() const { return constant_value; }
+		std::shared_ptr<Type> get_type() const override;
 	private:
 		std::uint16_t constant_value;
 	};
 
 	class Binary_Expression : public Expression {
 	public:
-		enum class Type {
+		enum class Bin_Type {
 			addition,
 			subtraction,
 			multiplication,
@@ -204,9 +209,10 @@ namespace AST {
 				  sub_right(right)
 				  {}
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override;
 	private:
-		static Type token_to_type(TokenType type);
-		Type type;
+		static Bin_Type token_to_type(TokenType type);
+		Bin_Type type;
 		std::shared_ptr<Expression> sub_left;
 		std::shared_ptr<Expression> sub_right;
 	};
@@ -215,6 +221,7 @@ namespace AST {
 	public:
 		Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override;
 	private:
 		std::shared_ptr<Expression> condition;
 		std::shared_ptr<Expression> true_exp;
@@ -225,6 +232,7 @@ namespace AST {
 	public:
 		Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
+		std::shared_ptr<Type> get_type() const override;
 	private:
 		std::string name;
 		std::vector<std::shared_ptr<Expression>> arguments;
@@ -342,6 +350,7 @@ namespace AST {
 		bool signature_matches(const Function& other) const;
 		bool signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const;
 		bool is_defined() const { return is_fn_defined; }
+		std::shared_ptr<Type> get_return_type() const { return return_type; }
 	private:
 		struct Arg_Type {
 			std::shared_ptr<Type> type;
@@ -371,6 +380,7 @@ namespace AST {
 		void check_function(
 			const std::string& name,
 			const std::vector<std::shared_ptr<Expression>>& args);
+		std::shared_ptr<Type> get_function_return_type(const std::string& name);
 		std::string generate_code();
 
 		void create_static_var(const Declaration& declaration);

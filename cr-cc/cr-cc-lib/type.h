@@ -74,3 +74,7 @@ private:
 	Declaration_Specifier declaration_specifiers;
 	Abstract_Declarator abstract_declarator;
 };
+
+
+extern const std::shared_ptr<Type> VOID_TYPE;
+extern const std::shared_ptr<Type> INT_TYPE;

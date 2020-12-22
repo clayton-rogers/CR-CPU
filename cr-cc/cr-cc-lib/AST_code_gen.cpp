@@ -151,7 +151,7 @@ namespace AST {
 		ss << sub->generate_code();
 
 		switch (type) {
-		case Type::negation:
+		case Unary_Type::negation:
 			// to negate must invert all bits and then add one
 			ss << "loadi rb, 0xFF # negate RA\n";
 			ss << "loadi.h rb, 0xFF\n";
@@ -159,13 +159,13 @@ namespace AST {
 			//ss << "not ra, 0xFF \n"; TODO add not to CPU
 			ss << "add ra, 1\n";
 			break;
-		case Type::bitwise_complement:
+		case Unary_Type::bitwise_complement:
 			ss << "loadi rb, 0xFF # complement RA\n";
 			ss << "loadi.h rb, 0xFF\n";
 			ss << "xor ra, rb\n";
 			//ss << "not ra, 0xFF # complement RA\n"; TODO add not to CPU
 			break;
-		case Type::logical_negation:
+		case Unary_Type::logical_negation:
 		{
 			ss << gen_logical_negation(scope);
 			break;
@@ -198,10 +198,10 @@ namespace AST {
 		// If exp 1 is true and op is || then skip exp 2
 		// If exp 1 is false(0) and op is && then skip exp2
 		std::string label_after = scope->env->label_maker.get_next_label();
-		if (type == Type::logical_or) {
+		if (type == Bin_Type::logical_or) {
 			ss << "jmp.r.nz " << label_after << " # short circuit or\n";
 		}
-		if (type == Type::logical_and) {
+		if (type == Bin_Type::logical_and) {
 			ss << "jmp.r.z " << label_after << " # short circuit and\n";
 		}
 
@@ -217,13 +217,13 @@ namespace AST {
 
 		// Perform actual binary operation
 		switch (type) {
-		case Type::addition:
+		case Bin_Type::addition:
 			ss << "add ra, rb # binary exp add\n";
 			break;
-		case Type::subtraction:
+		case Bin_Type::subtraction:
 			ss << "sub ra, rb # binary exp sub\n";
 			break;
-		case Type::multiplication:
+		case Bin_Type::multiplication:
 			// mult and div are not instructions but function calls
 			// if they're used we have to make sure there's an .external
 			// directive for them
@@ -231,7 +231,7 @@ namespace AST {
 			ss << "loada .__mult\n";
 			ss << "call .__mult\n";
 			break;
-		case Type::division:
+		case Bin_Type::division:
 			// mult and div are not instructions but function calls
 			// if they're used we have to make sure there's an .external
 			// directive for them
@@ -239,58 +239,58 @@ namespace AST {
 			ss << "loada .__div\n";
 			ss << "call .__div\n";
 			break;
-		case Type::remainder:
+		case Bin_Type::remainder:
 			// mod is also a function and not an instruction
 			scope->env->used_mod = true;
 			ss << "loada .__rem\n";
 			ss << "call .__rem\n";
 			break;
-		case Type::logical_and:
+		case Bin_Type::logical_and:
 			ss << "and ra, rb # binary exp logical and\n";
 			break;
-		case Type::logical_or:
+		case Bin_Type::logical_or:
 			ss << "or ra, rb # binary exp logical or\n";
 			break;
-		case Type::equal:
+		case Bin_Type::equal:
 			// A == B is the same as !(A - B)
 			// if A == B then A-B => 0 then !0 is 1
 			ss << "sub ra, rb # binary exp logical equal\n";
 			ss << gen_logical_negation(scope);
 			break;
-		case Type::not_equal:
+		case Bin_Type::not_equal:
 			// if A == B is the same as !(A - B) from above
 			// then A != B is the same as !!(A - B) which is just (A - B)
 			ss << "sub ra, rb # binary exp logical not equal\n";
 			ss << gen_is_true(scope); // probably not required
 			break;
-		case Type::less_than:
+		case Bin_Type::less_than:
 			// A < B is (B - A - 1) >= 0
 			ss << "sub rb, ra # binary less than\n";
 			ss << "mov ra, rb\n";
 			ss << "sub ra, 1\n";
 			ss << gen_is_positive(scope);
 			break;
-		case Type::less_than_or_equal:
+		case Bin_Type::less_than_or_equal:
 			// A <= B is (B - A) >= 0
 			ss << "sub rb, ra # binary less than equal\n";
 			ss << "mov ra, rb\n";
 			ss << gen_is_positive(scope);
 			break;
-		case Type::greater_than:
+		case Bin_Type::greater_than:
 			// A > B  is (A - B - 1) >= 0
 			ss << "sub ra, rb # binary greater than\n";
 			ss << "sub ra, 1\n";
 			ss << gen_is_positive(scope);
 			break;
-		case Type::greater_than_or_equal:
+		case Bin_Type::greater_than_or_equal:
 			// A >= B is (A - B) >= 0
 			ss << "sub ra, rb # binary greater than equal\n";
 			ss << gen_is_positive(scope);
 			break;
-		case Type::shift_left:
+		case Bin_Type::shift_left:
 			ss << "shftl ra, rb # binary shift left\n";
 			break;
-		case Type::shift_right:
+		case Bin_Type::shift_right:
 			ss << "shftr ra, rb # binary shift right\n";
 			break;
 		default:
@@ -298,7 +298,7 @@ namespace AST {
 		}
 
 		// In case of short circuit, skip the operation:
-		if (type == Type::logical_and || type == Type::logical_or) {
+		if (type == Bin_Type::logical_and || type == Bin_Type::logical_or) {
 			ss << label_after << ": # short circuit label\n";
 		}
 
@@ -473,6 +473,20 @@ namespace AST {
 		if (!function->signature_matches(name, args)) {
 			throw std::logic_error("Function call has mismatched signature: " + name);
 		}
+	}
+
+	std::shared_ptr<Type> Environment::get_function_return_type(const std::string& name) {
+		// This function should never be called before "check_function()" has,
+		// so we should not need to check that the function exists. We will anyways
+
+		auto symbol = get_symbol_with_name(name);
+		if (symbol == nullptr || symbol->type != Global_Symbol::Type::FUNCTION) {
+			throw std::logic_error("Should never happen: getting return type of non-fn: " + name);
+		}
+
+		auto function = symbol->function;
+
+		return function->get_return_type();
 	}
 
 	std::string VarMap::gen_scope_entry() {
