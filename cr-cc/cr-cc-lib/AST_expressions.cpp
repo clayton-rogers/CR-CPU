@@ -120,13 +120,13 @@ namespace AST {
 
 		switch (the_operator.token.token_type) {
 		case TokenType::sub:
-			type = Type::negation;
+			type = Unary_Type::negation;
 			break;
 		case TokenType::tilda:
-			type = Type::bitwise_complement;
+			type = Unary_Type::bitwise_complement;
 			break;
 		case TokenType::exclam:
-			type = Type::logical_negation;
+			type = Unary_Type::logical_negation;
 			break;
 		default:
 			throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
@@ -145,42 +145,85 @@ namespace AST {
 		constant_value = static_cast<std::uint16_t>(value);
 	}
 
-	Binary_Expression::Type Binary_Expression::token_to_type(TokenType type) {
+	std::shared_ptr<Type> Constant_Expression::get_type() const {
+		// Constant expressions are always of type int
+
+		return INT_TYPE;
+		//Declaration_Specifier declaration_specifier;
+		//declaration_specifier.specifier_list.push_back(Specifiers::INT);
+		//Abstract_Declarator abstract_declarator;
+		//auto type = std::make_shared<Type>(declaration_specifier, abstract_declarator);
+	}
+
+	Binary_Expression::Bin_Type Binary_Expression::token_to_type(TokenType type) {
 		switch (type) {
 		case TokenType::add:
-			return Type::addition;
+			return Bin_Type::addition;
 		case TokenType::sub:
-			return Type::subtraction;
+			return Bin_Type::subtraction;
 		case TokenType::star:
-			return Type::multiplication;
+			return Bin_Type::multiplication;
 		case TokenType::div:
-			return Type::division;
+			return Bin_Type::division;
 		case TokenType::percent:
-			return Type::remainder;
+			return Bin_Type::remainder;
 		case TokenType::and_op:
-			return Type::logical_and;
+			return Bin_Type::logical_and;
 		case TokenType::or_op:
-			return Type::logical_or;
+			return Bin_Type::logical_or;
 		case TokenType::eq_op:
-			return Type::equal;
+			return Bin_Type::equal;
 		case TokenType::ne_op:
-			return Type::not_equal;
+			return Bin_Type::not_equal;
 		case TokenType::less_than:
-			return Type::less_than;
+			return Bin_Type::less_than;
 		case TokenType::le_op:
-			return Type::less_than_or_equal;
+			return Bin_Type::less_than_or_equal;
 		case TokenType::greater_than:
-			return Type::greater_than;
+			return Bin_Type::greater_than;
 		case TokenType::ge_op:
-			return Type::greater_than_or_equal;
+			return Bin_Type::greater_than_or_equal;
 		case TokenType::left_op:
-			return Type::shift_left;
+			return Bin_Type::shift_left;
 		case TokenType::right_op:
-			return Type::shift_right;
+			return Bin_Type::shift_right;
 		default:
 			throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
 				+ tokenType_to_string(type));
 		}
+	}
+
+	std::shared_ptr<Type> Binary_Expression::get_type() const {
+		// TODO need to determine combined expression from two sub expressions
+
+		const auto left_broad_type = sub_left->get_type()->get_broad_type();
+		const auto right_broad_type = sub_right->get_type()->get_broad_type();
+
+		// For now just return int, it basically will be always anyway
+		if (left_broad_type == Broad_Type::INTEGRAL &&
+			right_broad_type == Broad_Type::INTEGRAL) {
+			// if both are int, then return int
+			// TODO should be the largest of the two or something
+			return INT_TYPE;
+			//Declaration_Specifier declaration_specifiers;
+			//declaration_specifiers.specifier_list.push_back(Specifiers::INT);
+			//return std::make_shared<Type>(declaration_specifiers, Abstract_Declarator());
+		} else if (left_broad_type == Broad_Type::POINTER) {
+			return sub_left->get_type();
+		} else if (right_broad_type == Broad_Type::POINTER) {
+			return sub_right->get_type();
+		} else if (left_broad_type == Broad_Type::STRUCT ||
+			right_broad_type == Broad_Type::STRUCT) {
+			// There are no valid binary operators on strucs
+			throw std::logic_error("Invalid binary operator on struct");
+		} else if (left_broad_type == Broad_Type::ARRAY ||
+			right_broad_type == Broad_Type::ARRAY) {
+			// There are no valid binary operators on arrays either
+			throw std::logic_error("Invalid binary operator on array");
+		}
+
+		// If we got this far then we probably forgot something
+		throw std::logic_error("Invalid binary operator on unknown sub-expression types");
 	}
 
 	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -188,6 +231,18 @@ namespace AST {
 		node.check_type(TokenType::identifier);
 
 		var_name = node.token.value;
+	}
+
+	std::shared_ptr<Type> Variable_Expression::get_type() const {
+		// TODO should be able to query the scope for the type of a given var
+
+		// Default to int for now
+		return INT_TYPE;
+
+		//Declaration_Specifier declaration_specifier;
+		//declaration_specifier.specifier_list.push_back(Specifiers::INT);
+		//Abstract_Declarator abstract_declarator;
+		//auto type = std::make_shared<Type>(declaration_specifier, abstract_declarator);
 	}
 
 	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -200,6 +255,17 @@ namespace AST {
 		condition = parse_binary(node.children.at(0), scope);
 		true_exp = parse_expression(node.children.at(2), scope);
 		false_exp = parse_conditional(node.children.at(4), scope);
+	}
+
+	std::shared_ptr<Type> Conditional_Expression::get_type() const {
+		// In theory both true and false sides of the expresion should be the same time right????
+		auto true_type = true_exp->get_type();
+		auto false_type = false_exp->get_type();
+		if (true_type->is_same(false_type)) {
+			return true_type;
+		} else {
+			throw std::logic_error("Type mismatch in conditional expression (?:)");
+		}
 	}
 
 	Function_Call_Expression::Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -222,5 +288,12 @@ namespace AST {
 		// Check that the function exists and has the correct arguments.
 		// Throws if there is any issue.
 		scope->env->check_function(name, arguments);
+	}
+
+	std::shared_ptr<Type> Function_Call_Expression::get_type() const {
+		// The type of a function call will of course be whatever the return type of the function is
+		// We should be able to query the function from the symbol table
+
+		return scope->env->get_function_return_type(name);
 	}
 }
