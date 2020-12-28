@@ -106,8 +106,17 @@ namespace AST {
 		: Expression(scope) {
 		node.check_type(TokenType::expression);
 
-		var_name = node.get_child_with_type(TokenType::identifier).token.value;
-		exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+		auto unary_exp = node.get_child_with_type(TokenType::unary_expression);
+		if (unary_exp.children.size() == 1) {
+			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
+			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+		} else if (unary_exp.contains_child_with_type(TokenType::star)) {
+			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
+			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+			is_pointer = true;
+		} else {
+			throw std::logic_error("Unknown unary expression on left side of assignment");
+		}
 	}
 
 	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -128,6 +137,18 @@ namespace AST {
 		case TokenType::exclam:
 			type = Unary_Type::logical_negation;
 			break;
+		case TokenType::star:
+			type = Unary_Type::dereference;
+			// Don't need to check that the sub expresion is an identifier because it
+			// is enforced by the grammar.
+			// TODO this should really be left in the sub expression since it could be
+			// more than just an identifer.
+			reference_identifier = sub_expression.token.value;
+			return;
+		case TokenType::ampersand:
+			type = Unary_Type::reference;
+			reference_identifier = sub_expression.token.value;
+			return;
 		default:
 			throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
 		}

@@ -148,7 +148,10 @@ namespace AST {
 		std::stringstream ss;
 
 		// calculate the sub expression and leave it in RA
-		ss << sub->generate_code();
+		// If there is one, which there isn't in the case of ref/deref
+		if (sub) {
+			ss << sub->generate_code();
+		}
 
 		switch (type) {
 		case Unary_Type::negation:
@@ -168,6 +171,20 @@ namespace AST {
 		case Unary_Type::logical_negation:
 		{
 			ss << gen_logical_negation(scope);
+			break;
+		}
+		case Unary_Type::reference:
+		{
+			// need to load the address of the given identifier into RA
+			ss << scope->load_address(reference_identifier, "ra");
+			break;
+		}
+		case Unary_Type::dereference:
+		{
+			// need to load the value from the given identifier into RP
+			// then load the value it points to
+			ss << scope->load_word(reference_identifier, "rp");
+			ss << "load.rp ra, 0x00 # dereference pointer\n";
 			break;
 		}
 		default:
@@ -583,7 +600,12 @@ namespace AST {
 		ss << exp->generate_code();
 
 		// Result is now in ra, store in memory location
-		ss << scope->store_word(var_name, "ra");
+		if (is_pointer) {
+			ss << scope->load_word(var_name, "rp");
+			ss << "store.rp ra, 0x00 # store through pointer\n";
+		} else {
+			ss << scope->store_word(var_name, "ra");
+		}
 
 		return ss.str();
 	}
@@ -662,6 +684,33 @@ namespace AST {
 
 		// If we've got this far then the var doesn't exist
 		throw std::logic_error("Referenced unknown var: " + name);
+	}
+
+	std::string VarMap::load_address(const std::string& name, const std::string& dest_reg) {
+		Scope_Id id;
+
+		// Try for stack var first
+		{
+			int offset = get_var_offset(name, &id);
+			if (id != MAGIC_NO_SCOPE) {
+				return
+					"mov " + dest_reg + ", sp # get address of stack var " + name + "_" + std::to_string(id) + "\n"
+					"add " + dest_reg + ", " + output_signed_byte(offset) + " # add var offset\n";
+			}
+		}
+
+		// Else try for global var
+		{
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return
+					"loadi " + dest_reg + ", ." + name + " # load address of global low byte\n" +
+					"loadi.h " + dest_reg + ", ." + name + " # load address of global high byte\n";
+			}
+		}
+
+		// If we've got this far then the var doesn't exist
+		throw std::logic_error("Tried to get address of unknown var: " + name);
 	}
 
 	std::string If_Statement::generate_code() const {
