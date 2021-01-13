@@ -21,8 +21,8 @@ ret
 
 #################################################
 #int print_num(int num);
-.print_num:
-.export print_num
+.__print_num:
+.export __print_num
 push ra
 shftr ra 12
 call.r .print_hex

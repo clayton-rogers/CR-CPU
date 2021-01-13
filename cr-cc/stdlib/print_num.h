@@ -1,3 +1,3 @@
 
 
-int print_num(int num);
+int __print_num(int num);
