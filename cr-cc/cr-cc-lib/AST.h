@@ -71,6 +71,7 @@ namespace AST {
 
 		std::string store_word(const std::string& name, const std::string& source_reg);
 		std::string load_word(const std::string& name, const std::string& dest_reg);
+		std::string load_address(const std::string& name, const std::string& dest_reg);
 
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
@@ -140,6 +141,7 @@ namespace AST {
 		std::shared_ptr<Type> get_type() const override { return exp->get_type(); }
 	private:
 		std::string var_name;
+		bool is_pointer = false;
 		std::shared_ptr<Expression> exp;
 	};
 
@@ -159,6 +161,8 @@ namespace AST {
 			negation,
 			bitwise_complement,
 			logical_negation,
+			reference,
+			dereference,
 		};
 		Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -166,6 +170,8 @@ namespace AST {
 	private:
 		Unary_Type type;
 		std::shared_ptr<Expression> sub;
+
+		std::string reference_identifier;
 	};
 
 	class Constant_Expression : public Expression {
