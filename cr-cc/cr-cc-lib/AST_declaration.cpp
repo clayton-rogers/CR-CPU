@@ -10,11 +10,14 @@ namespace AST {
 	static Declaration parse_init_declarator(const Declaration_Specifier& ds, const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::init_declarator);
 
-		const auto& identifier = node.get_child_with_type(TokenType::identifier).token.value;
+		const auto& declarator = node.get_child_with_type(TokenType::declarator);
+		const auto& direct_declarator = declarator.get_child_with_type(TokenType::direct_declarator);
+
+		const auto& identifier = direct_declarator.get_child_with_type(TokenType::identifier).token.value;
 
 		int num_pointer = 0;
-		if (node.contains_child_with_type(TokenType::pointer)) {
-			const auto& ptr_node = node.get_child_with_type(TokenType::pointer);
+		if (declarator.contains_child_with_type(TokenType::pointer)) {
+			const auto& ptr_node = declarator.get_child_with_type(TokenType::pointer);
 			num_pointer = static_cast<int>(ptr_node.children.size());
 		}
 
