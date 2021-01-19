@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <map>
+#include <string>
 
 namespace AST {
 
@@ -21,8 +22,20 @@ namespace AST {
 			num_pointer = static_cast<int>(ptr_node.children.size());
 		}
 
+		std::vector<int> array_sizes;
+		if (direct_declarator.contains_child_with_type(TokenType::open_square_bracket)) {
+			// Then this is an array declaration
+			// TODO assume for now that there is only ever one dimension
+			int array_size = std::stoi(direct_declarator.get_child_with_type(TokenType::constant).token.value);
+			if (array_size > 0xFFFF) {
+				throw std::logic_error("array size out of range");
+			}
+			array_sizes.push_back(array_size);
+		}
+
 		Abstract_Declarator abstract_declarator;
 		abstract_declarator.num_pointers = num_pointer;
+		abstract_declarator.array_sizes = array_sizes;
 		// TODO be able to parse nested declarators and arrays
 
 		auto variable = std::make_shared<Variable>();

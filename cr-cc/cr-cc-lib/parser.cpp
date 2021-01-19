@@ -315,7 +315,6 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 		{
 			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, {}},
 			{{TokenType::function_call}, {}},
-			{{TokenType::identifier}, {}},
 			{{TokenType::unary_expression}, {}},
 			{{TokenType::constant}, {}},
 		}
@@ -343,6 +342,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::exclam, TokenType::factor}, {}},
 			{{TokenType::ampersand, TokenType::identifier}, {}},
 			{{TokenType::star, TokenType::identifier}, {}},
+			{{TokenType::identifier, TokenType::open_square_bracket, TokenType::expression, TokenType::close_square_bracket}, {}},
 			{{TokenType::identifier}, {}},
 		}
 	},

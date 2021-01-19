@@ -148,10 +148,7 @@ namespace AST {
 		std::stringstream ss;
 
 		// calculate the sub expression and leave it in RA
-		// If there is one, which there isn't in the case of ref/deref
-		if (sub) {
-			ss << sub->generate_code();
-		}
+		ss << sub->generate_code();
 
 		switch (type) {
 		case Unary_Type::negation:
@@ -173,20 +170,7 @@ namespace AST {
 			ss << gen_logical_negation(scope);
 			break;
 		}
-		case Unary_Type::reference:
-		{
-			// need to load the address of the given identifier into RA
-			ss << scope->load_address(reference_identifier, "ra");
-			break;
-		}
-		case Unary_Type::dereference:
-		{
-			// need to load the value from the given identifier into RP
-			// then load the value it points to
-			ss << scope->load_word(reference_identifier, "rp");
-			ss << "load.rp ra, 0x00 # dereference pointer\n";
-			break;
-		}
+
 		default:
 			throw std::logic_error("Unary generate code: should never happen");
 		}
@@ -613,8 +597,34 @@ namespace AST {
 	std::string Variable_Expression::generate_code() const {
 		std::stringstream ss;
 
-		// Emit instruction to load var directly into ra
-		return scope->load_word(var_name, "ra");
+		switch (var_type) {
+		case Variable_Type::reference:
+			// need to load the address of the given identifier into RA
+			ss << scope->load_address(var_name, "ra");
+			break;
+		case Variable_Type::dereference:
+			// need to load the value from the given identifier into RP
+			// then load the value it points to
+			ss << scope->load_word(var_name, "rp");
+			ss << "load.rp ra, 0x00 # dereference pointer\n";
+			break;
+		case Variable_Type::direct:
+			// Emit instruction to load var directly into ra
+			ss << scope->load_word(var_name, "ra");
+			break;
+		case Variable_Type::array:
+			// Calculate the offset, then get the dereference
+			ss << array_index->generate_code();
+			ss << "mov rp, ra # move array offset to ptr reg\n";
+			ss << scope->load_address(var_name, "ra");
+			ss << "add rp, ra # calculate final array addr\n";
+			ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
+			break;
+		default:
+			throw std::logic_error("variable_expression::generate_code(): should never get here: default case");
+		}
+
+		return ss.str();
 	}
 
 	int VarMap::get_var_offset(const std::string& name, Scope_Id* found_id) {
