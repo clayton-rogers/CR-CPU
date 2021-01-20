@@ -2,7 +2,11 @@
 
 namespace AST {
 
-	static void add_declarations_to_stack(const std::vector<Declaration>& declaration_list, std::vector<std::shared_ptr<Statement>>* out_statement_list, std::shared_ptr<VarMap> scope) {
+	static void add_declarations_to_stack(
+			const std::vector<Declaration>& declaration_list,
+			std::vector<std::shared_ptr<Statement>>* out_statement_list,
+			std::shared_ptr<VarMap> scope) {
+
 		for (const auto& declaration : declaration_list) {
 			// Add var to the current scope
 			out_statement_list->push_back(std::make_shared<Declaration_Statement>(declaration.variable->identifier, scope));
