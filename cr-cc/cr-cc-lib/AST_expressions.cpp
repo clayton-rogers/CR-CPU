@@ -123,6 +123,7 @@ namespace AST {
 			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 			array_index_exp = parse_expression(unary_exp.get_child_with_type(TokenType::expression), scope);
+			is_array = true;
 		} else {
 			throw std::logic_error("Unknown unary expression on left side of assignment");
 		}

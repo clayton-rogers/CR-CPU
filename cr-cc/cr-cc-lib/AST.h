@@ -143,6 +143,7 @@ namespace AST {
 		std::string var_name;
 		bool is_pointer = false;
 		std::shared_ptr<Expression> exp;
+		bool is_array = false;
 		std::shared_ptr<Expression> array_index_exp;
 	};
 

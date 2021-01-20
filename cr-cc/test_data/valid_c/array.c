@@ -10,21 +10,9 @@ int simple_array() {
 	return a[0] == 10 && a[1] == 12;
 }
 
-int test() {
-	int a[2];
-	a[0] = 11;
-	a[1] = 12;
-
-	return a[0];
-}
-
 int main() {
-	//if (!simple_array()) {
-	//	return 1;
-	//}
-
-	if (test() != 11) {
-		return test();
+	if (!simple_array()) {
+		return 1;
 	}
 
 	return 2;

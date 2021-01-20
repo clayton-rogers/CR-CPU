@@ -587,6 +587,14 @@ namespace AST {
 		if (is_pointer) {
 			ss << scope->load_word(var_name, "rp");
 			ss << "store.rp ra, 0x00 # store through pointer\n";
+		} else if (is_array) {
+			// Need to calculate the array offset
+			ss << scope->push_reg("ra") + " # push result while we calc the array offset\n";
+			ss << array_index_exp->generate_code();
+			ss << scope->load_address(var_name, "rp");
+			ss << "add rp, ra # calculate final array offset\n";
+			ss << scope->pop_reg("ra") + " # get back expression\n";
+			ss << "store.rp ra, 0x00 # store through array\n";
 		} else {
 			ss << scope->store_word(var_name, "ra");
 		}
