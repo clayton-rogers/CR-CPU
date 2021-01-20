@@ -46,6 +46,38 @@ int array_loop() {
 	return total == 320;
 }
 
+int static_array[10];
+
+int load_static_array() {
+	for (int i = 0; i < 10; i = i + 1) {
+		static_array[i] = 22;
+	}
+	return 0;
+}
+int deref_static_array() {
+	int a = 0;
+	a = a + static_array[0];
+	a = a + static_array[1];
+	a = a + static_array[9];
+
+	return a == 66;
+}
+
+int pointers_to_array() {
+	int size = 10;
+	int a[10];
+
+	// load the array
+	for (int i = 0; i < size; i = i + 1) {
+		a[i] = 32 + i;
+	}
+
+	int * b = &a;
+	b = b + 5;
+
+	return *b == 37;
+}
+
 int main() {
 
 	if (!simple_array()) {
@@ -67,12 +99,14 @@ int main() {
 		return 1;
 	}
 
-	return 2;
-}
-
+	load_static_array();
+	if (!deref_static_array()) {
+		return 1;
+	}
 
 // wtf how does the assignment work?
 // the assignment expression doesn't seem to account for arrays...
 // do array declarations even work?
 
-// pretty sure it doesn't....
+	return 2;
+}
