@@ -703,6 +703,9 @@ namespace AST {
 		{
 			int offset = get_var_offset(name, &id);
 			if (id != MAGIC_NO_SCOPE) {
+				if (offset > 0xFF) {
+					throw std::logic_error("When getting address of " + name + " offset was out of range");
+				}
 				return
 					"mov " + dest_reg + ", sp # get address of stack var " + name + "_" + std::to_string(id) + "\n"
 					"add " + dest_reg + ", " + output_signed_byte(offset) + " # add var offset\n";
