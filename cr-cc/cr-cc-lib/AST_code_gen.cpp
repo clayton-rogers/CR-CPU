@@ -429,10 +429,10 @@ namespace AST {
 		for (auto& symbol : global_symbol_table) {
 			symbol.is_declared = true;
 			switch (symbol.type) {
-				case Global_Symbol::Type::FUNCTION:
+				case Global_Symbol::Global_Symbol_Type::FUNCTION:
 					ss << symbol.function->generate_code();
 					break;
-				case Global_Symbol::Type::VARIABLE:
+				case Global_Symbol::Global_Symbol_Type::VARIABLE:
 					ss << "\n";
 					ss << ".static " << symbol.static_var.declaration.variable->type->get_size()
 						<< " " << symbol.static_var.declaration.variable->identifier << " ";
@@ -465,7 +465,7 @@ namespace AST {
 		const std::vector<std::shared_ptr<Expression>>& args)
 	{
 		auto symbol = get_symbol_with_name(name);
-		if (symbol == nullptr || symbol->type != Global_Symbol::Type::FUNCTION) {
+		if (symbol == nullptr || symbol->type != Global_Symbol::Global_Symbol_Type::FUNCTION) {
 			throw std::logic_error("Called a function that has not been declared: " + name);
 		}
 		
@@ -481,7 +481,7 @@ namespace AST {
 		// so we should not need to check that the function exists. We will anyways
 
 		auto symbol = get_symbol_with_name(name);
-		if (symbol == nullptr || symbol->type != Global_Symbol::Type::FUNCTION) {
+		if (symbol == nullptr || symbol->type != Global_Symbol::Global_Symbol_Type::FUNCTION) {
 			throw std::logic_error("Should never happen: getting return type of non-fn: " + name);
 		}
 

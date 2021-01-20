@@ -411,11 +411,11 @@ namespace AST {
 			std::string name;
 			bool is_declared = false;
 
-			enum class Type {
+			enum class Global_Symbol_Type {
 				FUNCTION,
 				VARIABLE,
 			};
-			Type type;
+			Global_Symbol_Type type;
 
 			std::shared_ptr<Function> function;
 			Static_Var static_var;
