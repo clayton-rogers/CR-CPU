@@ -72,6 +72,11 @@ int pointers_to_array() {
 		a[i] = 32 + i;
 	}
 
+	// TODO this is actually a quirk,
+	// arrays references should decay
+	// into pointer to first member,
+	// but currently you have to manually,
+	// take the ref.
 	int * b = &a;
 	b = b + 5;
 
@@ -104,9 +109,9 @@ int main() {
 		return 1;
 	}
 
-// wtf how does the assignment work?
-// the assignment expression doesn't seem to account for arrays...
-// do array declarations even work?
+	if (!pointers_to_array()) {
+		return 1;
+	}
 
 	return 2;
 }
