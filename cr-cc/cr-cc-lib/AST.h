@@ -143,16 +143,27 @@ namespace AST {
 		std::string var_name;
 		bool is_pointer = false;
 		std::shared_ptr<Expression> exp;
+		bool is_array = false;
+		std::shared_ptr<Expression> array_index_exp;
 	};
 
 	// For when a variable is referenced
 	class Variable_Expression : public Expression {
 	public:
+		enum class Variable_Type {
+			direct,
+			reference,
+			dereference,
+			array,
+		};
+
 		Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 		std::shared_ptr<Type> get_type() const override;
 	private:
+		Variable_Type var_type;
 		std::string var_name;
+		std::shared_ptr<Expression> array_index;
 	};
 
 	class Unary_Expression : public Expression {
@@ -161,8 +172,6 @@ namespace AST {
 			negation,
 			bitwise_complement,
 			logical_negation,
-			reference,
-			dereference,
 		};
 		Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -170,8 +179,6 @@ namespace AST {
 	private:
 		Unary_Type type;
 		std::shared_ptr<Expression> sub;
-
-		std::string reference_identifier;
 	};
 
 	class Constant_Expression : public Expression {
@@ -405,11 +412,11 @@ namespace AST {
 			std::string name;
 			bool is_declared = false;
 
-			enum class Type {
+			enum class Global_Symbol_Type {
 				FUNCTION,
 				VARIABLE,
 			};
-			Type type;
+			Global_Symbol_Type type;
 
 			std::shared_ptr<Function> function;
 			Static_Var static_var;

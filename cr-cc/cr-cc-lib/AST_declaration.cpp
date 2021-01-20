@@ -4,22 +4,38 @@
 
 #include <stdexcept>
 #include <map>
+#include <string>
 
 namespace AST {
 
 	static Declaration parse_init_declarator(const Declaration_Specifier& ds, const ParseNode& node, std::shared_ptr<VarMap> scope) {
 		node.check_type(TokenType::init_declarator);
 
-		const auto& identifier = node.get_child_with_type(TokenType::identifier).token.value;
+		const auto& declarator = node.get_child_with_type(TokenType::declarator);
+		const auto& direct_declarator = declarator.get_child_with_type(TokenType::direct_declarator);
+
+		const auto& identifier = direct_declarator.get_child_with_type(TokenType::identifier).token.value;
 
 		int num_pointer = 0;
-		if (node.contains_child_with_type(TokenType::pointer)) {
-			const auto& ptr_node = node.get_child_with_type(TokenType::pointer);
+		if (declarator.contains_child_with_type(TokenType::pointer)) {
+			const auto& ptr_node = declarator.get_child_with_type(TokenType::pointer);
 			num_pointer = static_cast<int>(ptr_node.children.size());
+		}
+
+		std::vector<int> array_sizes;
+		if (direct_declarator.contains_child_with_type(TokenType::open_square_bracket)) {
+			// Then this is an array declaration
+			// TODO assume for now that there is only ever one dimension
+			int array_size = std::stoi(direct_declarator.get_child_with_type(TokenType::constant).token.value);
+			if (array_size > 0xFFFF) {
+				throw std::logic_error("array size out of range");
+			}
+			array_sizes.push_back(array_size);
 		}
 
 		Abstract_Declarator abstract_declarator;
 		abstract_declarator.num_pointers = num_pointer;
+		abstract_declarator.array_sizes = array_sizes;
 		// TODO be able to parse nested declarators and arrays
 
 		auto variable = std::make_shared<Variable>();

@@ -105,10 +105,24 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::init_declarator,
 		{
-			{{TokenType::pointer, TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized pointer
-			{{TokenType::pointer, TokenType::identifier}, {}}, // non initialized pointer
-			{{TokenType::identifier, TokenType::equals, TokenType::expression}, {}}, // initialized
-			{{TokenType::identifier}, {}}, // non initialized
+			{{TokenType::declarator, TokenType::equals, TokenType::expression}, {}},
+			{{TokenType::declarator}, {}},
+		}
+	},
+	{TokenType::declarator,
+		{
+			{{TokenType::pointer, TokenType::direct_declarator}, {}},
+			{{TokenType::direct_declarator}, {}},
+		}
+	},
+	{TokenType::direct_declarator,
+		{
+			{{TokenType::identifier}, TokenType::direct_declarator_tail}, // var/pointer
+		}
+	},
+	{TokenType::direct_declarator_tail,
+		{
+			{{TokenType::open_square_bracket, TokenType::constant, TokenType::close_square_bracket}, {}}, // technically should be const expression
 		}
 	},
 	{TokenType::pointer,
@@ -301,7 +315,6 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 		{
 			{{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth}, {}},
 			{{TokenType::function_call}, {}},
-			{{TokenType::identifier}, {}},
 			{{TokenType::unary_expression}, {}},
 			{{TokenType::constant}, {}},
 		}
@@ -329,6 +342,7 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 			{{TokenType::exclam, TokenType::factor}, {}},
 			{{TokenType::ampersand, TokenType::identifier}, {}},
 			{{TokenType::star, TokenType::identifier}, {}},
+			{{TokenType::identifier, TokenType::open_square_bracket, TokenType::expression, TokenType::close_square_bracket}, {}},
 			{{TokenType::identifier}, {}},
 		}
 	},

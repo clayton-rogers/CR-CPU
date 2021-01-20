@@ -41,9 +41,6 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 	if (declarator.num_pointers != 0) {
 		broad_type = Broad_Type::POINTER;
 		size = PTR_SIZE;
-	} else if (declarator.array_sizes.size() != 0) {
-		broad_type = Broad_Type::ARRAY;
-		size = PTR_SIZE;
 	} else if (specifier_type == Specifiers::STRUCT) {
 		broad_type = Broad_Type::STRUCT;
 		size = calc_struct_size(specifiers);
@@ -56,9 +53,15 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 		} else {
 			throw std::logic_error("Got integral type other than int or void");
 		}
+
+		if (declarator.array_sizes.size() != 0) {
+			broad_type = Broad_Type::ARRAY;
+			for (const auto& array_size : declarator.array_sizes) {
+				size = size * array_size;
+			}
+		}
 	}
 }
-
 
 bool operator==(const Declaration_Specifier& a, const Declaration_Specifier& b) {
 	if (a.specifier_list.size() != b.specifier_list.size()) {

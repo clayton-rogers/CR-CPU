@@ -228,14 +228,14 @@ namespace AST {
 		if (!symbol_exists) {
 			Global_Symbol s;
 			s.name = new_function->get_name();
-			s.type = Global_Symbol::Type::FUNCTION;
+			s.type = Global_Symbol::Global_Symbol_Type::FUNCTION;
 			s.function = new_function;
 			global_symbol_table.push_back(s);
 			return;
 		}
 
 		// Check that we don't already have a global var by the same name
-		if (symbol_exists && existing_symbol->type == Global_Symbol::Type::VARIABLE) {
+		if (symbol_exists && existing_symbol->type == Global_Symbol::Global_Symbol_Type::VARIABLE) {
 			throw std::logic_error("Redeclaration of symbol: " + existing_symbol->name);
 		}
 
@@ -264,7 +264,7 @@ namespace AST {
 		const std::string& name = declaration.variable->identifier;
 		
 		// global vars may not have the same name as functions
-		if (var_already_exists && existing_symbol->type == Global_Symbol::Type::FUNCTION) {
+		if (var_already_exists && existing_symbol->type == Global_Symbol::Global_Symbol_Type::FUNCTION) {
 			throw std::logic_error("Tried to declare a global var with same name as function");
 		}
 
@@ -281,7 +281,7 @@ namespace AST {
 			// If var doesn't exist then just create a new global symbol for it
 			Global_Symbol s;
 			s.name = name;
-			s.type = Global_Symbol::Type::VARIABLE;
+			s.type = Global_Symbol::Global_Symbol_Type::VARIABLE;
 			s.static_var = Static_Var{ declaration };
 			global_symbol_table.push_back(s);
 		}
@@ -290,7 +290,7 @@ namespace AST {
 	std::shared_ptr<Variable> Environment::get_static_var(const std::string& name) {
 
 		auto symbol = get_declared_symbol_with_name(name);
-		if (symbol != nullptr && symbol->type == Global_Symbol::Type::VARIABLE) {
+		if (symbol != nullptr && symbol->type == Global_Symbol::Global_Symbol_Type::VARIABLE) {
 			return symbol->static_var.declaration.variable;
 		}
 
