@@ -77,7 +77,7 @@ int pointers_to_array() {
 	// into pointer to first member,
 	// but currently you have to manually,
 	// take the ref.
-	int * b = &a;
+	int * b = a;
 	b = b + 5;
 
 	return *b == 37;

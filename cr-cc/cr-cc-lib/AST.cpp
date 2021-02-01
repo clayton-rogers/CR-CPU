@@ -101,18 +101,27 @@ namespace AST {
 		if (is_fn_defined) {
 			// Note this must be kept in line with Function::generate_code()
 			if (arguments.size() >= 1) {
-				scope->create_stack_var_at_offset(0, arguments.at(0).name);
+				scope->create_stack_var_at_offset(
+					0,
+					arguments.at(0).name,
+					arguments.at(0).type);
 			} else {
-				scope->create_stack_var_at_offset(0, "__saved_ra");
+				scope->create_stack_var_at_offset(0, "__saved_ra", INT_TYPE);
 			}
 			if (arguments.size() >= 2) {
-				scope->create_stack_var_at_offset(1, arguments.at(1).name);
+				scope->create_stack_var_at_offset(
+					1,
+					arguments.at(1).name,
+					arguments.at(1).type);
 			} else {
-				scope->create_stack_var_at_offset(1, "__saved_rb");
+				scope->create_stack_var_at_offset(1, "__saved_rb", INT_TYPE);
 			}
-			scope->create_stack_var_at_offset(2, "__return_addr");
+			scope->create_stack_var_at_offset(2, "__return_addr", INT_TYPE);
 			for (std::size_t arg_index = 2; arg_index < arguments.size(); ++arg_index) {
-				scope->create_stack_var_at_offset(static_cast<int>(arg_index) + 1, arguments.at(arg_index).name);
+				scope->create_stack_var_at_offset(
+					static_cast<int>(arg_index) + 1,
+					arguments.at(arg_index).name,
+					arguments.at(arg_index).type);
 			}
 
 			contents = std::make_shared<Compount_Statement>(actual_node.get_child_with_type(TokenType::compound_statement), scope);
@@ -185,6 +194,7 @@ namespace AST {
 		Var v;
 		v.is_declared = false;
 		v.offset = -size; // once all args are incremented, this will be zero
+		v.type = declaration.variable->type;
 		scopes.at(current_scope).offset_map[name] = v;
 
 		increment_all_vars(size);
@@ -198,7 +208,7 @@ namespace AST {
 		}
 	}
 
-	void VarMap::create_stack_var_at_offset(int offset, const std::string& name) {
+	void VarMap::create_stack_var_at_offset(int offset, const std::string& name, std::shared_ptr<Type> type) {
 		// Double check that the var doesn't exist already
 		if (scopes.at(current_scope).offset_map.count(name) == 1) {
 			throw std::logic_error("Duplicate var with name: " + name);
@@ -207,6 +217,7 @@ namespace AST {
 		Var v;
 		v.is_declared = true;
 		v.offset = offset;
+		v.type = type;
 		scopes.at(current_scope).offset_map[name] = v;
 	}
 

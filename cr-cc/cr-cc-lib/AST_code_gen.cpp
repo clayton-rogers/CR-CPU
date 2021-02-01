@@ -635,7 +635,18 @@ namespace AST {
 		return ss.str();
 	}
 
-	int VarMap::get_var_offset(const std::string& name, Scope_Id* found_id) {
+	int VarMap::get_stack_var_offset(const std::string& name) {
+
+		const Var* var = get_stack_var(name);
+		if (var != nullptr) {
+			return var->offset + stack_offset;
+		} else {
+			throw std::logic_error("Tried to get the offset of a non-existant stack var");
+		}
+
+	}
+
+	VarMap::Scope_Id VarMap::get_stack_var_scope_id(const std::string& name) {
 		Scope_Id id = current_scope;
 		while (id != NULL_SCOPE) {
 			// Only catch vars that exist at the current or parents scopes
@@ -643,24 +654,37 @@ namespace AST {
 			if (scopes.at(id).offset_map.count(name) == 1 &&
 				scopes.at(id).offset_map.at(name).is_declared == true) {
 
-				*found_id = id;
-				return scopes.at(id).offset_map.at(name).offset + stack_offset;
+				return id;
 			}
-			id = scopes.at(id).parent;
 		}
 
 		// if we got this far then we did not find the var
-		*found_id = MAGIC_NO_SCOPE;
-		return 0; // return value doesn't matter
+		return MAGIC_NO_SCOPE;
+	}
+
+	const VarMap::Var* VarMap::get_stack_var(const std::string& name) {
+		Scope_Id id = current_scope;
+		while (id != NULL_SCOPE) {
+			// Only catch vars that exist at the current or parents scopes
+			// and which have been declared
+			if (scopes.at(id).offset_map.count(name) == 1 &&
+				scopes.at(id).offset_map.at(name).is_declared == true) {
+
+				return &scopes.at(id).offset_map.at(name);
+			}
+		}
+
+		// if we got this far then we did not find the var
+		return nullptr;
 	}
 
 	std::string VarMap::store_word(const std::string& name, const std::string& source_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				return "store.sp " + source_reg + ", " + output_signed_byte(offset) +
 					" # store " + name + "_" + std::to_string(id) + "\n";
 			}
@@ -680,12 +704,12 @@ namespace AST {
 	}
 
 	std::string VarMap::load_word(const std::string& name, const std::string& dest_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				return "load.sp " + dest_reg + ", " + output_signed_byte(offset) +
 					" # load " + name + "_" + std::to_string(id) + "\n";
 			}
@@ -705,11 +729,11 @@ namespace AST {
 	}
 
 	std::string VarMap::load_address(const std::string& name, const std::string& dest_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
+			int offset = get_stack_var_offset(name);
 			if (id != MAGIC_NO_SCOPE) {
 				if (offset > 0xFF) {
 					throw std::logic_error("When getting address of " + name + " offset was out of range");
@@ -732,6 +756,38 @@ namespace AST {
 
 		// If we've got this far then the var doesn't exist
 		throw std::logic_error("Tried to get address of unknown var: " + name);
+	}
+
+	bool VarMap::is_var_array(const std::string& name) {
+
+		// Try for stack var
+		{
+			const Var* var = get_stack_var(name);
+			if (var != nullptr) {
+				return var->type->get_broad_type() == Broad_Type::ARRAY;
+			}
+		}
+
+		// If we get this far, try static var
+		{
+			throw std::logic_error("unfinised code");
+		}
+	}
+
+	bool VarMap::is_var_ptr(const std::string& name) {
+
+		// Try for stack var
+		{
+			const Var* var = get_stack_var(name);
+			if (var != nullptr) {
+				return var->type->get_broad_type() == Broad_Type::POINTER;
+			}
+		}
+
+		// If we get this far, try static var
+		{
+			throw std::logic_error("unfinised code");
+		}
 	}
 
 	std::string If_Statement::generate_code() const {
