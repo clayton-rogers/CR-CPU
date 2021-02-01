@@ -770,8 +770,13 @@ namespace AST {
 
 		// If we get this far, try static var
 		{
-			throw std::logic_error("unfinised code");
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return static_var->type->get_broad_type() == Broad_Type::ARRAY;
+			}
 		}
+
+		throw std::logic_error("Tried to get the array status of an unknown var: " + name);
 	}
 
 	bool VarMap::is_var_ptr(const std::string& name) {
@@ -786,8 +791,13 @@ namespace AST {
 
 		// If we get this far, try static var
 		{
-			throw std::logic_error("unfinised code");
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return static_var->type->get_broad_type() == Broad_Type::POINTER;
+			}
 		}
+
+		throw std::logic_error("Tried to get the pointer status of an unknown var: " + name);
 	}
 
 	std::string If_Statement::generate_code() const {
