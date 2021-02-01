@@ -75,6 +75,8 @@ Symbol_Type from_stream(Stream_Type_Iterator& s) {
 		return Symbol_Type::FUNCTION;
 	case 1:
 		return Symbol_Type::VARIABLE;
+	case 2:
+		return Symbol_Type::DATA;
 	default:
 		throw std::logic_error("Invalid conversion to Symbol type from " + std::to_string(value));
 	}

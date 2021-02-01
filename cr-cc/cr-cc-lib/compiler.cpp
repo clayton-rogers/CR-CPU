@@ -13,6 +13,7 @@
 #include <vector>
 #include <locale>
 #include <stdexcept>
+#include <algorithm>
 
 
 static const int RAM_SIZE_WORDS = 4096;
@@ -47,6 +48,53 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 		throw std::logic_error("Cannot handle file with extension: " + file_extension);
 	}
 
+}
+
+static void print_function_names(const Object::Object_Container& obj) {
+
+	struct Symbol {
+		int offset;
+		std::string name;
+	};
+
+	std::vector<Symbol> symbols;
+
+	// Add all symbols to the map, sorting them
+	const auto& exported_symbols = std::get<Object::Object_Type>(obj.contents).exported_symbols;
+	if (exported_symbols.size() == 0) { return; }
+	for (const auto& symb : exported_symbols) {
+		const auto type = symb.type;
+		if (type == Object::Symbol_Type::FUNCTION) {
+			symbols.push_back({ symb.offset, symb.name });
+		} else if (type == Object::Symbol_Type::DATA) {
+			symbols.push_back({ symb.offset, " Static Data" });
+		}
+	}
+
+	// Sort them by name
+	std::sort(symbols.begin(), symbols.end(),
+		[](Symbol a, Symbol b) {
+			return a.name < b.name;
+		});
+
+	// Output the size of the symbols
+	// Starting at the symbol localtion, look for the next ret instruction or end of code
+	// This assumes that all functions will only have a single ret.
+	const auto& machine_code = std::get<Object::Object_Type>(obj.contents).machine_code;
+	std::uint16_t ret_opcode = 0xC100;
+	int total = 0;
+	std::cout << std::endl;
+	for (const auto& symb : symbols) {
+		int ptr = symb.offset;
+		while (ptr < machine_code.size() && machine_code.at(ptr) != ret_opcode) {
+			++ptr;
+		}
+
+		const int size = (ptr - symb.offset);
+		total += size;
+		std::cout << symb.name << " - " << size << " words" << std::endl;
+	}
+	std::cout << " Total: " << total << std::endl;
 }
 
 int compile(Compiler_Options opt) {
@@ -102,6 +150,12 @@ int compile(Compiler_Options opt) {
 					const auto object = std::get<Object::Object_Type>(container.contents);
 					std::cout << "Code size: " << object.machine_code.size() << std::endl;
 				}
+			}
+		}
+
+		if (opt.function_size) {
+			for (const auto& obj : objs) {
+				print_function_names(obj);
 			}
 		}
 

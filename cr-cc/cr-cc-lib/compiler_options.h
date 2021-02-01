@@ -6,6 +6,7 @@ struct Compiler_Options {
 	static const std::string DEFAULT_OUTPUT_FILENAME;
 
 	bool verbose = false;
+	bool function_size = false;
 	bool should_sim = false;
 	bool compile_only = false;
 	bool include_main = true;

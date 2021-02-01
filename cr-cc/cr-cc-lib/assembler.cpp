@@ -990,6 +990,7 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 	}();
 
 	// Add contents of data section
+	const auto start_of_static_data = machine_code.size();
 	machine_code.resize(machine_code.size() + size_of_data);
 	for (const auto& var : as->data_label_map) {
 		Data_Label label = var.second;
@@ -1001,6 +1002,16 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 			}
 			machine_code.at(static_cast<size_t>(label.offset) + i) = static_cast<uint16_t>(value);
 		}
+	}
+
+	// Add symbol for start of static data
+	auto& exported_symbols = std::get<Object_Type>(as->out.contents).exported_symbols;
+	if (size_of_data != 0) {
+		Exported_Symbol sym;
+		sym.name = "__static_data";
+		sym.offset = static_cast<std::uint16_t>(start_of_static_data);
+		sym.type = Symbol_Type::DATA;
+		exported_symbols.push_back(sym);
 	}
 
 	// Add all external references to the object

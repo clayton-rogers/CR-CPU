@@ -42,12 +42,15 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
 				"  --map                 Also output in map format\n"
 				"  -I<dir>               Add dir to the list of paths searched for includes\n"
+				"  --function-size       Prints the compiled size of each function\n"
 				<< std::endl;
 
 			opt.should_exit = true;
 			return opt;
 		} else if ("-v" == arg || "--verbose" == arg) {
 			opt.verbose = true;
+		} else if ("--function-size" == arg) {
+			opt.function_size = true;
 		} else if ("-o" == arg) {
 			opt.output_filename = args.at(++i);
 		} else if ("-c" == arg) {

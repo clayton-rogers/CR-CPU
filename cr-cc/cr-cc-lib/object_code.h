@@ -18,6 +18,7 @@ namespace Object {
 	enum class Symbol_Type {
 		FUNCTION,
 		VARIABLE,
+		DATA,
 	};
 
 	struct External_Reference {
