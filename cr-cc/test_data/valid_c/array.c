@@ -72,12 +72,7 @@ int pointers_to_array() {
 		a[i] = 32 + i;
 	}
 
-	// TODO this is actually a quirk,
-	// arrays references should decay
-	// into pointer to first member,
-	// but currently you have to manually,
-	// take the ref.
-	int * b = &a;
+	int * b = a;
 	b = b + 5;
 
 	return *b == 37;

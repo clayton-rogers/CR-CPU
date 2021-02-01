@@ -585,13 +585,25 @@ namespace AST {
 
 		// Result is now in ra, store in memory location
 		if (is_pointer) {
+			// This is a deref on the LHS, verify this is actually a ptr
+			// ex: *a = <exp>
+			if (!scope->is_var_ptr(var_name)) {
+				throw std::logic_error("Tried to assign to something as a pointer which was not a pointer: " + var_name);
+			}
 			ss << scope->load_word(var_name, "rp");
 			ss << "store.rp ra, 0x00 # store through pointer\n";
 		} else if (is_array) {
 			// Need to calculate the array offset
+			// ex: a[<array_index_exp>] = <exp>
 			ss << scope->push_reg("ra") + " # push result while we calc the array offset\n";
 			ss << array_index_exp->generate_code();
-			ss << scope->load_address(var_name, "rp");
+			if (scope->is_var_array(var_name)) {
+				ss << scope->load_address(var_name, "rp");
+			} else if (scope->is_var_ptr(var_name)) {
+				ss << scope->load_word(var_name, "rp");
+			} else {
+				throw std::logic_error("Tried to assign to something as an array which was neither array or pointer: " + var_name);
+			}
 			ss << "add rp, ra # calculate final array offset\n";
 			ss << scope->pop_reg("ra") + " # get back expression\n";
 			ss << "store.rp ra, 0x00 # store through array\n";
@@ -618,13 +630,26 @@ namespace AST {
 			break;
 		case Variable_Type::direct:
 			// Emit instruction to load var directly into ra
-			ss << scope->load_word(var_name, "ra");
+			if (scope->is_var_array(var_name)) {
+				// Array decays into point to first element
+				ss << scope->load_address(var_name, "ra");
+			} else {
+				ss << scope->load_word(var_name, "ra");
+			}
 			break;
 		case Variable_Type::array:
 			// Calculate the offset, then get the dereference
 			ss << array_index->generate_code();
 			ss << "mov rp, ra # move array offset to ptr reg\n";
-			ss << scope->load_address(var_name, "ra");
+			if (scope->is_var_ptr(var_name)) {
+				// Use ptr contents directly
+				ss << scope->load_word(var_name, "ra");
+			} else if (scope->is_var_array(var_name)) {
+				// Array turns into pointer
+				ss << scope->load_address(var_name, "ra");
+			} else {
+				throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
+			}
 			ss << "add rp, ra # calculate final array addr\n";
 			ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
 			break;
@@ -635,7 +660,18 @@ namespace AST {
 		return ss.str();
 	}
 
-	int VarMap::get_var_offset(const std::string& name, Scope_Id* found_id) {
+	int VarMap::get_stack_var_offset(const std::string& name) {
+
+		const Var* var = get_stack_var(name);
+		if (var != nullptr) {
+			return var->offset + stack_offset;
+		} else {
+			throw std::logic_error("Tried to get the offset of a non-existant stack var: " + name);
+		}
+
+	}
+
+	VarMap::Scope_Id VarMap::get_stack_var_scope_id(const std::string& name) {
 		Scope_Id id = current_scope;
 		while (id != NULL_SCOPE) {
 			// Only catch vars that exist at the current or parents scopes
@@ -643,24 +679,39 @@ namespace AST {
 			if (scopes.at(id).offset_map.count(name) == 1 &&
 				scopes.at(id).offset_map.at(name).is_declared == true) {
 
-				*found_id = id;
-				return scopes.at(id).offset_map.at(name).offset + stack_offset;
+				return id;
 			}
 			id = scopes.at(id).parent;
 		}
 
 		// if we got this far then we did not find the var
-		*found_id = MAGIC_NO_SCOPE;
-		return 0; // return value doesn't matter
+		return MAGIC_NO_SCOPE;
+	}
+
+	const VarMap::Var* VarMap::get_stack_var(const std::string& name) {
+		Scope_Id id = current_scope;
+		while (id != NULL_SCOPE) {
+			// Only catch vars that exist at the current or parents scopes
+			// and which have been declared
+			if (scopes.at(id).offset_map.count(name) == 1 &&
+				scopes.at(id).offset_map.at(name).is_declared == true) {
+
+				return &scopes.at(id).offset_map.at(name);
+			}
+			id = scopes.at(id).parent;
+		}
+
+		// if we got this far then we did not find the var
+		return nullptr;
 	}
 
 	std::string VarMap::store_word(const std::string& name, const std::string& source_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				return "store.sp " + source_reg + ", " + output_signed_byte(offset) +
 					" # store " + name + "_" + std::to_string(id) + "\n";
 			}
@@ -680,12 +731,12 @@ namespace AST {
 	}
 
 	std::string VarMap::load_word(const std::string& name, const std::string& dest_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				return "load.sp " + dest_reg + ", " + output_signed_byte(offset) +
 					" # load " + name + "_" + std::to_string(id) + "\n";
 			}
@@ -705,12 +756,12 @@ namespace AST {
 	}
 
 	std::string VarMap::load_address(const std::string& name, const std::string& dest_reg) {
-		Scope_Id id;
 
 		// Try for stack var first
 		{
-			int offset = get_var_offset(name, &id);
+			Scope_Id id = get_stack_var_scope_id(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				if (offset > 0xFF) {
 					throw std::logic_error("When getting address of " + name + " offset was out of range");
 				}
@@ -732,6 +783,48 @@ namespace AST {
 
 		// If we've got this far then the var doesn't exist
 		throw std::logic_error("Tried to get address of unknown var: " + name);
+	}
+
+	bool VarMap::is_var_array(const std::string& name) {
+
+		// Try for stack var
+		{
+			const Var* var = get_stack_var(name);
+			if (var != nullptr) {
+				return var->type->get_broad_type() == Broad_Type::ARRAY;
+			}
+		}
+
+		// If we get this far, try static var
+		{
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return static_var->type->get_broad_type() == Broad_Type::ARRAY;
+			}
+		}
+
+		throw std::logic_error("Tried to get the array status of an unknown var: " + name);
+	}
+
+	bool VarMap::is_var_ptr(const std::string& name) {
+
+		// Try for stack var
+		{
+			const Var* var = get_stack_var(name);
+			if (var != nullptr) {
+				return var->type->get_broad_type() == Broad_Type::POINTER;
+			}
+		}
+
+		// If we get this far, try static var
+		{
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return static_var->type->get_broad_type() == Broad_Type::POINTER;
+			}
+		}
+
+		throw std::logic_error("Tried to get the pointer status of an unknown var: " + name);
 	}
 
 	std::string If_Statement::generate_code() const {

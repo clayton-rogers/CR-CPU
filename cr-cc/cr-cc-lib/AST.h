@@ -66,12 +66,15 @@ namespace AST {
 		void set_current_scope(Scope_Id scope);
 
 		void create_stack_var(const Declaration& declaration);
-		void create_stack_var_at_offset(int offset, const std::string& name);
+		void create_stack_var_at_offset(int offset, const std::string& name, std::shared_ptr<Type> type);
 		void declare_var(const std::string& name);
 
 		std::string store_word(const std::string& name, const std::string& source_reg);
 		std::string load_word(const std::string& name, const std::string& dest_reg);
 		std::string load_address(const std::string& name, const std::string& dest_reg);
+
+		bool is_var_array(const std::string& name);
+		bool is_var_ptr(const std::string& name);
 
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
@@ -104,6 +107,7 @@ namespace AST {
 		struct Var {
 			int offset = 0;
 			bool is_declared = false;
+			std::shared_ptr<Type> type;
 		};
 		struct Scope {
 			Scope_Id parent;
@@ -119,7 +123,9 @@ namespace AST {
 		int stack_offset = 0;// size of temporaries
 
 		void increment_all_vars(int offset);
-		int get_var_offset(const std::string& name, Scope_Id* found_id);
+		int get_stack_var_offset(const std::string& name);
+		const Var* get_stack_var(const std::string& name);
+		Scope_Id get_stack_var_scope_id(const std::string& name);
 	};
 
 	class Expression : public Compilable {
