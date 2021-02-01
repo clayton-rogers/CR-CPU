@@ -27,7 +27,7 @@ int pointer_to_static() {
 
 int assign_through_pointer() {
 	int var = 11;
-	int ptr = &var;
+	int * ptr = &var;
 
 	*ptr = 14;
 
@@ -36,7 +36,7 @@ int assign_through_pointer() {
 
 int assign_to_static_var_through_pointer() {
 	static_var = 13;
-	int ptr = &static_var;
+	int * ptr = &static_var;
 
 	*ptr = 14;
 
@@ -45,8 +45,8 @@ int assign_to_static_var_through_pointer() {
 
 int comparison_of_pointers() {
 	int a = 3213;
-	int ptr_a = &a;
-	int ptr_b = &a;
+	int * ptr_a = &a;
+	int * ptr_b = &a;
 
 	return ptr_a == ptr_b;
 }

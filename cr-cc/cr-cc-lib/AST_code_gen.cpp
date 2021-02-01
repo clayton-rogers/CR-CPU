@@ -585,13 +585,25 @@ namespace AST {
 
 		// Result is now in ra, store in memory location
 		if (is_pointer) {
+			// This is a deref on the LHS, verify this is actually a ptr
+			// ex: *a = <exp>
+			if (!scope->is_var_ptr(var_name)) {
+				throw std::logic_error("Tried to assign to something as a pointer which was not a pointer: " + var_name);
+			}
 			ss << scope->load_word(var_name, "rp");
 			ss << "store.rp ra, 0x00 # store through pointer\n";
 		} else if (is_array) {
 			// Need to calculate the array offset
+			// ex: a[<array_index_exp>] = <exp>
 			ss << scope->push_reg("ra") + " # push result while we calc the array offset\n";
 			ss << array_index_exp->generate_code();
-			ss << scope->load_address(var_name, "rp");
+			if (scope->is_var_array(var_name)) {
+				ss << scope->load_address(var_name, "rp");
+			} else if (scope->is_var_ptr(var_name)) {
+				ss << scope->load_word(var_name, "rp");
+			} else {
+				throw std::logic_error("Tried to assign to something as an array which was neither array or pointer: " + var_name);
+			}
 			ss << "add rp, ra # calculate final array offset\n";
 			ss << scope->pop_reg("ra") + " # get back expression\n";
 			ss << "store.rp ra, 0x00 # store through array\n";
@@ -618,13 +630,26 @@ namespace AST {
 			break;
 		case Variable_Type::direct:
 			// Emit instruction to load var directly into ra
-			ss << scope->load_word(var_name, "ra");
+			if (scope->is_var_array(var_name)) {
+				// Array decays into point to first element
+				ss << scope->load_address(var_name, "ra");
+			} else {
+				ss << scope->load_word(var_name, "ra");
+			}
 			break;
 		case Variable_Type::array:
 			// Calculate the offset, then get the dereference
 			ss << array_index->generate_code();
 			ss << "mov rp, ra # move array offset to ptr reg\n";
-			ss << scope->load_address(var_name, "ra");
+			if (scope->is_var_ptr(var_name)) {
+				// Use ptr contents directly
+				ss << scope->load_word(var_name, "ra");
+			} else if (scope->is_var_array(var_name)) {
+				// Array turns into pointer
+				ss << scope->load_address(var_name, "ra");
+			} else {
+				throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
+			}
 			ss << "add rp, ra # calculate final array addr\n";
 			ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
 			break;
@@ -641,7 +666,7 @@ namespace AST {
 		if (var != nullptr) {
 			return var->offset + stack_offset;
 		} else {
-			throw std::logic_error("Tried to get the offset of a non-existant stack var");
+			throw std::logic_error("Tried to get the offset of a non-existant stack var: " + name);
 		}
 
 	}
@@ -656,6 +681,7 @@ namespace AST {
 
 				return id;
 			}
+			id = scopes.at(id).parent;
 		}
 
 		// if we got this far then we did not find the var
@@ -672,6 +698,7 @@ namespace AST {
 
 				return &scopes.at(id).offset_map.at(name);
 			}
+			id = scopes.at(id).parent;
 		}
 
 		// if we got this far then we did not find the var
@@ -733,8 +760,8 @@ namespace AST {
 		// Try for stack var first
 		{
 			Scope_Id id = get_stack_var_scope_id(name);
-			int offset = get_stack_var_offset(name);
 			if (id != MAGIC_NO_SCOPE) {
+				int offset = get_stack_var_offset(name);
 				if (offset > 0xFF) {
 					throw std::logic_error("When getting address of " + name + " offset was out of range");
 				}
