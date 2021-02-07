@@ -86,7 +86,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << std::endl;
 	for (const auto& symb : symbols) {
 		int ptr = symb.offset;
-		while (ptr < machine_code.size() && machine_code.at(ptr) != ret_opcode) {
+		while (ptr < static_cast<int>(machine_code.size()) && machine_code.at(ptr) != ret_opcode) {
 			++ptr;
 		}
 
