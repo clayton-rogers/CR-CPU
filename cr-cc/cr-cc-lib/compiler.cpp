@@ -97,6 +97,54 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
+void handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const FileReader& f) {
+
+	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
+
+	if (opt.output_map) {
+		const auto map = to_map(exe);
+		const auto map_stream = map.to_stream();
+		const auto map_filename = opt.output_filename + ".map";
+		write_bin_file(map_filename, map_stream);
+	}
+	if (opt.output_hex) {
+		write_file(opt.output_filename + ".hex", machine_inst_to_hex(machine_code));
+	}
+	if (opt.output_srec) {
+		auto srec = exe_to_srec(exe);
+		write_file(opt.output_filename + ".srec", srec);
+
+		if (opt.output_srec_stdout) {
+			std::cout << "\n" << srec << std::endl;
+		}
+	}
+
+	if (opt.verbose) {
+		std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
+			<< " (" << std::fixed << std::setprecision(2)
+			<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
+			<< std::endl;
+	}
+
+	if (opt.should_sim) {
+
+		auto program_loader_o = compile_tu("program_loader.s", f);
+		auto program_loader_exe = link({ program_loader_o }, 0);
+
+		Simulator sim;
+		sim.load(program_loader_exe);
+		sim.load(exe);
+		sim.run_until_halted(opt.sim_steps);
+
+		std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
+			<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
+		std::cout << "PC: 0x" << std::hex << sim.get_state().pc
+			<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
+		std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
+		std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (opt.sim_steps - sim.get_state().steps_remaining) << std::endl;
+	}
+}
+
 int compile(Compiler_Options opt) {
 	if (opt.should_exit) {
 		return 1;
@@ -106,39 +154,53 @@ int compile(Compiler_Options opt) {
 		return 1;
 	}
 
-	try {
-		FileReader f;
-		// FileReader defaults to including the current directory
-		// Next add all user defined directories
-		for (const auto& include_path : opt.include_paths) {
-			f.add_directory(include_path);
+	FileReader filereader_user;
+	FileReader filereader_stdlib;
+	// FileReader defaults to including the current directory
+	// Next add all user defined directories
+	for (const auto& include_path : opt.include_paths) {
+		filereader_user.add_directory(include_path);
+	}
+	// Finally add stdlib path last so it's checked last
+	if (opt.include_stdlib) {
+		auto stdlib_path = std::getenv(STDLIB_ENV_VAR);
+		if (stdlib_path) {
+			filereader_user.add_directory(std::string(stdlib_path));
+			filereader_stdlib.add_directory(std::string(stdlib_path));
+		} else {
+			throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
 		}
-		// Finally add stdlib path last so it's checked last
-		if (opt.include_stdlib) {
-			auto stdlib_path = std::getenv(STDLIB_ENV_VAR);
-			if (stdlib_path) {
-				f.add_directory(std::string(stdlib_path));
-			} else {
-				throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
-			}
-		}
+	}
 
+	if (opt.filenames.size() == 1 &&
+		get_file_extension(opt.filenames.at(0)) == "bin") {
+
+		const auto stream = filereader_stdlib.read_bin_file_from_directories(opt.filenames.at(0));
+		auto exe = Object::Object_Container::from_stream(stream);
+
+		handle_exe(exe, opt, filereader_stdlib);
+
+		return 0;
+	}
+
+	// If the input is not a bin file, then assume this is actually a file(s) that need compiling/link
+	try {
 		std::vector<Object::Object_Container> objs;
 
 		if (opt.include_main) {
-			auto container = compile_tu("main.s", f);
+			auto container = compile_tu("main.s", filereader_stdlib);
 			objs.push_back(container);
 		}
 
 		for (const auto& filename : opt.filenames) {
 
 			if (get_file_extension(filename) == "c" && opt.output_assembly) {
-				const auto assembly = c_to_asm(filename, f);
+				const auto assembly = c_to_asm(filename, filereader_user);
 				const auto asm_filename = get_base_filename(filename) + ".s";
 				write_file(asm_filename, assembly);
 			}
 
-			const auto container = compile_tu(filename, f);
+			const auto container = compile_tu(filename, filereader_user);
 			objs.push_back(container);
 
 			if (opt.compile_only) {
@@ -172,54 +234,19 @@ int compile(Compiler_Options opt) {
 
 		// Automatically link with stdlib
 		{
-			auto stream = f.read_bin_file_from_directories("stdlib.a");
+			auto stream = filereader_user.read_bin_file_from_directories("stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 			objs.push_back(stdlib);
 		}
 
 		auto exe = link(std::move(objs), opt.link_address);
-
-		const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
-
 		{
 			auto stream = exe.to_stream();
 			write_bin_file(opt.output_filename + ".bin", stream);
 		}
-		if (opt.output_map) {
-			const auto map = to_map(exe);
-			const auto map_stream = map.to_stream();
-			const auto map_filename = opt.output_filename + ".map";
-			write_bin_file(map_filename, map_stream);
-		}
-		write_file(opt.output_filename + ".hex", machine_inst_to_hex(machine_code));
-		auto srec = exe_to_srec(exe);
-		write_file(opt.output_filename + ".srec", srec);
 
-		if (opt.verbose) {
-			std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
-				<< " (" << std::fixed << std::setprecision(2)
-				<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
-				<< std::endl;
-
-			std::cout << "\n" << srec;
-		}
-
-		if (opt.should_sim) {
-			auto program_loader_o = compile_tu("program_loader.s", f);
-			auto program_loader_exe = link({ program_loader_o }, 0);
-
-			Simulator sim;
-			sim.load(program_loader_exe);
-			sim.load(exe);
-			sim.run_until_halted(opt.sim_steps);
-
-			std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
-				<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
-			std::cout << "PC: 0x" << std::hex << sim.get_state().pc
-				<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
-			std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
-			std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (opt.sim_steps - sim.get_state().steps_remaining) << std::endl;
-		}
+		// Handle any outputs and simulation
+		handle_exe(exe, opt, filereader_stdlib);
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors

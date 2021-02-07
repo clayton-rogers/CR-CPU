@@ -41,6 +41,9 @@ Compiler_Options parse_args(int arc, char** argv) {
 				"  --no-stdlib           When linking, do not include stdlib, also does not include stdlib headers\n"
 				"  --link-addr <number>  Relocates the program to run at the given address\n"
 				"  --map                 Also output in map format\n"
+				"  --hex                 Also output in hex format\n"
+				"  --srec                Also output in srec format\n"
+				"  --srec-stdout         Also output srec to stdout (implies --srec)\n"
 				"  -I<dir>               Add dir to the list of paths searched for includes\n"
 				"  --function-size       Prints the compiled size of each function\n"
 				<< std::endl;
@@ -68,6 +71,13 @@ Compiler_Options parse_args(int arc, char** argv) {
 			opt.link_address = std::stoi(args.at(++i), nullptr, 0);
 		} else if ("--map" == arg) {
 			opt.output_map = true;
+		} else if ("--hex" == arg) {
+			opt.output_hex = true;
+		} else if ("--srec" == arg) {
+			opt.output_srec = true;
+		} else if ("--srec-stdout" == arg) {
+			opt.output_srec = true;
+			opt.output_srec_stdout = true;
 		} else if ("-S" == arg) {
 			opt.output_assembly = true;
 		} else if ("--lib" == arg) {

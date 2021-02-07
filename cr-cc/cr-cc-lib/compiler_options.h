@@ -14,6 +14,9 @@ struct Compiler_Options {
 	bool should_exit = false;
 	bool output_lib = false;
 	bool output_map = false;
+	bool output_hex = false;
+	bool output_srec = false;
+	bool output_srec_stdout = false;
 	bool output_assembly = false;
 	int link_address = 0x200;
 	std::vector<std::string> filenames;
