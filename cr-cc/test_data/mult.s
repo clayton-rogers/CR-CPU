@@ -2,8 +2,6 @@
 .constant 0x8200 TIMER_OFFSET
 .constant 0x8300 UART_OFFSET
 
-.text_offset 0x200
-
 .static 3 data 0xA1 0x07 0x33
 
 .main:

@@ -92,7 +92,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 
 		const int size = (ptr - symb.offset);
 		total += size;
-		std::cout << symb.name << " - " << size << " words" << std::endl;
+		std::cout << symb.name << ": " << size << " words" << std::endl;
 	}
 	std::cout << " Total: " << total << std::endl;
 }
