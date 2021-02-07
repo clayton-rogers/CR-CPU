@@ -13,12 +13,7 @@
 
 class Simulator {
 public:
-	Simulator()
-		: bus(std::make_shared<Simulator_Bus>()),
-		ram(bus),
-		io(bus, 0x8100),
-		timer(bus, 0x8200),
-		core(bus) {}
+	Simulator();
 
 	struct State {
 		std::uint16_t ra;

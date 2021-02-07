@@ -12,17 +12,15 @@
 #include <iostream>
 
 TEST_CASE("Test basic function of compiler", "[c]") {
-	FileReader fr;
-	fr.add_directory("./test_data");
+	FileReader fr("./test_data");
 	
-	auto ret = compile_tu("first.c", fr);
+	auto ret = compile_tu("./test_data/first.c", fr);
 }
 
 TEST_CASE("Compiler Benchmarks", "[.][bench]") {
-	FileReader fr;
-	fr.add_directory("./test_data");
+	FileReader fr("./test_data");
 
-	std::string filename = "first.c";
+	std::string filename = "./test_data/first.c";
 
 	BENCHMARK(std::string("File: ") + filename) {
 		return c_to_asm(filename, fr);
@@ -56,9 +54,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 	for (const auto& item : dir_list) {
 		INFO(item);
-		FileReader fr;
-		fr.add_directory("./stdlib/");
-		fr.add_directory(DIR);
+		FileReader fr("./stdlib");
 
 		// Catching the exception in the test allows us to continue
 		// rather than stopping at the first failed compile
@@ -66,7 +62,6 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			auto test_program = compile_tu(item, fr);
 			auto init_main = compile_tu("./stdlib/main.s", fr); // this is what calls the main fn
-			auto program_loader_o = compile_tu("./stdlib/program_loader.s", fr); // This jumps to 0x200
 			auto stream = read_bin_file("./stdlib/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 
@@ -76,12 +71,10 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			objs.push_back(stdlib); // link stdlib for those couple that need it
 			auto exe = link(std::move(objs), 0x200);
 
-			auto program_loader_exe = link({ program_loader_o }, 0);
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
 			sim.load(exe);
-			sim.load(program_loader_exe);
 
 			sim.run_until_halted(55000); // longest test is currently isqrt.c
 			CHECK(sim.get_state().is_halted == true);
@@ -110,8 +103,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 //	auto dir_list = read_directory(DIR);
 //
 //	for (const auto& item : dir_list) {
-//		if (item == "test_data/valid_c/program_loader.s") { continue; }
-//		FileReader fr;
+//		FileReader fr("./stdlib");
 //		fr.add_directory(DIR);
 //
 //		BENCHMARK(std::string("Filename: " ) + item) {
@@ -127,7 +119,7 @@ TEST_CASE("Invalid C programs", "[c]") {
 
 	for (const auto& item : dir_list) {
 		INFO(item);
-		FileReader fr;
+		FileReader fr(".");
 		fr.add_directory(DIR);
 
 		CHECK_THROWS(compile_tu(item, fr));
@@ -135,29 +127,24 @@ TEST_CASE("Invalid C programs", "[c]") {
 }
 
 TEST_CASE("Whole C program", "[c]") {
-	FileReader fr;
+	FileReader fr("./stdlib");
 	
 	// For the actual program
 	fr.add_directory("./test_data/whole_program/");
 	// For the sub lib
 	fr.add_directory("./test_data/whole_program/sub");
-	// For main.s
-	fr.add_directory("./stdlib/");
 
 	std::vector<Object::Object_Container> objs;
-	objs.push_back(compile_tu("main.s", fr));
-	objs.push_back(compile_tu("main.c", fr));
-	objs.push_back(compile_tu("add.c", fr));
-	objs.push_back(compile_tu("sub.c", fr));
+	objs.push_back(compile_tu("./stdlib/main.s", fr));
+	objs.push_back(compile_tu("./test_data/whole_program/main.c", fr));
+	objs.push_back(compile_tu("./test_data/whole_program/add.c", fr));
+	objs.push_back(compile_tu("./test_data/whole_program/sub/sub.c", fr));
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader_o = compile_tu("program_loader.s", fr);
-	auto program_loader_exe = link({ program_loader_o }, 0);
 
 	Simulator sim;
 	sim.load(exe);
-	sim.load(program_loader_exe);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);
@@ -192,24 +179,17 @@ TEST_CASE("Linker with multi segment files", "[link]") {
 
 	using namespace Object;
 
-	FileReader f;
-	f.add_directory("./test_data/relocation/");
-	f.add_directory("./stdlib/"); // for main.s
-
+	FileReader f("./stdlib");
 
 	std::vector<Object_Container> objs;
-	objs.push_back(compile_tu("main.s", f));
-	objs.emplace_back(compile_tu("relocation_asm1.s", f));
-	objs.emplace_back(compile_tu("relocation_asm2.s", f));
+	objs.push_back(compile_tu("./stdlib/main.s", f));
+	objs.emplace_back(compile_tu("./test_data/relocation/relocation_asm1.s", f));
+	objs.emplace_back(compile_tu("./test_data/relocation/relocation_asm2.s", f));
 
 	auto exe = link(std::move(objs), 0x200);
 
-	auto program_loader_o = compile_tu("program_loader.s", f);
-	auto program_loader_exe = link({ program_loader_o }, 0);
-
 	Simulator sim;
 	sim.load(exe);
-	sim.load(program_loader_exe);
 
 	sim.run_until_halted(20000);
 	CHECK(sim.get_state().is_halted == true);

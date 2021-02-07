@@ -23,7 +23,7 @@ public:
 std::string c_to_asm(const std::string& tu_filename, FileReader fr) {
 	Front_End_State cs;
 
-	cs.code_original = fr.read_file_from_directories(tu_filename);
+	cs.code_original = read_file(tu_filename);
 	cs.code_preprocessed = preprocess(cs.code_original, fr);
 	cs.code_stripped = strip_comments(cs.code_preprocessed);
 	cs.token_list = tokenize(cs.code_stripped);

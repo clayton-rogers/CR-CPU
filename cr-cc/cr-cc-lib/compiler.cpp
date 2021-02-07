@@ -39,10 +39,10 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 		auto assembly = c_to_asm(filename, f);
 		return assemble(assembly);
 	} else if (file_extension == "s") {
-		auto assembly = f.read_file_from_directories(filename);
+		auto assembly = read_file(filename);
 		return assemble(assembly);
 	} else if (file_extension == "o" || file_extension == "map" || file_extension == "a") {
-		const auto stream = f.read_bin_file_from_directories(filename);
+		const auto stream = read_bin_file(filename);
 		return Object::Object_Container::from_stream(stream);
 	} else {
 		throw std::logic_error("Cannot handle file with extension: " + file_extension);
@@ -97,7 +97,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
-void handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const FileReader& f) {
+void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 
 	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
@@ -128,11 +128,7 @@ void handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const
 
 	if (opt.should_sim) {
 
-		auto program_loader_o = compile_tu("program_loader.s", f);
-		auto program_loader_exe = link({ program_loader_o }, 0);
-
 		Simulator sim;
-		sim.load(program_loader_exe);
 		sim.load(exe);
 		sim.run_until_halted(opt.sim_steps);
 
@@ -154,31 +150,31 @@ int compile(Compiler_Options opt) {
 		return 1;
 	}
 
-	FileReader filereader_user;
-	FileReader filereader_stdlib;
-	// FileReader defaults to including the current directory
-	// Next add all user defined directories
-	for (const auto& include_path : opt.include_paths) {
-		filereader_user.add_directory(include_path);
-	}
-	// Finally add stdlib path last so it's checked last
+	std::string stdlib_path = ".";
 	if (opt.include_stdlib) {
-		auto stdlib_path = std::getenv(STDLIB_ENV_VAR);
-		if (stdlib_path) {
-			filereader_user.add_directory(std::string(stdlib_path));
-			filereader_stdlib.add_directory(std::string(stdlib_path));
+		auto stdlib_path_c = std::getenv(STDLIB_ENV_VAR);
+		if (stdlib_path_c) {
+			stdlib_path = std::string(stdlib_path_c);
 		} else {
 			throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
 		}
 	}
 
+	FileReader f(stdlib_path);
+	// FileReader defaults to including the current directory
+	// Next add all user defined directories
+	for (const auto& include_path : opt.include_paths) {
+		f.add_directory(include_path);
+	}
+
+
 	if (opt.filenames.size() == 1 &&
 		get_file_extension(opt.filenames.at(0)) == "bin") {
 
-		const auto stream = filereader_stdlib.read_bin_file_from_directories(opt.filenames.at(0));
+		const auto stream = read_bin_file(opt.filenames.at(0));
 		auto exe = Object::Object_Container::from_stream(stream);
 
-		handle_exe(exe, opt, filereader_stdlib);
+		handle_exe(exe, opt);
 
 		return 0;
 	}
@@ -188,19 +184,20 @@ int compile(Compiler_Options opt) {
 		std::vector<Object::Object_Container> objs;
 
 		if (opt.include_main) {
-			auto container = compile_tu("main.s", filereader_stdlib);
+			auto assembly = read_file(stdlib_path + "/main.s");
+			auto container = assemble(assembly);
 			objs.push_back(container);
 		}
 
 		for (const auto& filename : opt.filenames) {
 
 			if (get_file_extension(filename) == "c" && opt.output_assembly) {
-				const auto assembly = c_to_asm(filename, filereader_user);
+				const auto assembly = c_to_asm(filename, f);
 				const auto asm_filename = get_base_filename(filename) + ".s";
 				write_file(asm_filename, assembly);
 			}
 
-			const auto container = compile_tu(filename, filereader_user);
+			const auto container = compile_tu(filename, f);
 			objs.push_back(container);
 
 			if (opt.compile_only) {
@@ -234,7 +231,7 @@ int compile(Compiler_Options opt) {
 
 		// Automatically link with stdlib
 		{
-			auto stream = filereader_user.read_bin_file_from_directories("stdlib.a");
+			auto stream = read_bin_file(stdlib_path + "/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 			objs.push_back(stdlib);
 		}
@@ -246,7 +243,7 @@ int compile(Compiler_Options opt) {
 		}
 
 		// Handle any outputs and simulation
-		handle_exe(exe, opt, filereader_stdlib);
+		handle_exe(exe, opt);
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors

@@ -17,10 +17,13 @@ std::string get_file_extension(std::string filename);
 
 class FileReader {
 public:
+	FileReader(std::string stdlib_path) : stdlib_path(stdlib_path) { directories.push_back(stdlib_path); }
+
 	void add_directory(const std::string& directory);
-	std::string read_file_from_directories(std::string filename);
-	std::vector<std::uint16_t> read_bin_file_from_directories(std::string filename);
+	std::string read_file_from_directories(std::string filename, bool stdlib_only = false) const;
+	std::vector<std::uint16_t> read_bin_file_from_directories(std::string filename, bool stdlib_only = false) const;
 
 private:
 	std::vector<std::string> directories = { "./" };
+	const std::string stdlib_path;
 };

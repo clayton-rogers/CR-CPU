@@ -11,6 +11,15 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+static bool file_exists(std::string filename) {
+	std::ifstream file(filename);
+	if (!file) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 std::string read_file(std::string filename) {
 	std::ifstream file(filename);
 
@@ -29,15 +38,6 @@ std::string read_file(std::string filename) {
 		std::istreambuf_iterator<char>());
 
 	return output;
-}
-
-bool file_exists(std::string filename) {
-	std::ifstream file(filename);
-	if (!file) {
-		return false;
-	} else {
-		return true;
-	}
 }
 
 void write_file(std::string filename, std::string data) {
@@ -74,11 +74,22 @@ void write_bin_file(std::string filename, std::vector<std::uint16_t> data) {
 
 void FileReader::add_directory(const std::string& directory)
 {
-	directories.push_back(directory);
+	// Need to keep stdlib path at the end
+	directories.back() = directory;
+	directories.push_back(stdlib_path);
 }
 
-std::string FileReader::read_file_from_directories(std::string filename)
+std::string FileReader::read_file_from_directories(std::string filename, bool stdlib_only) const
 {
+	if (stdlib_only) {
+		std::string full_filename = stdlib_path + "/" + filename;
+		if (file_exists(full_filename)) {
+			return read_file(full_filename);
+		} else {
+			throw std::logic_error("Could not find file in stdlib: " + filename);
+		}
+	}
+
 	std::string result;
 	for (const auto& directory : directories) {
 		std::string full_filename = directory + "/" + filename;
@@ -96,8 +107,17 @@ std::string FileReader::read_file_from_directories(std::string filename)
 	throw std::logic_error("Could not find file: " + filename);
 }
 
-std::vector<std::uint16_t> FileReader::read_bin_file_from_directories(std::string filename)
+std::vector<std::uint16_t> FileReader::read_bin_file_from_directories(std::string filename, bool stdlib_only) const
 {
+	if (stdlib_only) {
+		std::string full_filename = stdlib_path + "/" + filename;
+		if (file_exists(full_filename)) {
+			return read_bin_file(full_filename);
+		} else {
+			throw std::logic_error("Could not find file in stdlib: " + filename);
+		}
+	}
+
 	for (const auto& directory : directories) {
 		std::string full_filename = directory + "/" + filename;
 
