@@ -222,7 +222,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	for (const auto& test_point : test_programs) {
 		INFO(test_point.name);
 
-		std::string program = read_file(std::string("./test_data/") + test_point.name);
+		std::string program = read_file(std::string("./test_data/asm/") + test_point.name);
 
 		REQUIRE(program.length() != 0);
 
@@ -244,7 +244,7 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 TEST_CASE("Assembler Benchmarks", "[.][bench]") {
 	for (const auto& test_point : test_programs) {
-		std::string program = read_file(std::string("./test_data/") + test_point.name);
+		std::string program = read_file(std::string("./test_data/asm/") + test_point.name);
 
 		REQUIRE(program.length() != 0);
 
@@ -257,7 +257,7 @@ TEST_CASE("Assembler Benchmarks", "[.][bench]") {
 TEST_CASE("Assembler object Relocations", "[asm]") {
 	using namespace Object;
 
-	std::string input = read_file("./test_data/relocation_test.s");
+	std::string input = read_file("./test_data/asm/relocation_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
 	auto exe = link( { object_file }, 0);
@@ -301,7 +301,7 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 TEST_CASE("Assembler object External references", "[asm]") {
 	using namespace Object;
 
-	std::string input = read_file("./test_data/external_references_test.s");
+	std::string input = read_file("./test_data/asm/external_references_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
 
@@ -327,7 +327,7 @@ TEST_CASE("Assembler object External references", "[asm]") {
 TEST_CASE("Assembler object Exported referencs", "[asm]") {
 	using namespace Object;
 
-	std::string input = read_file("./test_data/exported_references_test.s");
+	std::string input = read_file("./test_data/asm/exported_references_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
 	auto exe = link({ object_file }, 0);
