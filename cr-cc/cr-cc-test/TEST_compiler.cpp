@@ -128,10 +128,7 @@ TEST_CASE("Invalid C programs", "[c]") {
 
 TEST_CASE("Whole C program", "[c]") {
 	FileReader fr("./stdlib");
-	
-	// For the actual program
-	fr.add_directory("./test_data/whole_program/");
-	// For the sub lib
+
 	fr.add_directory("./test_data/whole_program/sub");
 
 	std::vector<Object::Object_Container> objs;
@@ -161,6 +158,20 @@ TEST_CASE("Test file io filename methods", "[c]") {
 
 	CHECK(get_base_filename(filename) == std::string("test"));
 	CHECK(get_file_extension(filename) == std::string("txt"));
+	CHECK(get_directory_name(filename) == std::string("./"));
+
+	filename = "test/test.txt";
+
+	CHECK(get_base_filename(filename) == std::string("test"));
+	CHECK(get_file_extension(filename) == std::string("txt"));
+	CHECK(get_directory_name(filename) == std::string("test/"));
+
+
+	filename = "another_longer/filename.abc";
+
+	CHECK(get_base_filename(filename) == std::string("filename"));
+	CHECK(get_file_extension(filename) == std::string("abc"));
+	CHECK(get_directory_name(filename) == std::string("another_longer/"));
 }
 
 TEST_CASE("Linker with multi segment files", "[link]") {

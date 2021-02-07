@@ -1,4 +1,4 @@
-#include "math.h"
+#include <math.h>
 
 // ret: 0
 int main() {

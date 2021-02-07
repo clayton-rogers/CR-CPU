@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-std::string preprocess(const std::string& code, FileReader fr) {
-	std::string preprocessed(code);
+std::string preprocess(const std::string& tu_filename, FileReader fr) {
+	std::string preprocessed = read_file(tu_filename);
 
 	while (true) {
 		auto hash_offset = preprocessed.find('#');
@@ -24,12 +24,21 @@ std::string preprocess(const std::string& code, FileReader fr) {
 
 		if (false) { // To align the rest of the cases
 		} else if ("include" == directive) {
-			const auto first = directive_line.find('"');
-			const auto second = directive_line.find('"', first + 1);
-			const std::string include_filename = directive_line.substr(first + 1, second - first - 1);
-			const std::string include_text = fr.read_file_from_directories(include_filename);
+			if (directive_line.find('"') != std::string::npos) {
+				const auto first = directive_line.find('"');
+				const auto second = directive_line.find('"', first + 1);
+				const std::string include_filename = directive_line.substr(first + 1, second - first - 1);
+				const std::string include_text = fr.include_file(tu_filename, include_filename);
 
-			preprocessed.insert(hash_offset, include_text);
+				preprocessed.insert(hash_offset, include_text);
+			} else {
+				const auto first = directive_line.find('<');
+				const auto second = directive_line.find('>', first + 1);
+				const std::string include_filename = directive_line.substr(first + 1, second - first - 1);
+				const std::string include_text = fr.include_file(tu_filename, include_filename, true);
+
+				preprocessed.insert(hash_offset, include_text);
+			}
 		} else if ("define" == directive) {
 			std::cout << "Warning: define directive not currently supported" << std::endl;
 		} else if ("pragma" == directive) {

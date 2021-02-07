@@ -67,7 +67,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 		if (type == Object::Symbol_Type::FUNCTION) {
 			symbols.push_back({ symb.offset, symb.name });
 		} else if (type == Object::Symbol_Type::DATA) {
-			symbols.push_back({ symb.offset, " Static Data" });
+			symbols.push_back({ symb.offset, "Static Data" });
 		}
 	}
 
@@ -83,7 +83,6 @@ static void print_function_names(const Object::Object_Container& obj) {
 	const auto& machine_code = std::get<Object::Object_Type>(obj.contents).machine_code;
 	std::uint16_t ret_opcode = 0xC100;
 	int total = 0;
-	std::cout << std::endl;
 	for (const auto& symb : symbols) {
 		int ptr = symb.offset;
 		while (ptr < static_cast<int>(machine_code.size()) && machine_code.at(ptr) != ret_opcode) {
@@ -104,15 +103,15 @@ void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 	if (opt.output_map) {
 		const auto map = to_map(exe);
 		const auto map_stream = map.to_stream();
-		const auto map_filename = opt.output_filename + ".map";
+		const auto map_filename = opt.get_out_filename(".map");
 		write_bin_file(map_filename, map_stream);
 	}
 	if (opt.output_hex) {
-		write_file(opt.output_filename + ".hex", machine_inst_to_hex(machine_code));
+		write_file(opt.get_out_filename(".hex"), machine_inst_to_hex(machine_code));
 	}
 	if (opt.output_srec) {
 		auto srec = exe_to_srec(exe);
-		write_file(opt.output_filename + ".srec", srec);
+		write_file(opt.get_out_filename(".srec"), srec);
 
 		if (opt.output_srec_stdout) {
 			std::cout << "\n" << srec << std::endl;
@@ -225,7 +224,7 @@ int compile(Compiler_Options opt) {
 		if (opt.output_lib) {
 			auto lib = make_lib(objs);
 			auto stream = lib.to_stream();
-			write_bin_file(opt.output_filename, stream);
+			write_bin_file(opt.get_out_filename(".lib"), stream);
 			return 0;
 		}
 
@@ -239,7 +238,7 @@ int compile(Compiler_Options opt) {
 		auto exe = link(std::move(objs), opt.link_address);
 		{
 			auto stream = exe.to_stream();
-			write_bin_file(opt.output_filename + ".bin", stream);
+			write_bin_file(opt.get_out_filename(".bin"), stream);
 		}
 
 		// Handle any outputs and simulation

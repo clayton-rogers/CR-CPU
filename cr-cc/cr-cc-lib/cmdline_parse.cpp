@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-
-const std::string Compiler_Options::DEFAULT_OUTPUT_FILENAME = "out";
-
 Compiler_Options parse_args(int arc, char** argv) {
 	std::vector<std::string> args;
 
@@ -55,7 +52,7 @@ Compiler_Options parse_args(int arc, char** argv) {
 		} else if ("--function-size" == arg) {
 			opt.function_size = true;
 		} else if ("-o" == arg) {
-			opt.output_filename = args.at(++i);
+			opt.set_output_filename(args.at(++i));
 		} else if ("-c" == arg) {
 			opt.compile_only = true;
 			opt.include_main = false;

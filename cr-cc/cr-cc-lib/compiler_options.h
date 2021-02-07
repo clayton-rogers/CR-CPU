@@ -1,9 +1,9 @@
 #include <vector>
 #include <string>
 
+#include "file_io.h"
 
 struct Compiler_Options {
-	static const std::string DEFAULT_OUTPUT_FILENAME;
 
 	bool verbose = false;
 	bool function_size = false;
@@ -21,6 +21,27 @@ struct Compiler_Options {
 	int link_address = 0x200;
 	std::vector<std::string> filenames;
 	std::vector<std::string> include_paths;
-	std::string output_filename = DEFAULT_OUTPUT_FILENAME;
+
 	int sim_steps = 1000000;
+
+	std::string get_out_filename(std::string extension) {
+		if (output_filename_set) {
+			return output_filename;
+		} else {
+			std::string base_name = "out";
+			if (filenames.size() == 1) {
+				base_name = get_base_filename(filenames.at(0));
+			}
+			return base_name + extension;
+		}
+	}
+
+	void set_output_filename(std::string filename) {
+		output_filename = filename;
+		output_filename_set = true;
+	}
+
+private:
+	std::string output_filename;
+	bool output_filename_set = false;
 };

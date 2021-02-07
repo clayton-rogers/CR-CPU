@@ -74,63 +74,45 @@ void write_bin_file(std::string filename, std::vector<std::uint16_t> data) {
 
 void FileReader::add_directory(const std::string& directory)
 {
-	// Need to keep stdlib path at the end
-	directories.back() = directory;
-	directories.push_back(stdlib_path);
+	directories.push_back(directory);
 }
 
-std::string FileReader::read_file_from_directories(std::string filename, bool stdlib_only) const
+std::string FileReader::include_file(std::string from_file, std::string filename, bool stdlib_only) const
 {
-	if (stdlib_only) {
-		std::string full_filename = stdlib_path + "/" + filename;
-		if (file_exists(full_filename)) {
-			return read_file(full_filename);
-		} else {
-			throw std::logic_error("Could not find file in stdlib: " + filename);
-		}
-	}
+	// Where include files are searched for:
+	// - relative to input file
+	// - at all include paths
+	// - at stdlib
 
-	std::string result;
-	for (const auto& directory : directories) {
-		std::string full_filename = directory + "/" + filename;
-
+	if (!stdlib_only) {
+		const auto tu_path = get_directory_name(from_file);
+		const std::string full_filename = tu_path + "/" + filename;
 		if (file_exists(full_filename)) {
 			return read_file(full_filename);
 		}
 	}
 
-	std::cout << "Looked in paths:" << std::endl;
-	for (const auto& path : directories) {
-		std::cout << path << std::endl;
+	if (!stdlib_only) {
+		for (const auto& directory : directories) {
+			std::string full_filename = directory + "/" + filename;
+
+			if (file_exists(full_filename)) {
+				return read_file(full_filename);
+			}
+		}
 	}
 
-	throw std::logic_error("Could not find file: " + filename);
-}
-
-std::vector<std::uint16_t> FileReader::read_bin_file_from_directories(std::string filename, bool stdlib_only) const
-{
-	if (stdlib_only) {
+	{
 		std::string full_filename = stdlib_path + "/" + filename;
 		if (file_exists(full_filename)) {
-			return read_bin_file(full_filename);
-		} else {
-			throw std::logic_error("Could not find file in stdlib: " + filename);
+			return read_file(full_filename);
 		}
 	}
 
-	for (const auto& directory : directories) {
-		std::string full_filename = directory + "/" + filename;
-
-		if (file_exists(full_filename)) {
-			return read_bin_file(full_filename);
-		}
-	}
-
-	std::cout << "Looked in paths:" << std::endl;
+	// Error if we haven't found the file yet.
 	for (const auto& path : directories) {
-		std::cout << path << std::endl;
+		std::cout << "Looked in path:" << path << std::endl;
 	}
-
 	throw std::logic_error("Could not find file: " + filename);
 }
 
@@ -145,9 +127,24 @@ std::vector<std::string> read_directory(std::string directory) {
 }
 
 std::string get_base_filename(std::string filename) {
-	return filename.substr(0, filename.find_last_of("."));
+	auto last_slash = filename.find_last_of("/");
+	auto last_period = filename.find_last_of(".");
+	if (last_slash == std::string::npos) {
+		return filename.substr(0, last_period);
+	} else {
+		return filename.substr(last_slash + 1, (last_period - last_slash - 1));
+	}
 }
 
 std::string get_file_extension(std::string filename) {
 	return filename.substr(filename.find_last_of(".") + 1);
+}
+
+std::string get_directory_name(std::string filename) {
+	auto last_slash = filename.find_last_of("/");
+	if (last_slash == std::string::npos) {
+		return "./";
+	} else {
+		return filename.substr(0, last_slash + 1);
+	}
 }
