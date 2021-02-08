@@ -1070,19 +1070,19 @@ Object_Container assemble(const std::string& assembly) {
 			}
 		}
 
-		// Data section is placed after the text section
-		const int size_of_text = static_cast<int>(as.instructions.size());
-		for (auto& label : as.data_label_map) {
-			label.second.offset += size_of_text;
-		}
-
-		generate_machine_code(&as);
-		return as.out;
-
 	} catch (const std::logic_error& e) {
 		std::string msg = std::string("line ") + std::to_string(as.current_line) + ": " + e.what();
 		throw std::logic_error(msg);
 	}
+
+	// Data section is placed after the text section
+	const int size_of_text = static_cast<int>(as.instructions.size());
+	for (auto& label : as.data_label_map) {
+		label.second.offset += size_of_text;
+	}
+
+	generate_machine_code(&as);
+	return as.out;
 }
 
 bool assembler_internal_test() {
