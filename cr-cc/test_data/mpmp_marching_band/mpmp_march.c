@@ -43,13 +43,13 @@ int check() {
 		int asm = calc_number_of_arrangements_asm(i);
 		int alt = calc_number_of_arrangements_alt(i);
 		if (c != asm || c != alt) {
-			print_num(c);
+			__print_num(c);
 			write_vga_char(32);
-			print_num(asm);
+			__print_num(asm);
 			write_vga_char(32);
-			print_num(alt);
+			__print_num(alt);
 			write_vga_char(32);
-			print_num(i);
+			__print_num(i);
 			write_vga_char(32);
 			return 0;
 		}
@@ -94,9 +94,9 @@ int find_arrangement(int required) {
 		if (i == 8000) { break; } // prevent infinite loop
 	}
 	write_vga_char(45);
-	print_num(required);
+	__print_num(required);
 	write_vga_char(45);
-	print_num(result);
+	__print_num(result);
 	write_vga_char(32);
 
 	return result;
@@ -129,9 +129,9 @@ int print_all_arrangments() {
 	int MAX = get_max_arrangements();
 	for (int i = 4; i < MAX; i = i + 2) {
 		write_vga_char(45);
-		print_num(i);
+		__print_num(i);
 		write_vga_char(45);
-		print_num(get_soln(i));
+		__print_num(get_soln(i));
 		write_vga_char(32);
 	}
 }
@@ -142,7 +142,7 @@ int print_factors() {
 
 	for (int i = 1; i <= max; i = i + 1) {
 		if (num % i == 0) {
-			print_num(i);
+			__print_num(i);
 			write_vga_char(32);
 		}
 	}
@@ -156,8 +156,8 @@ int main() {
 	//print_factors();
 	//return 0;
 
-	print_num(get_timer_upper());
-	print_num(get_timer_lower());
+	__print_num(get_timer_upper());
+	__print_num(get_timer_lower());
 	write_vga_char(32);
 
 	find_all_arrangements_up_to(8000); // same value used in find_arrangements
@@ -168,8 +168,8 @@ int main() {
 	//}
 
 	write_vga_char(32);
-	print_num(get_timer_upper());
-	print_num(get_timer_lower());
+	__print_num(get_timer_upper());
+	__print_num(get_timer_lower());
 
 	return 0;
 }

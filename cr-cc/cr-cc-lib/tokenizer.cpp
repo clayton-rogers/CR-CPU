@@ -87,7 +87,7 @@ static bool is_string_literal(std::string s) {
 }
 
 static bool is_identifier(std::string s) {
-	return std::isalpha(s.at(0), LOCALE);
+	return (std::isalpha(s.at(0), LOCALE) || s.at(0) == '_');
 }
 
 // For now numeral literals (constants) must be all numbers

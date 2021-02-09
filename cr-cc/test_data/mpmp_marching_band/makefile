@@ -10,8 +10,10 @@ all: mpmp_march.srec
 setup:
 	-stty -F $(TTY) ospeed 115200
 
-mpmp_march.srec: $(OBJS) asm.o
-	$(CC) -o mpmp_march $^
+mpmp_march.srec: mpmp_march.bin
+	$(CC) --srec $<
+mpmp_march.bin: $(OBJS) asm.o
+	$(CC) -o mpmp_march.bin $^
 
 asm.o: asm.s
 	$(CC) -c -o $@ $<

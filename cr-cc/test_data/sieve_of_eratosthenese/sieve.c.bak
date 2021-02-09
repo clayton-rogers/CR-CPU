@@ -1,0 +1,33 @@
+
+void print(int);
+
+void sieve(void) {
+
+	int current_prime = 2;
+	int prime_array[256] = {};
+	int size = 256;
+	int finished = 0;
+
+	while (1) {
+		// mark all multiples of the current prime
+		for (int i = current_prime; i < size; i = i + current_prime) {
+			prime_array[i] = 1;
+		}
+
+		print(current_prime);
+
+		// find next prime
+		++current_prime;
+		while (prime_array[current_prime]) {
+			++current_prime;
+			if (current_prime == size) {
+				finished = 1;
+				break;
+			}
+		}
+
+		if (finished) {
+			break;
+		}
+	}
+}
