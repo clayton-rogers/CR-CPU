@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace Object;
 
@@ -228,9 +229,19 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 	Library_Type library;
 
 	// TODO check that there are no duplicate exported symbols
+
+	std::unordered_set<std::string> exported_symbols;
 	
 	for (const auto& obj : objects) {
-		library.objects.push_back(std::get<Object_Type>(obj.contents));
+		const auto& contents = std::get<Object_Type>(obj.contents);
+		library.objects.push_back(contents);
+
+		for (const auto& symbol : contents.exported_symbols) {
+			if (exported_symbols.count(symbol.name) != 0) {
+				throw std::logic_error("Duplicate symbol in library: " + symbol.name);
+			}
+			exported_symbols.insert(symbol.name);
+		}
 	}
 
 	Object_Container output;

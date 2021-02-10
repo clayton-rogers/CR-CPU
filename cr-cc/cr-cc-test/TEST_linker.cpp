@@ -305,6 +305,10 @@ TEST_CASE("Test library creation", "[link]") {
 				External_Reference{ "funb", HI_LO_TYPE::LO_BYTE, {0x01} }
 			);
 
+			obj.exported_symbols.push_back(
+				Exported_Symbol{ "main_fn", Symbol_Type::FUNCTION, 0x0002 }
+			);
+
 			main_item.contents = obj;
 		}
 
@@ -348,13 +352,32 @@ TEST_CASE("Test library creation", "[link]") {
 			CHECK(code == expected_code);
 
 			const auto& debug_external_ref = exe_contents.exported_symbols;
-			CHECK(debug_external_ref.at(0).name == "funb");
+			CHECK(debug_external_ref.at(0).name == "main_fn");
 			CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
-			CHECK(debug_external_ref.at(0).offset == 0x0107);
-			CHECK(debug_external_ref.at(1).name == "funa");
+			CHECK(debug_external_ref.at(0).offset == 0x0102);
+			CHECK(debug_external_ref.at(1).name == "funb");
 			CHECK(debug_external_ref.at(1).type == Symbol_Type::FUNCTION);
-			CHECK(debug_external_ref.at(1).offset == 0x0109);
+			CHECK(debug_external_ref.at(1).offset == 0x0107);
+			CHECK(debug_external_ref.at(2).name == "funa");
+			CHECK(debug_external_ref.at(2).type == Symbol_Type::FUNCTION);
+			CHECK(debug_external_ref.at(2).offset == 0x0109);
 			
+		}
+
+		SECTION("Link a library") {
+
+			lib_items.push_back(main_item);
+
+			const auto lib_container = make_lib(lib_items);
+			size_t index = lib_container.contents.index();
+			CHECK(index == Object_Container::Variant_Type::LIBRARY);
+		}
+
+		SECTION("Link a library with duplicate exported symbols") {
+			lib_items.push_back(main_item);
+			lib_items.push_back(main_item);
+
+			CHECK_THROWS(make_lib(lib_items));
 		}
 	}
 }
