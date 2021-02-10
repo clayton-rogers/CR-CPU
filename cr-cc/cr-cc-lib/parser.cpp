@@ -13,6 +13,36 @@ struct Rule {
 
 using RuleList = std::vector<Rule>;
 
+void new_parse() {
+	struct New_Rule {
+		New_Rule(TokenType token) : rule_type(DIRECT), token(token) {}
+
+		enum RuleType {
+			DIRECT,
+			ZERO_OR_MORE,
+			ONE_OR_MORE,
+		} rule_type;
+		TokenType token;
+	};
+
+	auto one_or_more = [](TokenType token) {
+		New_Rule rule(token);
+		rule.rule_type = New_Rule::ONE_OR_MORE;
+		return rule;
+	};
+
+	auto zero_or_more = [](TokenType token) {
+		New_Rule rule(token);
+		rule.rule_type = New_Rule::ZERO_OR_MORE;
+		return rule;
+	};
+
+	using NewRuleList = std::vector<Rule>;
+	std::map<TokenType, NewRuleList> NEW_C_GRAMMAR;
+
+	NEW_C_GRAMMAR[TokenType::translation_unit] = { one_or_more(TokenType::external_declaration) };
+}
+
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	{TokenType::translation_unit,
 		{
