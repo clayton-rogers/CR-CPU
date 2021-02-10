@@ -40,7 +40,7 @@ void new_parse() {
 	using NewRuleList = std::vector<Rule>;
 	std::map<TokenType, NewRuleList> NEW_C_GRAMMAR;
 
-	NEW_C_GRAMMAR[TokenType::translation_unit] = { one_or_more(TokenType::external_declaration) };
+	NEW_C_GRAMMAR[TokenType::translation_unit] = NewRuleList{ one_or_more(TokenType::external_declaration) };
 }
 
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
