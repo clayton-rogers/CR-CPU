@@ -43,10 +43,10 @@ namespace AST {
 		std::string l_zero = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.z " << l_zero << " # logical negation\n";
-		ss << "loadi ra, 0\n";
+		ss << "loadi ra, 0x00\n";
 		ss << "jmp.r " << l_end << "\n";
 		ss << l_zero << ":\n";
-		ss << "loadi ra, 1\n";
+		ss << "loadi ra, 0x01\n";
 		ss << l_end << ":\n";
 		return ss.str();
 	}
@@ -57,10 +57,10 @@ namespace AST {
 		std::string l_false = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.z " << l_false << " # is true\n";
-		ss << "loadi ra, 1\n";
+		ss << "loadi ra, 0x01\n";
 		ss << "jmp.r " << l_end << "\n";
 		ss << l_false << ":\n";
-		ss << "loadi ra, 0\n";
+		ss << "loadi ra, 0x00\n";
 		ss << l_end << ":\n";
 		return ss.str();
 	}
@@ -71,10 +71,10 @@ namespace AST {
 		std::string l_true = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
 		ss << "jmp.r.gz " << l_true << " # is positive\n";
-		ss << "loadi ra, 0\n";
+		ss << "loadi ra, 0x00\n";
 		ss << "jmp.r " << l_end << "\n";
 		ss << l_true << ":\n";
-		ss << "loadi ra, 1\n";
+		ss << "loadi ra, 0x01\n";
 		ss << l_end << ":\n";
 		return ss.str();
 	}
@@ -268,7 +268,7 @@ namespace AST {
 			// A < B is (B - A - 1) >= 0
 			ss << "sub rb, ra # binary less than\n";
 			ss << "mov ra, rb\n";
-			ss << "sub ra, 1\n";
+			ss << "sub ra, 0x01\n";
 			ss << gen_is_positive(scope);
 			break;
 		case Bin_Type::less_than_or_equal:
@@ -280,7 +280,7 @@ namespace AST {
 		case Bin_Type::greater_than:
 			// A > B  is (A - B - 1) >= 0
 			ss << "sub ra, rb # binary greater than\n";
-			ss << "sub ra, 1\n";
+			ss << "sub ra, 0x01\n";
 			ss << gen_is_positive(scope);
 			break;
 		case Bin_Type::greater_than_or_equal:
@@ -378,17 +378,17 @@ namespace AST {
 			// Code for contents
 			ss << contents->generate_code();
 			// Exit block
-			ss << "loadi ra, 0\n"; // In case funtion runs off the end, it should return 0.
+			ss << "loadi ra, 0x00\n"; // In case funtion runs off the end, it should return 0.
 			ss << scope->env->label_maker.get_fn_end_label() << ":\n";
 			ss << scope->gen_scope_exit();
 			// From above, we always push two int onto the stack, so we always have to remove those
 			// but depending on what they are, we may have to restore them or discard them.
 			if (arguments.size() >= 2) {
 				// both ra and rb were args, so just drop them
-				ss << "add sp, 2 # drop pushed ra, and rb\n";
+				ss << "add sp, 0x02 # drop pushed ra, and rb\n";
 			} else if (arguments.size() == 1) {
 				// restore rb, drop arg ra
-				ss << "add sp, 1 # drop arg ra\n";
+				ss << "add sp, 0x01 # drop arg ra\n";
 				ss << "pop rb # restore caller rb\n";
 			} else if (arguments.size() == 0 && return_type->get_size() == 0) {
 				// restore caller ra and rb
@@ -396,7 +396,7 @@ namespace AST {
 				ss << "pop rb # restore caller rb\n";
 			} else if (arguments.size() == 0) {
 				// has a return type, so return is in ra, so don't have to restore ra
-				ss << "add sp, 1 # drop ra because we're returning a value\n";
+				ss << "add sp, 0x01 # drop ra because we're returning a value\n";
 				ss << "pop rb # restore caller rb\n";
 			} else {
 				throw std::logic_error("Should never get here: unable to determine function epilogue");
