@@ -5,8 +5,7 @@ void sieve(void) {
 
 	int current_prime = 2;
 	int prime_array[256] = {};
-	int size = 256;
-	int finished = 0;
+	int size = 6;
 
 	while (1) {
 		// mark all multiples of the current prime
@@ -17,17 +16,14 @@ void sieve(void) {
 		print(current_prime);
 
 		// find next prime
-		++current_prime;
-		while (prime_array[current_prime]) {
+		do {
 			++current_prime;
 			if (current_prime == size) {
-				finished = 1;
-				break;
+				goto after_outer_while;
 			}
-		}
-
-		if (finished) {
-			break;
-		}
+		} while (prime_array[current_prime]);
 	}
+
+after_outer_while:
+;
 }

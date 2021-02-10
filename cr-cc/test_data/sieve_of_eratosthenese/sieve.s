@@ -162,25 +162,44 @@ load.sp ra .current_prime
 call.r .print
 #########
 
+
+
 #########
+.inner_while:
+# do while body
 load.sp ra .current_prime
 add ra 1
 store.sp ra .current_prime
-.inner_while:
-# while condition
-load.sp ra .current_prime
-call.r .get_bit
-jmp.r.z .after_inner_while
-# while body
-load.sp ra .current_prime
-add ra 1
-store.sp ra .current_prime  # ++ current_prime
 loadi rb .size
 loadi.h rb .size
 sub ra rb
 jmp.r.z .after_outer_while # if current_prime == size : break
-jmp.r .inner_while
-.after_inner_while:
+# do while condition
+load.sp ra .current_prime
+call.r .get_bit
+jmp.r.nz .inner_while
+#########
+
+
+#########
+#load.sp ra .current_prime
+#add ra 1
+#store.sp ra .current_prime
+#.inner_while:
+## while condition
+#load.sp ra .current_prime
+#call.r .get_bit
+#jmp.r.z .after_inner_while
+## while body
+#load.sp ra .current_prime
+#add ra 1
+#store.sp ra .current_prime  # ++ current_prime
+#loadi rb .size
+#loadi.h rb .size
+#sub ra rb
+#jmp.r.z .after_outer_while # if current_prime == size : break
+#jmp.r .inner_while
+#.after_inner_while:
 #########
 
 jmp.r .outer_while
