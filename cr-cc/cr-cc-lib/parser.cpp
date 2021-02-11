@@ -277,7 +277,7 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		NewRuleList rule_list = NEW_C_GRAMMAR.at(node->token.token_type);
 
 		for (const NewRule& rule : rule_list) {
-			int consumed_tokens;
+			int consumed_tokens = 0;
 
 			for (const TokenWrapper& needed_token : rule) {
 
