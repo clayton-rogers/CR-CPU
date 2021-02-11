@@ -50,7 +50,10 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 	std::map<TokenType, NewRuleList> NEW_C_GRAMMAR;
 
 
-	NEW_C_GRAMMAR[TokenType::translation_unit] = { {one_or_more(TokenType::external_declaration)} };
+	NEW_C_GRAMMAR[TokenType::translation_unit] = {
+		{one_or_more(TokenType::external_declaration)}
+	};
+	// TODO delete external_declaration_tail
 	NEW_C_GRAMMAR[TokenType::external_declaration] = {
 		{ TokenType::function },
 		{ TokenType::declaration },
@@ -101,6 +104,12 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 	NEW_C_GRAMMAR[TokenType::init_declarator] = {
 		{TokenType::declarator, TokenType::equals, TokenType::expression},
 		{TokenType::declarator},
+	};
+	NEW_C_GRAMMAR[TokenType::declarator] = {
+		// TODO optimize
+		//{optional(TokenType::pointer), TokenType::direct_declarator},
+		{TokenType::pointer, TokenType::direct_declarator},
+		{TokenType::direct_declarator},
 	};
 	NEW_C_GRAMMAR[TokenType::direct_declarator] = {
 		{TokenType::identifier, zero_or_more(TokenType::direct_declarator_tail)}, // var/pointer
