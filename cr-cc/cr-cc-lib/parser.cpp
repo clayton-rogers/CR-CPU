@@ -15,7 +15,7 @@ using RuleList = std::vector<Rule>;
 
 static int new_parse_node(ParseNode* node, const TokenList& token_list, int offset) {
 	struct TokenWrapper {
-		TokenWrapper(TokenType token) : rule_type(DIRECT), token(token) {}
+		TokenWrapper(TokenType token) : rule_type(DIRECT), tokens{ token } {}
 
 		enum RuleType {
 			DIRECT,
@@ -23,7 +23,8 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 			ZERO_OR_MORE,
 			ONE_OR_MORE,
 		} rule_type;
-		TokenType token;
+		//TokenType token;
+		std::vector<TokenType> tokens;
 	};
 	using NewRule = std::vector<TokenWrapper>;
 
@@ -215,7 +216,6 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 	NEW_C_GRAMMAR[TokenType::relational_exp] = {
 		{TokenType::shift_exp, zero_or_more(TokenType::shift_exp_tail)},
 	};
-
 	NEW_C_GRAMMAR[TokenType::shift_exp_tail] = {
 		{TokenType::less_than, TokenType::shift_exp},
 		{TokenType::greater_than, TokenType::shift_exp},
@@ -274,7 +274,6 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		return NEW_C_GRAMMAR.count(token) != 1;
 	};
 
-
 	if (local_is_token_terminal(node->token.token_type)) {
 		if (offset < static_cast<int>(token_list.size()) && node->token.token_type == token_list.at(offset).token_type) {
 			node->token = token_list.at(offset);
@@ -293,12 +292,11 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 				// If this token is required, force us to get it
 				if (needed_token.rule_type == TokenWrapper::DIRECT || needed_token.rule_type == TokenWrapper::ONE_OR_MORE) {
 					ParseNode p;
-					p.token.token_type = needed_token.token;
+					p.token.token_type = needed_token.tokens.at(0);
 					int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
 					if (ret == 0) {
 						consumed_tokens = 0;
 						node->children.clear();
-						break;
 					} else {
 						node->children.push_back(p);
 						consumed_tokens += ret;
@@ -311,7 +309,7 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 					needed_token.rule_type == TokenWrapper::ZERO_OR_ONE) {
 					while (true) {
 						ParseNode p;
-						p.token.token_type = needed_token.token;
+						p.token.token_type = needed_token.tokens.at(0);
 						int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
 						if (ret == 0) {
 							// We did not match any (more) optionals so we're done
@@ -329,7 +327,9 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 				}
 
 				// If we failed to match this rule, try the next one
-				if (consumed_tokens == 0 && needed_token.rule_type != TokenWrapper::ZERO_OR_MORE) {
+				if (consumed_tokens == 0 &&
+					(needed_token.rule_type == TokenWrapper::ONE_OR_MORE ||
+						needed_token.rule_type == TokenWrapper::DIRECT)) {
 					goto next_rule;
 				}
 			}
@@ -762,7 +762,7 @@ ParseNode parse(TokenList token_list) {
 
 	ParseNode root;
 	root.token.token_type = TokenType::translation_unit;
-	int tokens_parsed = parse_node(&root, token_list, 0);
+	int tokens_parsed = new_parse_node(&root, token_list, 0);
 	if (tokens_parsed == 0) {
 		throw std::logic_error("Failed to parse");
 		//std::cout << "FAILED TO PARSE" << std::endl;
