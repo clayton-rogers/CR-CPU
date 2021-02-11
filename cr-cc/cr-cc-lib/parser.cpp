@@ -14,9 +14,7 @@ struct Rule {
 using RuleList = std::vector<Rule>;
 
 static int new_parse_node(ParseNode* node, const TokenList& token_list, int offset) {
-	struct TokenWrapper {
-		TokenWrapper(TokenType token) : rule_type(DIRECT), tokens{ token } {}
-
+	struct TokenPack {
 		enum RuleType {
 			DIRECT,
 			ZERO_OR_ONE,
@@ -25,25 +23,31 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		} rule_type;
 		//TokenType token;
 		std::vector<TokenType> tokens;
+
+		explicit TokenPack(RuleType rule_type, std::vector<TokenType> tokens) : rule_type(rule_type), tokens(tokens) {}
+		TokenPack(TokenType token) : rule_type(DIRECT), tokens{ token } {}
 	};
-	using NewRule = std::vector<TokenWrapper>;
+	using NewRule = std::vector<TokenPack>;
 
 	auto optional = [](TokenType token) {
-		TokenWrapper rule(token);
-		rule.rule_type = TokenWrapper::ZERO_OR_ONE;
-		return rule;
+		return TokenPack(TokenPack::ZERO_OR_ONE, { token });
+	};
+	auto optional_pack = [](std::vector<TokenType> tokens) {
+		return TokenPack(TokenPack::ZERO_OR_ONE, tokens);
 	};
 
 	auto one_or_more = [](TokenType token) {
-		TokenWrapper rule(token);
-		rule.rule_type = TokenWrapper::ONE_OR_MORE;
-		return rule;
+		return TokenPack(TokenPack::ONE_OR_MORE, { token });
+	};
+	auto one_or_more_pack = [](std::vector<TokenType> tokens) {
+		return TokenPack(TokenPack::ONE_OR_MORE, tokens);
 	};
 
 	auto zero_or_more = [](TokenType token) {
-		TokenWrapper rule(token);
-		rule.rule_type = TokenWrapper::ZERO_OR_MORE;
-		return rule;
+		return TokenPack(TokenPack::ZERO_OR_MORE, { token });
+	};
+	auto zero_or_more_pack = [](std::vector<TokenType> tokens) {
+		return TokenPack(TokenPack::ZERO_OR_MORE, tokens);
 	};
 
 
@@ -70,10 +74,7 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, optional(TokenType::parameter_list), TokenType::close_parenth, TokenType::compound_statement},
 	};
 	NEW_C_GRAMMAR[TokenType::parameter_list] = {
-		{TokenType::parameter_declaration, zero_or_more(TokenType::parameter_list_tail)},
-	};
-	NEW_C_GRAMMAR[TokenType::parameter_list_tail] = {
-		{TokenType::comma, TokenType::parameter_declaration},
+		{TokenType::parameter_declaration, zero_or_more_pack({TokenType::comma, TokenType::parameter_declaration})},
 	};
 	NEW_C_GRAMMAR[TokenType::parameter_declaration] = {
 		{TokenType::declaration_specifier, optional(TokenType::init_declarator)},
@@ -97,12 +98,10 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		{TokenType::declaration_specifier, TokenType::init_declarator_list, TokenType::semi_colon},
 	};
 	NEW_C_GRAMMAR[TokenType::init_declarator_list] = {
-		{TokenType::init_declarator, zero_or_more(TokenType::init_declarator_list_tail)},
-	};
-	NEW_C_GRAMMAR[TokenType::init_declarator_list_tail] = {
-		{TokenType::comma, TokenType::init_declarator},
+		{TokenType::init_declarator, zero_or_more_pack({TokenType::comma, TokenType::init_declarator})},
 	};
 	NEW_C_GRAMMAR[TokenType::init_declarator] = {
+		// TODO could make optional
 		{TokenType::declarator, TokenType::equals, TokenType::expression},
 		{TokenType::declarator},
 	};
@@ -113,10 +112,8 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		{TokenType::direct_declarator},
 	};
 	NEW_C_GRAMMAR[TokenType::direct_declarator] = {
-		{TokenType::identifier, zero_or_more(TokenType::direct_declarator_tail)}, // var/pointer
-	};
-	NEW_C_GRAMMAR[TokenType::direct_declarator_tail] = {
-		{TokenType::open_square_bracket, TokenType::constant, TokenType::close_square_bracket}, // technically should be const expression
+		{TokenType::identifier, zero_or_more_pack({TokenType::open_square_bracket, TokenType::constant, TokenType::close_square_bracket})}, // var/pointer
+								// ^ technically should be const expression
 	};
 	NEW_C_GRAMMAR[TokenType::pointer] = {
 		{one_or_more(TokenType::star)},
@@ -189,22 +186,13 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		{TokenType::conditional_exp},
 	};
 	NEW_C_GRAMMAR[TokenType::conditional_exp] = {
-		{TokenType::logical_or_exp, zero_or_more(TokenType::logical_or_exp_tail)},
-	};
-	NEW_C_GRAMMAR[TokenType::logical_or_exp_tail] = {
-		{TokenType::question, TokenType::expression, TokenType::colon, TokenType::conditional_exp},
+		{TokenType::logical_or_exp, zero_or_more_pack({TokenType::question, TokenType::expression, TokenType::colon, TokenType::conditional_exp})},
 	};
 	NEW_C_GRAMMAR[TokenType::logical_or_exp] = {
-		{TokenType::logical_and_exp, zero_or_more(TokenType::logical_and_exp_tail)},
-	};
-	NEW_C_GRAMMAR[TokenType::logical_and_exp_tail] = {
-		{TokenType::or_op, TokenType::logical_and_exp},
+		{TokenType::logical_and_exp, zero_or_more_pack({TokenType::or_op, TokenType::logical_and_exp})},
 	};
 	NEW_C_GRAMMAR[TokenType::logical_and_exp] = {
-		{TokenType::equality_exp, zero_or_more(TokenType::equality_exp_tail)},
-	};
-	NEW_C_GRAMMAR[TokenType::equality_exp_tail] = {
-		{TokenType::and_op, TokenType::equality_exp},
+		{TokenType::equality_exp, zero_or_more_pack({TokenType::and_op, TokenType::equality_exp})},
 	};
 	NEW_C_GRAMMAR[TokenType::equality_exp] = {
 		{TokenType::relational_exp, zero_or_more(TokenType::relational_exp_tail)},
@@ -287,50 +275,64 @@ static int new_parse_node(ParseNode* node, const TokenList& token_list, int offs
 		for (const NewRule& rule : rule_list) {
 			int consumed_tokens = 0;
 
-			for (const TokenWrapper& needed_token : rule) {
+			for (const TokenPack& token_pack : rule) {
 
-				// If this token is required, force us to get it
-				if (needed_token.rule_type == TokenWrapper::DIRECT || needed_token.rule_type == TokenWrapper::ONE_OR_MORE) {
-					ParseNode p;
-					p.token.token_type = needed_token.tokens.at(0);
-					int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
-					if (ret == 0) {
-						consumed_tokens = 0;
-						node->children.clear();
-					} else {
-						node->children.push_back(p);
-						consumed_tokens += ret;
+				// If this token_pack is required, force us to get all of them
+				if (token_pack.rule_type == TokenPack::DIRECT || token_pack.rule_type == TokenPack::ONE_OR_MORE) {
+					for (const TokenType& token : token_pack.tokens) {
+						ParseNode p;
+						p.token.token_type = token;
+						int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
+						if (ret == 0) {
+							consumed_tokens = 0;
+							node->children.clear();
+							break;
+						} else {
+							node->children.push_back(p);
+							consumed_tokens += ret;
+						}
+					}
+
+					if (consumed_tokens == 0) {
+						goto next_rule;
 					}
 				}
 
 				// If this token may optionally have more than one of itself then try to get more
-				if (needed_token.rule_type == TokenWrapper::ONE_OR_MORE ||
-					needed_token.rule_type == TokenWrapper::ZERO_OR_MORE ||
-					needed_token.rule_type == TokenWrapper::ZERO_OR_ONE) {
+				if (token_pack.rule_type == TokenPack::ONE_OR_MORE ||
+					token_pack.rule_type == TokenPack::ZERO_OR_MORE ||
+					token_pack.rule_type == TokenPack::ZERO_OR_ONE) {
 					while (true) {
-						ParseNode p;
-						p.token.token_type = needed_token.tokens.at(0);
-						int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
-						if (ret == 0) {
-							// We did not match any (more) optionals so we're done
-							break;
-						} else {
-							// We actually was this children
-							node->children.push_back(p);
-							consumed_tokens += ret;
+						std::vector<ParseNode> nodes_from_this_token_pack;
+						const int old_consumed_tokens = consumed_tokens;
+						for (const TokenType& token : token_pack.tokens) {
+							ParseNode p;
+							p.token.token_type = token;
+							int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
+							if (ret == 0) {
+								if (nodes_from_this_token_pack.size() != 0) {
+									consumed_tokens = old_consumed_tokens;
+									break;
+								}
+								// We did not match any (more) optionals so we're done
+								break;
+							} else {
+								nodes_from_this_token_pack.push_back(p);
+								consumed_tokens += ret;
+							}
 						}
 
-						if (needed_token.rule_type == TokenWrapper::ZERO_OR_ONE) {
+						if (consumed_tokens != old_consumed_tokens) {
+							for (const ParseNode& p : nodes_from_this_token_pack) {
+								node->children.push_back(p);
+							}
+						}
+
+						if (token_pack.rule_type == TokenPack::ZERO_OR_ONE ||  // if this rule type specifies only one extra
+							consumed_tokens == old_consumed_tokens) { // or if we did not find any more extras
 							break;
 						}
 					}
-				}
-
-				// If we failed to match this rule, try the next one
-				if (consumed_tokens == 0 &&
-					(needed_token.rule_type == TokenWrapper::ONE_OR_MORE ||
-						needed_token.rule_type == TokenWrapper::DIRECT)) {
-					goto next_rule;
 				}
 			}
 
@@ -734,7 +736,7 @@ static int parse_node(ParseNode* node, const TokenList& token_list, int offset) 
 						// We did not match any (more) optionals so we're done
 						break;
 					} else {
-						// We actually was this children
+						// We actually want the children
 						for (const auto& child_node : p.children) {
 							node->children.push_back(child_node);
 						}

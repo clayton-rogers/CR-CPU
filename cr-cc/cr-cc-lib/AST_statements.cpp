@@ -97,24 +97,25 @@ namespace AST {
 
 		for (const auto& block_item : block_item_list.children) {
 
-			switch (block_item.token.token_type)
+			const auto& block_item_child = block_item.children.at(0);
+			switch (block_item_child.token.token_type)
 			{
 				// Code blocks can optionally have a list of declarations
 				case TokenType::declaration:
 				{
-					auto declarations = parse_declaration(block_item, scope);
+					auto declarations = parse_declaration(block_item_child, scope);
 					add_declarations_to_stack(declarations, &statement_list, scope);
 				}
 				break;
 				// Code blocks can optionally have a list of statements
 				case TokenType::statement:
 				{
-					std::shared_ptr<Statement> s = parse_statement(block_item, scope);
+					std::shared_ptr<Statement> s = parse_statement(block_item_child, scope);
 					this->statement_list.push_back(s);
 				}
 				break;
 			default:
-				throw std::logic_error("Compound statement should never get here: " + tokenType_to_string(block_item.token.token_type));
+				throw std::logic_error("Compound statement should never get here: " + tokenType_to_string(block_item_child.token.token_type));
 			}
 		}
 
