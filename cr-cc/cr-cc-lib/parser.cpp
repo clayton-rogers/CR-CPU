@@ -13,34 +13,329 @@ struct Rule {
 
 using RuleList = std::vector<Rule>;
 
-void new_parse() {
-	struct New_Rule {
-		New_Rule(TokenType token) : rule_type(DIRECT), token(token) {}
+static int new_parse_node(ParseNode* node, const TokenList& token_list, int offset) {
+	struct TokenWrapper {
+		TokenWrapper(TokenType token) : rule_type(DIRECT), token(token) {}
 
 		enum RuleType {
 			DIRECT,
+			ZERO_OR_ONE,
 			ZERO_OR_MORE,
 			ONE_OR_MORE,
 		} rule_type;
 		TokenType token;
 	};
+	using NewRule = std::vector<TokenWrapper>;
+
+	auto optional = [](TokenType token) {
+		TokenWrapper rule(token);
+		rule.rule_type = TokenWrapper::ZERO_OR_ONE;
+		return rule;
+	};
 
 	auto one_or_more = [](TokenType token) {
-		New_Rule rule(token);
-		rule.rule_type = New_Rule::ONE_OR_MORE;
+		TokenWrapper rule(token);
+		rule.rule_type = TokenWrapper::ONE_OR_MORE;
 		return rule;
 	};
 
 	auto zero_or_more = [](TokenType token) {
-		New_Rule rule(token);
-		rule.rule_type = New_Rule::ZERO_OR_MORE;
+		TokenWrapper rule(token);
+		rule.rule_type = TokenWrapper::ZERO_OR_MORE;
 		return rule;
 	};
 
-	using NewRuleList = std::vector<Rule>;
+
+	using NewRuleList = std::vector<NewRule>;
 	std::map<TokenType, NewRuleList> NEW_C_GRAMMAR;
 
-	NEW_C_GRAMMAR[TokenType::translation_unit] = NewRuleList{ one_or_more(TokenType::external_declaration) };
+
+	NEW_C_GRAMMAR[TokenType::translation_unit] = { {one_or_more(TokenType::external_declaration)} };
+	NEW_C_GRAMMAR[TokenType::external_declaration] = {
+		{ TokenType::function },
+		{ TokenType::declaration },
+	};
+	NEW_C_GRAMMAR[TokenType::function] = {
+		{ TokenType::function_declaration },
+		{ TokenType::function_definition },
+	};
+	NEW_C_GRAMMAR[TokenType::function_declaration] = {
+		{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, optional(TokenType::parameter_list), TokenType::close_parenth, TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::function_definition] = {
+		{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, optional(TokenType::parameter_list), TokenType::close_parenth, TokenType::compound_statement},
+	};
+	NEW_C_GRAMMAR[TokenType::parameter_list] = {
+		{TokenType::parameter_declaration, zero_or_more(TokenType::parameter_list_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::parameter_list_tail] = {
+		{TokenType::comma, TokenType::parameter_declaration},
+	};
+	NEW_C_GRAMMAR[TokenType::parameter_declaration] = {
+		{TokenType::declaration_specifier, optional(TokenType::init_declarator)},
+	};
+	NEW_C_GRAMMAR[TokenType::declaration_specifier] = {
+		{TokenType::key_int}, // TODO add other types and specifiers
+	};
+	NEW_C_GRAMMAR[TokenType::compound_statement] = {
+		{TokenType::open_bracket, optional(TokenType::block_item_list), TokenType::close_bracket},
+	};
+	// TODO block item list could be eliminated?
+	NEW_C_GRAMMAR[TokenType::block_item_list] = {
+		{zero_or_more(TokenType::block_item)},
+	};
+	NEW_C_GRAMMAR[TokenType::block_item] = {
+		{TokenType::declaration},
+		{TokenType::statement},
+	};
+	NEW_C_GRAMMAR[TokenType::declaration] = {
+		//{TokenType::type_specifer, TokenType::semi_colon}, // TODO for struct declaration
+		{TokenType::declaration_specifier, TokenType::init_declarator_list, TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::init_declarator_list] = {
+		{TokenType::init_declarator, zero_or_more(TokenType::init_declarator_list_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::init_declarator_list_tail] = {
+		{TokenType::comma, TokenType::init_declarator},
+	};
+	NEW_C_GRAMMAR[TokenType::init_declarator] = {
+		{TokenType::declarator, TokenType::equals, TokenType::expression},
+		{TokenType::declarator},
+	};
+	NEW_C_GRAMMAR[TokenType::direct_declarator] = {
+		{TokenType::identifier, zero_or_more(TokenType::direct_declarator_tail)}, // var/pointer
+	};
+	NEW_C_GRAMMAR[TokenType::direct_declarator_tail] = {
+		{TokenType::open_square_bracket, TokenType::constant, TokenType::close_square_bracket}, // technically should be const expression
+	};
+	NEW_C_GRAMMAR[TokenType::pointer] = {
+		{one_or_more(TokenType::star)},
+	};
+	NEW_C_GRAMMAR[TokenType::statement] = {
+		{TokenType::compound_statement},
+		{TokenType::jump_statement},
+		{TokenType::if_statement},
+		{TokenType::for_statement},
+		{TokenType::while_statement},
+		{TokenType::do_while_statement},
+		{TokenType::break_statement},
+		{TokenType::continue_statement},
+		{TokenType::expression_statement},
+	};
+	NEW_C_GRAMMAR[TokenType::jump_statement] = {
+		// TODO for now don't accept return without an expression
+		//{TokenType::key_return, TokenType::semi_colon},
+		{TokenType::key_return, TokenType::expression, TokenType::semi_colon},
+		// TODO goto?
+	};
+	NEW_C_GRAMMAR[TokenType::if_statement] = {
+		// If with else
+		{TokenType::key_if, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::statement, TokenType::key_else, TokenType::statement},
+		// If without else
+		{TokenType::key_if, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::statement},
+	};
+	NEW_C_GRAMMAR[TokenType::while_statement] = {
+		{TokenType::key_while, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::statement},
+	};
+	NEW_C_GRAMMAR[TokenType::do_while_statement] = {
+		{TokenType::key_do, TokenType::statement, TokenType::key_while, TokenType::open_parenth, TokenType::expression, TokenType::close_parenth, TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::for_statement] = {
+		{TokenType::key_for, TokenType::open_parenth, TokenType::for_init_expression, TokenType::for_condition_expression, TokenType::for_increment_expression, TokenType::statement},
+	};
+	NEW_C_GRAMMAR[TokenType::for_init_expression] = {
+		{TokenType::declaration},
+		{TokenType::expression, TokenType::semi_colon},
+		{TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::for_condition_expression] = {
+		// TODO optimize to one line
+		//{optional(TokenType::expression), TokenType::semi_colon},
+
+		{TokenType::expression, TokenType::semi_colon},
+		{TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::for_increment_expression] = {
+		// TODO optimize to one line
+		//{optional(TokenType::expression), TokenType::close_parenth},
+
+		{TokenType::expression, TokenType::close_parenth},
+		{TokenType::close_parenth},
+	};
+	NEW_C_GRAMMAR[TokenType::break_statement] = {
+		{TokenType::key_break, TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::continue_statement] = {
+		{TokenType::key_continue, TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::expression_statement] = {
+		// TODO optimize to one line
+		//{optional(TokenType::expression), TokenType::semi_colon},
+		{TokenType::expression, TokenType::semi_colon},
+		{TokenType::semi_colon},
+	};
+	NEW_C_GRAMMAR[TokenType::expression] = {
+		{TokenType::unary_expression, TokenType::equals, TokenType::expression},
+		{TokenType::conditional_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::conditional_exp] = {
+		{TokenType::logical_or_exp, zero_or_more(TokenType::logical_or_exp_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::logical_or_exp_tail] = {
+		{TokenType::question, TokenType::expression, TokenType::colon, TokenType::conditional_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::logical_or_exp] = {
+		{TokenType::logical_and_exp, zero_or_more(TokenType::logical_and_exp_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::logical_and_exp_tail] = {
+		{TokenType::or_op, TokenType::logical_and_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::logical_and_exp] = {
+		{TokenType::equality_exp, zero_or_more(TokenType::equality_exp_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::equality_exp_tail] = {
+		{TokenType::and_op, TokenType::equality_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::equality_exp] = {
+		{TokenType::relational_exp, zero_or_more(TokenType::relational_exp_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::relational_exp_tail] = {
+		{TokenType::ne_op, TokenType::relational_exp},
+		{TokenType::eq_op, TokenType::relational_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::relational_exp] = {
+		{TokenType::shift_exp, zero_or_more(TokenType::shift_exp_tail)},
+	};
+
+	NEW_C_GRAMMAR[TokenType::shift_exp_tail] = {
+		{TokenType::less_than, TokenType::shift_exp},
+		{TokenType::greater_than, TokenType::shift_exp},
+		{TokenType::le_op, TokenType::shift_exp},
+		{TokenType::ge_op, TokenType::shift_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::shift_exp] = {
+		{TokenType::additive_exp, zero_or_more(TokenType::additive_exp_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::additive_exp_tail] = {
+		{TokenType::left_op, TokenType::additive_exp},
+		{TokenType::right_op, TokenType::additive_exp},
+	};
+	NEW_C_GRAMMAR[TokenType::additive_exp] = {
+		{TokenType::term, zero_or_more(TokenType::term_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::term_tail] = {
+		{TokenType::add, TokenType::term},
+		{TokenType::sub, TokenType::term},
+	};
+	NEW_C_GRAMMAR[TokenType::term] = {
+		{TokenType::factor, zero_or_more(TokenType::factor_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::factor_tail] = {
+		{TokenType::star, TokenType::factor}, // mult
+		{TokenType::div, TokenType::factor}, // div
+		{TokenType::percent, TokenType::factor}, // modulo
+	};
+	NEW_C_GRAMMAR[TokenType::factor] = {
+		{TokenType::open_parenth, TokenType::expression, TokenType::close_parenth},
+		{TokenType::function_call},
+		{TokenType::unary_expression},
+		{TokenType::constant},
+	};
+	NEW_C_GRAMMAR[TokenType::function_call] = {
+		{TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth},
+		{TokenType::identifier, TokenType::open_parenth, TokenType::argument_expression_list, TokenType::close_parenth},
+	};
+	NEW_C_GRAMMAR[TokenType::argument_expression_list] = {
+		{TokenType::expression, zero_or_more(TokenType::argument_expression_list_tail)},
+	};
+	NEW_C_GRAMMAR[TokenType::argument_expression_list_tail] = {
+		{TokenType::comma, TokenType::expression},
+	};
+	NEW_C_GRAMMAR[TokenType::unary_expression] = {
+		{TokenType::sub, TokenType::factor},
+		{TokenType::tilda, TokenType::factor},
+		{TokenType::exclam, TokenType::factor},
+		{TokenType::ampersand, TokenType::identifier},
+		{TokenType::star, TokenType::identifier},
+		{TokenType::identifier, TokenType::open_square_bracket, TokenType::expression, TokenType::close_square_bracket},
+		{TokenType::identifier},
+	};
+
+	auto local_is_token_terminal = [&NEW_C_GRAMMAR](TokenType token) {
+		return NEW_C_GRAMMAR.count(token) != 1;
+	};
+
+
+	if (local_is_token_terminal(node->token.token_type)) {
+		if (offset < static_cast<int>(token_list.size()) && node->token.token_type == token_list.at(offset).token_type) {
+			node->token = token_list.at(offset);
+			return 1; // Consume one token
+		} else {
+			return 0; // No match
+		}
+	} else {
+		NewRuleList rule_list = NEW_C_GRAMMAR.at(node->token.token_type);
+
+		for (const NewRule& rule : rule_list) {
+			int consumed_tokens;
+
+			for (const TokenWrapper& needed_token : rule) {
+
+				// If this token is required, force us to get it
+				if (needed_token.rule_type == TokenWrapper::DIRECT || needed_token.rule_type == TokenWrapper::ONE_OR_MORE) {
+					ParseNode p;
+					p.token.token_type = needed_token.token;
+					int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
+					if (ret == 0) {
+						consumed_tokens = 0;
+						node->children.clear();
+						break;
+					} else {
+						node->children.push_back(p);
+						consumed_tokens += ret;
+					}
+				}
+
+				// If this token may optionally have more than one of itself then try to get more
+				if (needed_token.rule_type == TokenWrapper::ONE_OR_MORE ||
+					needed_token.rule_type == TokenWrapper::ZERO_OR_MORE ||
+					needed_token.rule_type == TokenWrapper::ZERO_OR_ONE) {
+					while (true) {
+						ParseNode p;
+						p.token.token_type = needed_token.token;
+						int ret = new_parse_node(&p, token_list, offset + consumed_tokens);
+						if (ret == 0) {
+							// We did not match any (more) optionals so we're done
+							break;
+						} else {
+							// We actually was this children
+							node->children.push_back(p);
+							consumed_tokens += ret;
+						}
+
+						if (needed_token.rule_type == TokenWrapper::ZERO_OR_ONE) {
+							break;
+						}
+					}
+				}
+
+				// If we failed to match this rule, try the next one
+				if (consumed_tokens == 0 && needed_token.rule_type != TokenWrapper::ZERO_OR_MORE) {
+					goto next_rule;
+				}
+			}
+
+			// If we've gotten this far then we have matched the rule, return
+			return consumed_tokens;
+
+		next_rule:
+			;
+		}
+
+	}
+
+	// If we didn't match any of the rules
+	return 0;
 }
 
 const static std::map<TokenType, RuleList> C_GRAMMAR = {
