@@ -90,11 +90,19 @@ static bool is_identifier(std::string s) {
 	return (std::isalpha(s.at(0), LOCALE) || s.at(0) == '_');
 }
 
-// For now numeral literals (constants) must be all numbers
+// For now numeral literals (constants) must be hex or dec
 static bool is_constant(std::string s) {
-	for (const auto& letter : s) {
-		if (!std::isdigit(letter, LOCALE)) {
-			return false;
+	if ((int)s.length() > 2 && s.at(0) == '0' && (s.at(1) == 'x' || s.at(1) == 'X')) {
+		for (int i = 2; i < s.length(); ++i) {
+			if (!std::isxdigit(s.at(i), LOCALE)) {
+				return false;
+			}
+		}
+	} else {
+		for (const auto& letter : s) {
+			if (!std::isdigit(letter, LOCALE)) {
+				return false;
+			}
 		}
 	}
 	return true;

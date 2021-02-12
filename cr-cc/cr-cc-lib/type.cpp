@@ -30,6 +30,7 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 			}
 			specifier_type = specifier;
 			specifier_type_determined = true;
+			break;
 		default: ; // ignore
 		}
 	}

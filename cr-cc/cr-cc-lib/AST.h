@@ -422,7 +422,7 @@ namespace AST {
 				FUNCTION,
 				VARIABLE,
 			};
-			Global_Symbol_Type type;
+			Global_Symbol_Type type = Global_Symbol_Type::FUNCTION;
 
 			std::shared_ptr<Function> function;
 			Static_Var static_var;
