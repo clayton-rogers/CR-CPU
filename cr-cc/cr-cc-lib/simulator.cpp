@@ -5,6 +5,7 @@
 #include "linker.h"
 
 #include <stdexcept>
+#include <iostream>
 
 std::string program_loader_s =
 ".constant 0x1000 RAM_SIZE\n"
@@ -60,7 +61,14 @@ void Simulator::run_until_halted(const int number_steps) {
 	steps_remaining = number_steps;
 	while (!get_state().is_halted && steps_remaining != 0) {
 		--steps_remaining;
-		step();
+		try {
+			step();
+		} catch (const std::logic_error& e) {
+			// TODO actually separate out the types of errors
+			std::cout << "SIMULATOR ERROR: \n";
+			std::cout << e.what() << std::endl;
+			break;
+		}
 	}
 }
 
