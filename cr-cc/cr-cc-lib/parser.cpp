@@ -39,14 +39,20 @@ const static std::map<TokenType, RuleList> C_GRAMMAR = {
 	},
 	{TokenType::function_declaration,
 		{
-			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::semi_colon}, {}},
-			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::semi_colon}, {}},
+			{{TokenType::declaration_specifier, TokenType::function_declarator, TokenType::semi_colon}, {}},
 		}
 	},
 	{TokenType::function_definition,
 		{
-			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth, TokenType::compound_statement}, {}},
-			{{TokenType::declaration_specifier, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth, TokenType::compound_statement}, {}},
+			{{TokenType::declaration_specifier, TokenType::function_declarator, TokenType::compound_statement}, {}},
+		}
+	},
+	{TokenType::function_declarator,
+		{
+			{{TokenType::pointer, TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth}, {}},
+			{{TokenType::pointer, TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth}, {}},
+			{{TokenType::identifier, TokenType::open_parenth, TokenType::parameter_list, TokenType::close_parenth}, {}},
+			{{TokenType::identifier, TokenType::open_parenth, TokenType::close_parenth}, {}},
 		}
 	},
 	{TokenType::parameter_list,

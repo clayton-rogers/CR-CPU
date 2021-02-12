@@ -97,6 +97,7 @@ enum class TokenType {
 	function,
 	function_declaration,
 	function_definition,
+	function_declarator,
 	parameter_list,
 	parameter_list_tail,
 	parameter_declaration,

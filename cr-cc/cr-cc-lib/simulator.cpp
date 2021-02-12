@@ -4,6 +4,8 @@
 #include "assembler.h"
 #include "linker.h"
 
+#include <stdexcept>
+
 std::string program_loader_s =
 ".constant 0x1000 RAM_SIZE\n"
 ".constant 0x0200 PROGRAM_ADDR\n"

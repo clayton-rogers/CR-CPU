@@ -62,6 +62,8 @@ namespace AST {
 			actual_node.check_type(TokenType::function_declaration);
 		}
 
+		const auto& function_declarator = actual_node.get_child_with_type(TokenType::function_declarator);
+
 		// If the caller is asking for only a declaration, then override
 		if (is_fn_defined && type == Parse_Type::DECLARATION) {
 			is_fn_defined = false;
@@ -69,15 +71,20 @@ namespace AST {
 
 		{
 			auto declaration_specifer = parse_declaration_specifier(actual_node.get_child_with_type(TokenType::declaration_specifier));
-			return_type = std::make_shared<Type>(declaration_specifer, Abstract_Declarator());;
+			Abstract_Declarator a;
+			if (function_declarator.contains_child_with_type(TokenType::pointer)) {
+				const auto& pointer = function_declarator.get_child_with_type(TokenType::pointer);
+				a.num_pointers = static_cast<int>(pointer.children.size());
+			}
+			return_type = std::make_shared<Type>(declaration_specifer, a);;
 		}
 
-		name = actual_node.get_child_with_type(TokenType::identifier).token.value;
+		name = function_declarator.get_child_with_type(TokenType::identifier).token.value;
 
 		// Function arguments
-		if (actual_node.contains_child_with_type(TokenType::parameter_list)) {
+		if (function_declarator.contains_child_with_type(TokenType::parameter_list)) {
 			int unnamed_var_count = 0;
-			const auto& parameter_list = actual_node.get_child_with_type(TokenType::parameter_list);
+			const auto& parameter_list = function_declarator.get_child_with_type(TokenType::parameter_list);
 			for (const auto& parameter_declaration : parameter_list.children) {
 				if (parameter_declaration.token.token_type == TokenType::comma) {
 					continue; // comma's are expected in parameter lists
