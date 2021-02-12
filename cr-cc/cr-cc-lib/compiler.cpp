@@ -89,7 +89,9 @@ static void print_function_names(const Object::Object_Container& obj) {
 			++ptr;
 		}
 
-		const int size = (ptr - symb.offset);
+		// Don't forget to count the ret instruction if that's what stopped us
+		const int size = (ptr - symb.offset) +
+			((ptr < static_cast<int>(machine_code.size()) && machine_code.at(ptr) == ret_opcode) ? 1 : 0);
 		total += size;
 		std::cout << symb.name << ": " << size << " words" << std::endl;
 	}
