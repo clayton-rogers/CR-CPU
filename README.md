@@ -9,3 +9,5 @@ Currently the CPU and several peripherals are working on a Tiny FPGA BX. An asse
 ## Tips and Tricks
 
 Recommended args when hex dumping object or bin files: `xxd -e -g 2 obj.o` This will set the endianness and specify 2 bytes per word.
+
+You can use PuTTY (plink) to connect to the device's serial. Ex. `plink COM6 < flash.srec`.
