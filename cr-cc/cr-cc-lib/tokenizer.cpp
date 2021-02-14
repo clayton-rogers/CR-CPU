@@ -93,7 +93,7 @@ static bool is_identifier(std::string s) {
 // For now numeral literals (constants) must be hex or dec
 static bool is_constant(std::string s) {
 	if ((int)s.length() > 2 && s.at(0) == '0' && (s.at(1) == 'x' || s.at(1) == 'X')) {
-		for (int i = 2; i < s.length(); ++i) {
+		for (int i = 2; i < (int)s.length(); ++i) {
 			if (!std::isxdigit(s.at(i), LOCALE)) {
 				return false;
 			}
