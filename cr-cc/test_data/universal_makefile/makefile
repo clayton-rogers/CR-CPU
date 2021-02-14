@@ -25,7 +25,7 @@ sim: $(PROJECT).bin
 	$(CC) --sim $<
 
 clean:
-	$(RM) -f *.o $(PROJECT).bin $(PROJECT).srec $(PROJECT).hex
+	$(RM) -f *.o *.bin *.srec *.hex *.map
 
 $(PROJECT).srec: $(PROJECT).bin
 	$(CC) --srec $<
