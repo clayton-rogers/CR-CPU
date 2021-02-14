@@ -7,7 +7,7 @@ OBJS=$(ASM_OBJS) $(C_OBJS)
 
 OS_SRCS=os.s
 
-all: stdlib.a os.hex
+all: stdlib.a os.hex os.map
 
 os.hex: os.bin
 	$(CC) --hex $<

@@ -164,6 +164,16 @@ int compile(Compiler_Options opt) {
 
 		return 0;
 	}
+	if (opt.filenames.size() == 1 &&
+		get_file_extension(opt.filenames.at(0)) == "bin") {
+
+		const auto stream = read_bin_file(opt.filenames.at(0));
+		auto exe = Object::Object_Container::from_stream(stream);
+
+		handle_exe(exe, opt);
+
+		return 0;
+	}
 
 	std::string stdlib_path = ".";
 	if (opt.include_stdlib) {
@@ -180,18 +190,6 @@ int compile(Compiler_Options opt) {
 	// Next add all user defined directories
 	for (const auto& include_path : opt.include_paths) {
 		f.add_directory(include_path);
-	}
-
-
-	if (opt.filenames.size() == 1 &&
-		get_file_extension(opt.filenames.at(0)) == "bin") {
-
-		const auto stream = read_bin_file(opt.filenames.at(0));
-		auto exe = Object::Object_Container::from_stream(stream);
-
-		handle_exe(exe, opt);
-
-		return 0;
 	}
 
 	// If the input is not a bin file, then assume this is actually a file(s) that need compiling/link
@@ -244,11 +242,15 @@ int compile(Compiler_Options opt) {
 			return 0;
 		}
 
-		// Automatically link with stdlib
+		// Automatically link with stdlib and os lib
 		if (opt.include_stdlib) {
 			auto stream = read_bin_file(stdlib_path + "/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 			objs.push_back(stdlib);
+
+			stream = read_bin_file(stdlib_path + "/os.map");
+			auto os_map = Object::Object_Container::from_stream(stream);
+			objs.push_back(os_map);
 		}
 
 		auto exe = link(std::move(objs), opt.link_address);
