@@ -245,7 +245,7 @@ int compile(Compiler_Options opt) {
 		}
 
 		// Automatically link with stdlib
-		{
+		if (opt.include_stdlib) {
 			auto stream = read_bin_file(stdlib_path + "/stdlib.a");
 			auto stdlib = Object::Object_Container::from_stream(stream);
 			objs.push_back(stdlib);
@@ -262,7 +262,11 @@ int compile(Compiler_Options opt) {
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors
-		std::cout << "COMPILER ERROR: \n";
+		std::cout << "COMPILER ERROR:\n";
+		std::cout << e.what() << std::endl;
+		return 1;
+	} catch (const std::exception& e) {
+		std::cout << "UNKNOWN ERROR:\n";
 		std::cout << e.what() << std::endl;
 		return 1;
 	}

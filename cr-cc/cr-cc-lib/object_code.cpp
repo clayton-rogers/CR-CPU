@@ -806,7 +806,7 @@ static std::string to_string(const Library_Type& obj) {
 	std::stringstream ss;
 
 	for (const auto& lib_obj : obj.objects) {
-		ss << "\n";
+		ss << "\n=====================================================================";
 		ss << to_string(lib_obj);
 	}
 

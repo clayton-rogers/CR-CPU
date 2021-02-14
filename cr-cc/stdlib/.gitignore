@@ -1,2 +1,6 @@
 *.o
-stdlib.a
+*.bin
+*.hex
+*.srec
+*.map
+*.a
