@@ -26,8 +26,9 @@ namespace AST {
 		if (direct_declarator.contains_child_with_type(TokenType::open_square_bracket)) {
 			// Then this is an array declaration
 			// TODO assume for now that there is only ever one dimension
-			int array_size = std::stoi(direct_declarator.get_child_with_type(TokenType::constant).token.value, 0, 0);
-			if (array_size > 0xFFFF) {
+			size_t offset = 0;
+			int array_size = constant_from_string(direct_declarator.get_child_with_type(TokenType::constant).token.value, &offset);
+			if (array_size > 0xFFFF || array_size < 0) {
 				throw std::logic_error("array size out of range");
 			}
 			array_sizes.push_back(array_size);

@@ -337,4 +337,66 @@ namespace AST {
 
 		return nullptr;
 	}
+
+	// Processes strings and handles escape chars
+	static unsigned char get_next_char_from_string_literal(const std::string& s, size_t* offset) {
+		if (s.at(*offset) == '\\') {
+			++*offset;
+			switch (s.at((*offset)++)) {
+			case '\'':
+				return '\'';
+			case '\"':
+				return '\"';
+			case '?':
+				return '?'; // not sure why ? is even here....
+			case '\\':
+				return '\\';
+			case 'a':
+				return 0x07; // audible bell
+			case 'b':
+				return 0x08; // backspace
+			case 'f':
+				return 0x0c; // form feed
+			case 'n':
+				return '\n'; // line feed
+			case 'r':
+				return '\r'; // carriage return
+			case 't':
+				return '\t'; // horizontal tab
+			case 'v':
+				return '\v'; // vertical tab
+			case 'x':
+			case '0':
+			{
+				--* offset;
+				size_t consumed = 0;
+				std::string temp = s.substr(*offset);
+				if (s.at(*offset) == 'x') {
+					temp = std::string("0") + temp;
+				}
+				int value = std::stoi(temp, &consumed, 0);
+				if (s.at(*offset + 1) == 'x') { --consumed; } // sub off the '0' we added
+				*offset += consumed;
+				unsigned char ret_value = static_cast<unsigned char>(value);
+				if (value != ret_value) {
+					throw std::logic_error("Invalid oct char literal: " + temp);
+				}
+				return ret_value;
+			}
+			default:
+				throw std::logic_error("Unknown escape char: " + s.at(*offset - 1));
+			}
+		} else {
+			return s.at(*offset++);
+		}
+	}
+
+	int constant_from_string(const std::string& s, size_t* offset) {
+		if (s.at(0) == '\'') {
+			++*offset; // go past opening '
+			return get_next_char_from_string_literal(s, offset);
+		} else {
+			return std::stoi(s, nullptr, 0);
+		}
+	}
 }

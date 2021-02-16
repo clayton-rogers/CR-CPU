@@ -69,11 +69,11 @@ static const std::map<std::string, TokenType> STR_TOKEN_MAP =
 
 static const std::locale LOCALE("");
 
-static bool is_known_token(std::string token) {
+static bool is_known_token(const std::string& token) {
 	return STR_TOKEN_MAP.count(token) == 1;
 }
 
-static TokenType get_token_type(std::string token) {
+static TokenType get_token_type(const std::string& token) {
 	if (STR_TOKEN_MAP.count(token) == 1) {
 		return STR_TOKEN_MAP.at(token);
 	} else {
@@ -82,17 +82,20 @@ static TokenType get_token_type(std::string token) {
 }
 
 // TODO better checking for string and identifiers
-static bool is_string_literal(std::string s) {
+static bool is_string_literal(const std::string& s) {
 	return s.at(0) == '"';
 }
 
-static bool is_identifier(std::string s) {
+static bool is_identifier(const std::string&  s) {
 	return (std::isalpha(s.at(0), LOCALE) || s.at(0) == '_');
 }
 
 // For now numeral literals (constants) must be hex or dec
-static bool is_constant(std::string s) {
-	if ((int)s.length() > 2 && s.at(0) == '0' && (s.at(1) == 'x' || s.at(1) == 'X')) {
+static bool is_constant(const std::string& s) {
+	if (s.at(0) == '\'') {
+		// Make sure there is a closing ', but otherwise no restriction
+		return s.at(s.length() - 1) == '\'';
+	}  else if ((int)s.length() > 2 && s.at(0) == '0' && (s.at(1) == 'x' || s.at(1) == 'X')) {
 		for (int i = 2; i < (int)s.length(); ++i) {
 			if (!std::isxdigit(s.at(i), LOCALE)) {
 				return false;
@@ -151,6 +154,7 @@ TokenList tokenize(const std::string& code) {
 	Token current_token;
 	bool is_in_middle_of_token = false;
 	bool is_in_string_literal = false;
+	bool is_in_character_literal = false;
 
 	auto end_current_token = [&]() {
 		current_token.token_type = get_token_type(current_token.value);
@@ -170,13 +174,13 @@ TokenList tokenize(const std::string& code) {
 		is_in_middle_of_token = false;
 	};
 
-	for (int i = 0; i < static_cast<int>(code.length()); ++i) {
+	for (size_t i = 0; i < code.length(); ++i) {
 		const char current_char = code.at(i);
-		const char next_char = (i+1 < static_cast<int>(code.length())) ? code.at(i + 1) : '\0';
+		const char next_char = (i+1 < code.length()) ? code.at(i + 1) : '\0';
 		const std::string current_char_str(1, current_char);
 		const TokenType possible_compound = get_compound_token(current_char, next_char);
 
-		if (std::isspace(current_char, LOCALE) && !is_in_string_literal) {
+		if (std::isspace(current_char, LOCALE) && !(is_in_string_literal||is_in_character_literal)) {
 				if (is_in_middle_of_token) {
 					end_current_token();
 				} else {
@@ -190,7 +194,7 @@ TokenList tokenize(const std::string& code) {
 			current_token = Token(); // reset
 			is_in_middle_of_token = false;
 			++i; // consume the additional token
-		} else if (is_known_token(current_char_str) && !is_in_string_literal) {
+		} else if (is_known_token(current_char_str) && !(is_in_string_literal || is_in_character_literal)) {
 			if (is_in_middle_of_token) {
 				end_current_token();
 			}
@@ -204,10 +208,16 @@ TokenList tokenize(const std::string& code) {
 				if (current_char == '"') {
 					is_in_string_literal = true;
 				}
+				if (current_char == '\'') {
+					is_in_character_literal = true;
+				}
 			} else {
 				if (is_in_string_literal && current_char == '"') {
 					is_in_string_literal = false;
 					//end_current_token(); // Not sure if this is required. For now will leave it out.
+				}
+				if (is_in_character_literal && current_char == '\'') {
+					is_in_character_literal = false;
 				}
 			}
 		}

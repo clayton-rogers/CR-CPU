@@ -441,4 +441,6 @@ namespace AST {
 		Environment env;
 		std::shared_ptr<VarMap> global_scope;
 	};
+
+	int constant_from_string(const std::string& s, size_t* offset);
 }

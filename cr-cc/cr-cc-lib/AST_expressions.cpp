@@ -157,7 +157,8 @@ namespace AST {
 	Constant_Expression::Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 			: Expression(scope) {
 		node.check_type(TokenType::constant);
-		int value = std::stoi(node.token.value, 0, 0);
+		size_t offset = 0;
+		int value = constant_from_string(node.token.value, &offset);
 		if (value > 0xFFFF || value < -0x7FFF) {
 			throw std::logic_error("Contstant literal out of range: " + node.token.value);
 		}
