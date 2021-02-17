@@ -503,17 +503,22 @@ namespace AST {
 				struct Temp_Var_Map {
 					int offset;
 					std::string name;
-					Temp_Var_Map(int offset, std::string name) : offset(offset), name(name) {}
+					int size;
+					Temp_Var_Map(int offset, std::string name, int size) : offset(offset), name(name), size(size) {}
 				};
 				std::vector<Temp_Var_Map> vars;
 				for (const auto& var : scope.offset_map) {
-					vars.emplace_back(var.second.offset, var.first);
+					vars.emplace_back(var.second.offset, var.first, var.second.type->get_size());
 				}
 				std::sort(vars.begin(), vars.end(), [](Temp_Var_Map a, Temp_Var_Map b) {
 					return a.offset > b.offset;
 					});
 				for (const auto& var : vars) {
-					ss << "# sp + " << var.offset << " = " << var.name << "_" << id << "\n";
+					ss << "# sp + " << var.offset << " = " << var.name << "_" << id;
+					if (var.size != 1) {
+						ss << " size: " << var.size;
+					}
+					ss << "\n";
 				}
 				++id;
 			}
