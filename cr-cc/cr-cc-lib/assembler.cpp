@@ -643,6 +643,9 @@ static std::uint16_t instruction_to_machine(
 				case OPCODE::CALL:
 					// label instruction numbers should be relative to current instruction
 					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+						if (extern_label_map.count(a.label_value)) {
+							throw std::logic_error("Should not reference an external symbol with relative flag: " + a.label_value);
+						}
 						const_value = get_label(a.label_value) - instruction_number;
 						if (const_value > +127 || const_value < -128) {
 							throw std::logic_error("Jmp or call to label too far away: " + a.label_value);
