@@ -38,7 +38,6 @@ ret
 	pop rb
 ret
 
-
 # sleep - busy waits for the given number of seconds
 # INPUT
 #   ra - number of seconds
@@ -46,7 +45,6 @@ ret
 .export sleep
 push rb
 jmp.r.z .sleep_done
-
 
 .sleep_top:
 mov rb ra
@@ -56,7 +54,6 @@ call.r .msleep
 mov ra rb
 sub ra 1
 jmp.r.nz .sleep_top
-
 
 .sleep_done:
 pop rb

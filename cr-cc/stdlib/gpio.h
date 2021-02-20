@@ -1,2 +1,2 @@
 
-int __set_gpio(int);
+int __set_led(int);
