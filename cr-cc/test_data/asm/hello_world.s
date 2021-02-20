@@ -2,7 +2,8 @@
 .constant 0x8200 TIMER_OFFSET
 .constant 0x8300 UART_OFFSET
 
-.static 13 HELLO_STR "Hello world!"
+.static 12 HELLO_STR "Hello world!"
+.static 1 unused 0x00 # NULL
 
 # must be the first instruction of the program
 .main:

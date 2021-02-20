@@ -88,10 +88,10 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{".static 2 var 0xfafe 255", "FAFE 00FF "},
 		{".static 1 bb 0xff \n .static 1 aa 0xaa", "00FF 00AA "}, // check that variables are stored in order declared
 		{".static 0x0a bb", "0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 "}, // static variables size should accept hex
-		{".static 6 text \"hello\"", "0068 0065 006C 006C 006F 0000 "}, // handling simple string
-		{".static 6 text \"ab ab\"", "0061 0062 0020 0061 0062 0000 "}, // handling embeded space in string
-		{".static 9 text \"ab ab ab\"", "0061 0062 0020 0061 0062 0020 0061 0062 0000 "}, // handling two spaces
-		{".static 6 text \"HELLO\"", "0048 0045 004C 004C 004F 0000 "}, // handling upper case letters
+		{".static 5 text \"hello\"", "0068 0065 006C 006C 006F "}, // handling simple string
+		{".static 5 text \"ab ab\"", "0061 0062 0020 0061 0062 "}, // handling embeded space in string
+		{".static 8 text \"ab ab ab\"", "0061 0062 0020 0061 0062 0020 0061 0062 "}, // handling two spaces
+		{".static 5 text \"HELLO\"", "0048 0045 004C 004C 004F "}, // handling upper case letters
 		{"loadi ra, .const \n .constant 10 const", "A00A "},
 		{"loadi ra, .const \n loadi.h ra, .const \n .constant 0xabcd const", "A0CD A2AB "},
 		{"loada .const \n .constant 0xfedc const", "D0FE "},

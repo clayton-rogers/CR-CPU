@@ -374,10 +374,10 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 					throw std::logic_error("Missing closing quote for var: " + label);
 				}
 
-				if (static_cast<int>(supplied_string.size()) + 1 != vl.size) {
+				if (static_cast<int>(supplied_string.size()) != vl.size) {
 					throw std::logic_error("Incorrect size string: " + label +
 						" Expected: " + std::to_string(vl.size) +
-						" Actual: " + std::to_string(supplied_string.size() + 1));
+						" Actual: " + std::to_string(supplied_string.size()));
 				}
 
 				vl.has_values = true;
@@ -386,7 +386,6 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 					char c = supplied_string.at(i);
 					vl.values.push_back(c);
 				}
-				vl.values.push_back(0); // null terminator
 
 			} else {
 				// this is a list of numbers
