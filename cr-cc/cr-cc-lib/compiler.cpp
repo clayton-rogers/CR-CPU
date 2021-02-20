@@ -16,7 +16,7 @@
 #include <algorithm>
 
 
-static const int RAM_SIZE_WORDS = 4096;
+static const int RAM_SIZE_WORDS = 0x1000 - 0x200;
 static const char* STDLIB_ENV_VAR = "CRSTDLIBPATH";
 
 
@@ -123,7 +123,8 @@ void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 	if (opt.verbose) {
 		std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
 			<< " (" << std::fixed << std::setprecision(2)
-			<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%)"
+			<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%) "
+			<< (RAM_SIZE_WORDS - machine_code.size()) << " left for stack"
 			<< std::endl;
 	}
 

@@ -21,8 +21,8 @@ halt
 # ====================================================================
 # YOUR MAIN GOES HERE
 # ====================================================================
-.static 0x13 WELCOME_STR "Welcome to CR-CPU!"
-.static 0x18 PROMPT_TEXT "READY. PASTE PROGRAM > "
+.static 0x12 WELCOME_STR "Welcome to CR-CPU!"
+.static 0x17 PROMPT_TEXT "READY. PASTE PROGRAM > "
 ._main:
 	# set LEDs to RA to display return code
 	call.r ._set_led

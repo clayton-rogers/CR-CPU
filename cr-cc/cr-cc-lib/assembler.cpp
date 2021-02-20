@@ -374,10 +374,10 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 					throw std::logic_error("Missing closing quote for var: " + label);
 				}
 
-				if (static_cast<int>(supplied_string.size()) + 1 != vl.size) {
+				if (static_cast<int>(supplied_string.size()) != vl.size) {
 					throw std::logic_error("Incorrect size string: " + label +
 						" Expected: " + std::to_string(vl.size) +
-						" Actual: " + std::to_string(supplied_string.size() + 1));
+						" Actual: " + std::to_string(supplied_string.size()));
 				}
 
 				vl.has_values = true;
@@ -386,7 +386,6 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 					char c = supplied_string.at(i);
 					vl.values.push_back(c);
 				}
-				vl.values.push_back(0); // null terminator
 
 			} else {
 				// this is a list of numbers
@@ -644,6 +643,9 @@ static std::uint16_t instruction_to_machine(
 				case OPCODE::CALL:
 					// label instruction numbers should be relative to current instruction
 					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+						if (extern_label_map.count(a.label_value)) {
+							throw std::logic_error("Should not reference an external symbol with relative flag: " + a.label_value);
+						}
 						const_value = get_label(a.label_value) - instruction_number;
 						if (const_value > +127 || const_value < -128) {
 							throw std::logic_error("Jmp or call to label too far away: " + a.label_value);

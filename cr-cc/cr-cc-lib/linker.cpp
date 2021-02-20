@@ -43,7 +43,7 @@ static void handle_object(
 	for (const auto& existing_symbol : output_object.exported_symbols) {
 		for (const auto& new_symbol : input_object.exported_symbols) {
 			if (existing_symbol.name == new_symbol.name &&
-					new_symbol.name != "__static_data") {
+					new_symbol.type != Symbol_Type::DATA) {
 				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
 			}
 		}
@@ -89,7 +89,8 @@ static void handle_map(
 	// Double check that this new object doesn't export any already exported symbols
 	for (const auto& existing_symbol : output_object.exported_symbols) {
 		for (const auto& new_symbol : input_map.exported_symbols) {
-			if (existing_symbol.name == new_symbol.name) {
+			if (existing_symbol.name == new_symbol.name &&
+				new_symbol.type != Symbol_Type::DATA) {
 				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
 			}
 		}
