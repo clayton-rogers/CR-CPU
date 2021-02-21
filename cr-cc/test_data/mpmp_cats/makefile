@@ -1,7 +1,7 @@
 # Change these
-PROJECT=universal
-CFLAGS=--function-size
-TTY=/dev/ttyS2
+PROJECT=cats
+CFLAGS=
+TTY=/dev/ttyS5
 
 # Don't change these unless you know what you're doing
 C_SRCS=$(shell find . -name "*.c")
