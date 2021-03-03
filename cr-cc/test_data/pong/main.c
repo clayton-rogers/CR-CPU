@@ -24,6 +24,9 @@
 // run: make pong.srec && cat pong.srec
 // then paste into PuTTY terminal
 // ===================================================== //
+// TODO:
+// - randomize starting position better
+// - print score in dec?
 
 
 // CONSTANTS
@@ -178,7 +181,7 @@ int print_ball() {
 }
 
 int print_scores() {
-	set_vga_cursor(35); // 0, 40
+	set_vga_cursor(115); // 0, 40
 	write_vga_char('A');
 	write_vga_char(':');
 	__print_num(score_a);
@@ -188,8 +191,22 @@ int print_scores() {
 	__print_num(score_b);
 }
 
+int print_border() {
+	set_vga_cursor(1);
+	int max = width - 2;
+	for (int i = 0; i < max; i = i + 1) {
+		write_vga_char('=');
+	}
+	set_vga_cursor(1841);
+	for (int i = 0; i < max; i = i + 1) {
+		write_vga_char('=');
+	}
+}
+
 int print_screen() {
 	clear_screen();
+
+	print_border();
 
 	print_paddle(player_a_pos * 80);
 	print_paddle(player_b_pos * 80 + 79);
@@ -206,7 +223,7 @@ int main() {
 		print_screen();
 		msleep(sleep_ms);
 		frame_count = frame_count - 1;
-		if (frame_count == 0 && sleep_ms != 1) {
+		if (frame_count == 0 && sleep_ms != 10) {
 			sleep_ms = sleep_ms - 1;
 			frame_count = start_frame_count;
 		}
