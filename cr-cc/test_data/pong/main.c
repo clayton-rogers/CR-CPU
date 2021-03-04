@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <cr-os.h>
 #include <print_num.h>
+#include "print_as_dec.h"
+int get_rand(); // from asm
 
 // ===================================================== //
 // ==================== PONG =========================== //
@@ -25,8 +27,7 @@
 // then paste into PuTTY terminal
 // ===================================================== //
 // TODO:
-// - randomize starting position better
-// - print score in dec?
+// - ball trails
 
 
 // CONSTANTS
@@ -62,9 +63,12 @@ int score_a = 0;
 int score_b = 0;
 
 
-int get_rand(); // from asm
-
 int restart_ball() {
+	// (320/2) - 8 ( 1.5 expected rand val )
+	ball_p_x = 148 + (get_rand() << 3);
+	// (192/2) - 8 ( 1.5 expected rand val )
+	ball_p_y = 84 + (get_rand() << 3);
+
 	int dir = get_rand();
 	if (dir == 0) {
 		ball_v_x = 1;
@@ -87,8 +91,6 @@ int restart_ball() {
 int restart() {
 	sleep_ms = start_sleep_ms;
 	frame_count = start_frame_count;
-	ball_p_x = 160;
-	ball_p_y = 96;
 	restart_ball();
 }
 
@@ -184,11 +186,15 @@ int print_scores() {
 	set_vga_cursor(115); // 0, 40
 	write_vga_char('A');
 	write_vga_char(':');
-	__print_num(score_a);
+	write_vga_char(' ');
+	print_as_dec(score_a);
+	//__print_num(score_a);
 	write_vga_char(' ');
 	write_vga_char('B');
 	write_vga_char(':');
-	__print_num(score_b);
+	write_vga_char(' ');
+	print_as_dec(score_b);
+	//__print_num(score_b);
 }
 
 int print_border() {

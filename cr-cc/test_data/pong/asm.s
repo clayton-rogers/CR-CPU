@@ -1,14 +1,7 @@
 
-
-## worlds worst random number generator
-#.get_rand:
-#.export get_rand
-#loada .get_timer_lower
-#call .get_timer_lower
-#shftr ra 3 # every 8 clocks, the output changes
-#and ra 3 # 4 possible outputs
-#ret
-
+# From:
+# https://stackoverflow.com/questions/3062746/special-simple-random-number-generator
+# https://en.wikipedia.org/wiki/Xorshift
 
 
 #/* The state word must be initialized to non-zero */
