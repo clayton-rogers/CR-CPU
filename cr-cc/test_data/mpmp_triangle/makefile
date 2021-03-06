@@ -1,5 +1,5 @@
 # Change these
-PROJECT=no_squares
+PROJECT=triangle
 CFLAGS=
 TTY=/dev/ttyS5
 
