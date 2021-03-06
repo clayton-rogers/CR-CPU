@@ -241,7 +241,7 @@ static const Argument parse_token_for_arg(std::string token) {
 	} else if (token.length() > 2 && token.at(0) == '0' && token.at(1) == 'x') {
 		try {
 			output.value = std::stoi(token, 0, 16);
-		} catch (std::logic_error e) {
+		} catch (const std::logic_error& /*e*/) {
 			throw std::logic_error("Failed to parse token as register or constant: " + token);
 		}
 		if (output.value < 0 || output.value > 0xFF) {
@@ -250,7 +250,7 @@ static const Argument parse_token_for_arg(std::string token) {
 	} else {
 		try {
 			output.value = std::stoi(token);
-		} catch (std::logic_error e) {
+		} catch (const std::logic_error& /*e*/) {
 			throw std::logic_error("Failed to parse token as register or constant: " + token);
 		}
 		if (output.value < -128 || output.value > 127) {
