@@ -624,6 +624,13 @@ static std::string machine_to_string(const std::uint16_t instruction, const std:
 	bool should_print_literal = false;
 	switch (op_code) {
 	case ADD:
+		if (high == 0 && low == 0 && literal != 0) {
+			// This might be a character literal
+			if (literal >= ' ' && literal <= '~') {
+				ss << "\"" << (char)literal << "\"";
+			}
+			break;
+		}
 		ss << "add " << high_reg << " " << low_reg;
 		if (low == 3) should_print_literal = true;
 		break;
