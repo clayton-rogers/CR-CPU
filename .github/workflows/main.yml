@@ -18,7 +18,7 @@ jobs:
     - name: Build
       run: |
         cd cr-cc
-        make
+        make -j
         mkdir build
         mv cc build/cr-cc
         mv test build/cr-cc-test
