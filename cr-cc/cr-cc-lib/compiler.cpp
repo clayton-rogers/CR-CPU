@@ -100,7 +100,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
-void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
+int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 
 	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
@@ -151,7 +151,14 @@ void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 			<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
 		std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
 		std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (opt.sim_steps - sim.get_state().steps_remaining) << std::endl;
+		if (sim.get_state().is_halted) {
+			return 0;
+		} else {
+			return 1; // get propagated to the return code
+		}
 	}
+
+	return 0;
 }
 
 int compile(Compiler_Options opt) {
@@ -182,9 +189,7 @@ int compile(Compiler_Options opt) {
 		const auto stream = read_bin_file(opt.filenames.at(0));
 		auto exe = Object::Object_Container::from_stream(stream);
 
-		handle_exe(exe, opt);
-
-		return 0;
+		return handle_exe(exe, opt);
 	}
 
 	std::string stdlib_path = ".";
@@ -272,7 +277,7 @@ int compile(Compiler_Options opt) {
 		}
 
 		// Handle any outputs and simulation
-		handle_exe(exe, opt);
+		return handle_exe(exe, opt);
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors
