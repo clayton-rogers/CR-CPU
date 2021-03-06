@@ -10,7 +10,11 @@ OS_SRCS=os-sleep.s os-uart.s os-gpio.s os-load-srec.s os-puts.s
 OS_OBJS=$(subst .s,.o,$(OS_SRCS))
 OS_MAIN_OBJS=os.o
 
-all: stdlib.a os.hex os.map
+all: stdlib.a os.hex os.map os_verify
+
+os_verify: os.hex
+	@chmod 755 verify_os_hex.sh
+	@./verify_os_hex.sh
 
 os.hex: os.bin
 	$(CC) --hex $<
