@@ -22,7 +22,7 @@ upload: $(PROJECT).srec
 	cat $< > $(TTY)
 
 sim: $(PROJECT).bin
-	$(CC) --sim $<
+	$(CC) --sim --sim-steps 3000000 $<
 
 clean:
 	$(RM) -f *.o $(PROJECT).bin $(PROJECT).srec $(PROJECT).hex

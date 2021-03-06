@@ -18,7 +18,7 @@ jobs:
     - name: Build
       run: |
         cd cr-cc
-        make
+        make -j
         mkdir build
         mv cc build/cr-cc
         mv test build/cr-cc-test
@@ -33,3 +33,9 @@ jobs:
       run: |
         cd cr-cc
         ./build/cr-cc-test  "*,[.]" --benchmark-no-analysis
+
+    - name: Build and run test code
+      run: |
+        cd cr-cc/test_data
+        chmod 755 build_and_run_test_code.sh
+        PATH=../../build:$PATH CRSTDLIBPATH=../../stdlib ./build_and_run_test_code.sh
