@@ -15,8 +15,10 @@
 #include <stdexcept>
 #include <algorithm>
 
+static const int OS_SIZE_WORDS = 0x200;
+static const int FULL_RAM_SIZE_WORDS = 0x1000;
+static const int USABLE_RAM_SIZE_WORDS = FULL_RAM_SIZE_WORDS - OS_SIZE_WORDS;
 
-static const int RAM_SIZE_WORDS = 0x1000 - 0x200;
 static const char* STDLIB_ENV_VAR = "CRSTDLIBPATH";
 
 
@@ -121,11 +123,20 @@ void handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 	}
 
 	if (opt.verbose) {
-		std::cout << "Code size: " << machine_code.size() << "/" << RAM_SIZE_WORDS
-			<< " (" << std::fixed << std::setprecision(2)
-			<< static_cast<float>(machine_code.size()) / RAM_SIZE_WORDS * 100 << "%) "
-			<< (RAM_SIZE_WORDS - machine_code.size()) << " left for stack"
-			<< std::endl;
+		if (!opt.include_stdlib && !opt.include_main) {
+			// We are probably compiling the os itself
+			std::cout
+				<< "Code size: " << machine_code.size() << "/" << OS_SIZE_WORDS
+				<< " (" << std::fixed << std::setprecision(2)
+				<< static_cast<float>(machine_code.size()) / OS_SIZE_WORDS * 100 << "%) "
+				<< std::endl;
+		} else {
+			std::cout << "Code size: " << machine_code.size() << "/" << USABLE_RAM_SIZE_WORDS
+				<< " (" << std::fixed << std::setprecision(2)
+				<< static_cast<float>(machine_code.size()) / USABLE_RAM_SIZE_WORDS * 100 << "%) "
+				<< (USABLE_RAM_SIZE_WORDS - machine_code.size()) << " left for stack"
+				<< std::endl;
+		}
 	}
 
 	if (opt.should_sim) {
