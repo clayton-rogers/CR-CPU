@@ -642,6 +642,28 @@ namespace AST {
 				ss << scope->load_word(var_name, "ra");
 			}
 			break;
+		case Variable_Type::increment:
+		case Variable_Type::decrement:
+		{
+			if (scope->is_var_array(var_name)) {
+				throw std::logic_error("Cannot increment array: " + var_name);
+			}
+			int inc_amount = 1;
+			if (scope->is_var_ptr(var_name)) {
+				auto type_of_var = scope->get_var_type(var_name);
+				throw std::logic_error("Can't increment pointers yet");
+			}
+			ss << scope->load_word(var_name, "ra");
+			if (var_type == Variable_Type::increment) {
+				ss << "add ra " << output_byte(inc_amount) << " # increment\n";
+			} else if (var_type == Variable_Type::decrement) {
+				ss << "sub ra " << output_byte(inc_amount) << " # decrement\n";
+			} else {
+				throw std::logic_error("Variable_Expression::generate_code(): Should never get here");
+			}
+			ss << scope->store_word(var_name, "ra");
+		}
+		break;
 		case Variable_Type::array:
 			// Calculate the offset, then get the dereference
 			ss << array_index->generate_code();
@@ -830,6 +852,27 @@ namespace AST {
 		}
 
 		throw std::logic_error("Tried to get the pointer status of an unknown var: " + name);
+	}
+
+	std::shared_ptr<Type> VarMap::get_var_type(const std::string& name) {
+
+		// Try for stack var
+		{
+			const Var* var = get_stack_var(name);
+			if (var != nullptr) {
+				return var->type;
+			}
+		}
+
+		// If we get this far, try static var
+		{
+			auto static_var = env->get_static_var(name);
+			if (static_var != nullptr) {
+				return static_var->type;
+			}
+		}
+
+		return std::shared_ptr<Type>();
 	}
 
 	std::string If_Statement::generate_code() const {

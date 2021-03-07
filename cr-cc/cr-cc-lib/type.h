@@ -67,6 +67,8 @@ public:
 
 	bool is_same(std::shared_ptr<Type> other);
 
+	const Abstract_Declarator* get_abstract_declarator() { return &abstract_declarator; }
+
 private:
 	Broad_Type broad_type;
 	int size;

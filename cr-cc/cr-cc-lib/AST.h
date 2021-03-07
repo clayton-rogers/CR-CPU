@@ -75,6 +75,7 @@ namespace AST {
 
 		bool is_var_array(const std::string& name);
 		bool is_var_ptr(const std::string& name);
+		std::shared_ptr<Type> get_var_type(const std::string& name);
 
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
@@ -161,6 +162,8 @@ namespace AST {
 			reference,
 			dereference,
 			array,
+			increment,
+			decrement,
 		};
 
 		Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
