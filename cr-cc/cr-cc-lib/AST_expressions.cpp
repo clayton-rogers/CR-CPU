@@ -258,6 +258,10 @@ namespace AST {
 			var_type = Variable_Type::reference;
 		} else if (node.contains_child_with_type(TokenType::star)) {
 			var_type = Variable_Type::dereference;
+		} else if (node.contains_child_with_type(TokenType::inc_op)) {
+			var_type = Variable_Type::increment;
+		} else if (node.contains_child_with_type(TokenType::dec_op)) {
+			var_type = Variable_Type::decrement;
 		} else if (node.contains_child_with_type(TokenType::open_square_bracket)) {
 			var_type = Variable_Type::array;
 			array_index = parse_expression(node.get_child_with_type(TokenType::expression), scope);
