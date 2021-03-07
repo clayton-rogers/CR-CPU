@@ -409,9 +409,6 @@ namespace AST {
 		std::shared_ptr<Variable> get_static_var(const std::string& name);
 
 		Label_Maker label_maker;
-		bool used_mult = false;
-		bool used_div = false;
-		bool used_mod = false;
 
 	private:
 		using Struct_Map_Type = std::map<std::string, std::shared_ptr<Type>>;

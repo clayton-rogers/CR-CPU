@@ -1019,6 +1019,11 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 	// Add all external references to the object
 	auto& extern_ref = std::get<Object_Type>(as->out.contents).external_references;
 	for (const auto& ref : as->extern_label_map) {
+		// If this extern is not actually referenced, then don't include it
+		if (ref.second.hi_references.size() == 0 && ref.second.lo_references.size() == 0) {
+			continue;
+		}
+
 		External_Reference hi_ref;
 		External_Reference lo_ref;
 

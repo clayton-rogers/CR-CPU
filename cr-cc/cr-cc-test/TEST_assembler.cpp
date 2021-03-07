@@ -309,10 +309,9 @@ TEST_CASE("Assembler object External references", "[asm]") {
 	{
 		const auto& refs = object.external_references;
 
-		CHECK(refs.at(0) == External_Reference{ "bar", HI_LO_TYPE::HI_BYTE, {} });
-		CHECK(refs.at(1) == External_Reference{ "bar", HI_LO_TYPE::LO_BYTE, {} });
-		CHECK(refs.at(2) == External_Reference{ "foo", HI_LO_TYPE::HI_BYTE, {0x04} });
-		CHECK(refs.at(3) == External_Reference{ "foo", HI_LO_TYPE::LO_BYTE, {0x05} });
+		// Note bar is not included in the external references because it is not used
+		CHECK(refs.at(0) == External_Reference{ "foo", HI_LO_TYPE::HI_BYTE, {0x04} });
+		CHECK(refs.at(1) == External_Reference{ "foo", HI_LO_TYPE::LO_BYTE, {0x05} });
 	}
 	// Check the output machine code
 	{

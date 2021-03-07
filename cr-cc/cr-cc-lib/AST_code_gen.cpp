@@ -228,7 +228,6 @@ namespace AST {
 			// mult and div are not instructions but function calls
 			// if they're used we have to make sure there's an .external
 			// directive for them
-			scope->env->used_mult = true;
 			ss << "loada .__mult\n";
 			ss << "call .__mult\n";
 			break;
@@ -236,13 +235,11 @@ namespace AST {
 			// mult and div are not instructions but function calls
 			// if they're used we have to make sure there's an .external
 			// directive for them
-			scope->env->used_div = true;
 			ss << "loada .__div\n";
 			ss << "call .__div\n";
 			break;
 		case Bin_Type::remainder:
 			// mod is also a function and not an instruction
-			scope->env->used_mod = true;
 			ss << "loada .__rem\n";
 			ss << "call .__rem\n";
 			break;
@@ -447,15 +444,10 @@ namespace AST {
 		// generate extern for mult and div if needed
 		// TODO probably proper way to do this is to add them to the function map
 		ss << "\n";
-		if (used_mult) {
-			ss << ".extern __mult\n";
-		}
-		if (used_div) {
-			ss << ".extern __div\n";
-		}
-		if (used_mod) {
-			ss << ".extern __rem\n";
-		}
+		// Note the assembler will not actually generate external references if these are not used
+		ss << ".extern __mult\n";
+		ss << ".extern __div\n";
+		ss << ".extern __rem\n";
 
 		return ss.str();
 	}
