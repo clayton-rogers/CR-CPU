@@ -4,7 +4,7 @@
 sim_dirs=(
 	#"echo"  # missing devices in sim
 	"flash"
-	#"map_test"  # compiler bug, duplicate symbol
+	#"map_test"  # can't load multiple bin into sim
 	"mpmp_cats"
 	#"mpmp_marching_band" # takes too long???
 	#"mpmp_no_squares" # takes too long???
@@ -18,6 +18,7 @@ build_only=(
 	"echo"
 	"pong"
 	"os_link"
+	"map_test"
 	"mpmp_marching_band"
 	"mpmp_no_squares"
 	"mpmp_triangle"
