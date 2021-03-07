@@ -81,7 +81,7 @@ static void handle_object(
 }
 
 static void handle_map(
-	Object_Type& output_object,
+	Map& output_object,
 	const Map& input_map
 	)
 {
@@ -91,7 +91,7 @@ static void handle_map(
 		for (const auto& new_symbol : input_map.exported_symbols) {
 			if (existing_symbol.name == new_symbol.name &&
 				new_symbol.type != Symbol_Type::DATA) {
-				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
+				throw std::logic_error("Link(): Duplicate symbol exported in map: " + existing_symbol.name);
 			}
 		}
 	}
@@ -139,12 +139,15 @@ static void handle_lib(
 	}
 }
 
-static void apply_references(Object_Type& object, std::uint16_t link_addr)
+static void apply_references(Object_Type& object, const Map& map, const std::uint16_t link_addr)
 {
 	std::unordered_map<std::string, Exported_Symbol> symbol_table;
 
 	// Add all the know references to the map
 	for (const auto& symbol : object.exported_symbols) {
+		symbol_table[symbol.name] = symbol;
+	}
+	for (const auto& symbol : map.exported_symbols) {
 		symbol_table[symbol.name] = symbol;
 	}
 
@@ -175,13 +178,11 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 	} catch (const std::logic_error& ) {
 		throw std::logic_error("Link address out of range: " + link_addr);
 	}
-	// For now we're going to assume all inputs are objects.
-	// i.e. none of them are libraries or maps. This means
-	// that we know that all inputs will be copied to the output.
 
-	// All the input objects are collected into this one, then
-	// transfered to the output container
+	// All the input objects (both objects and libs) are collected into this one,
+	// then transfered to the output container
 	Object_Type collector_object;
+	Map collector_map;
 
 	for (auto& item : link_items) {
 		switch (item.contents.index())
@@ -201,7 +202,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 		case Object_Container::MAP:
 		{
 			auto& map = std::get<Map>(item.contents);
-			handle_map(collector_object, map);
+			handle_map(collector_map, map);
 			break;
 		}
 		case Object_Container::EXECUTABLE:
@@ -212,7 +213,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 	}
 
 	// Now that we have all the objects collected, apply all the references
-	apply_references(collector_object, real_link_addr);
+	apply_references(collector_object, collector_map, real_link_addr);
 
 	Executable exe{
 		real_link_addr,
