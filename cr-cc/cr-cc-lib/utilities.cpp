@@ -100,13 +100,15 @@ std::string exe_to_srec(const Object::Object_Container& obj) {
 		sum ^= 0xFF;
 		output << u8_to_string(sum);
 
+		output << '\n';
+
 		return output.str();
 	};
 
 	std::ostringstream ss;
 
 	// Header
-	ss << write_line(0, 0, { 0x43,0x52,0x2D,0x43,0x50,0x55,0x00 }) << '\n'; // "CR-CPU"
+	ss << write_line(0, 0, { 0x43,0x52,0x2D,0x43,0x50,0x55,0x00 }); // "CR-CPU"
 
 	// Length
 	const int number_of_data_lines = static_cast<int>((exe.machine_code.size()-1) / 16 + 1); // 32 bytes per line, 16 words
@@ -122,13 +124,13 @@ std::string exe_to_srec(const Object::Object_Container& obj) {
 			data.push_back(exe.machine_code.at(offset) >> 8);
 			data.push_back(exe.machine_code.at(offset) & 0xFF);
 		}
-		ss << write_line(1, static_cast<uint16_t>(i * 16 + exe.load_address), data) << '\n';
+		ss << write_line(1, static_cast<uint16_t>(i * 16 + exe.load_address), data);
 	}
 
 	// Length
-	ss << write_line(5, static_cast<std::uint16_t>(number_of_data_lines), {}) << '\n';
+	ss << write_line(5, static_cast<std::uint16_t>(number_of_data_lines), {});
 	// Finish
-	ss << write_line(9, 0, {}) << '\n';
+	ss << write_line(9, 0, {});
 
 	return ss.str();
 }
