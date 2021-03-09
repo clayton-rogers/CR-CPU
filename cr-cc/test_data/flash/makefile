@@ -31,7 +31,7 @@ $(PROJECT).srec: $(PROJECT).bin
 	$(CC) --srec $<
 
 $(PROJECT).bin: $(OBJS)
-	$(CC) -o $@ $(notdir $^)
+	$(CC) --link-addr 0x400 -o $@ $(notdir $^)
 
 $(C_OBJS): %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
