@@ -427,6 +427,9 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 		if (size < -32768 || size > 65535) {
 			throw std::logic_error("Constant out of range: " + label + " " + std::to_string(size));
 		}
+		if (as->const_map.count(label) != 0) {
+			throw std::logic_error("Duplicate constant defined: " + label);
+		}
 		as->const_map[label] = size;
 
 		return;

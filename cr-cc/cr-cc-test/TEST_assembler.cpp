@@ -165,6 +165,7 @@ TEST_CASE("Test assembler should throw", "[asm]") {
 		"out",
 		".constant name 231", // order of name and number are reversed
 		".constant 65536 name", // constant is too large
+		".constant 10 name \n .constant 12 name", // constant redefinition
 		"shftl ra, 0x10", // constant must be 0 .. 15
 		"shftr rb, -1", // constant must be 0 .. 15
 		".text_offset 0x1020 013", // text offset only takes one argument
