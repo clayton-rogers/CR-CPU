@@ -1,12 +1,12 @@
 .extern __read_uart
 
 #############################
-# int __load_srec_uart(void)
+# int user_load_srec(void)
 #############################
 # Returns: The first address written to it is assumed this is the address to
 #          start execution
-.__load_srec_uart:
-.export __load_srec_uart
+.user_load_srec:
+.export user_load_srec
 push rb
 sub sp 6
 
