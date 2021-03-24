@@ -1,167 +1,207 @@
 .extern __read_uart
 
-# _load_srec_uart - reads uart and parses SREC
-# OUTPUT
-#   ra - first address or -1 on error
+#############################
+# int __load_srec_uart(void)
+#############################
+# Returns: The first address written to it is assumed this is the address to
+#          start execution
 .__load_srec_uart:
 .export __load_srec_uart
 push rb
-push rp
-loadi ra 0
-push ra
-push ra
-push ra
-push ra
-push ra
-# sp + 7 = return address
+sub sp 6
+
+# sp + 7 = return addr
 # sp + 6 = saved rb
-# sp + 5 = saved rp
-# sp + 4 = temp value for combining low and high bytes
-# sp + 3 = remaining bytes to read on this line (default 0)
-# sp + 2 = running cksum value (default 0)
-# sp + 1 = number of records received (default 0)
-# sp + 0 = address of first data (default 0)
+# sp + 5 =
+# sp + 4 =
+# sp + 3 =
+# sp + 2 = is_first_line
+# sp + 1 = number_of_data_lines
+# sp + 0 = exec_address
 
-	.load_srec_uart_start_of_rec:
-	# Read until we get an "S"
-	loada .__read_uart
-	call .__read_uart
-	sub ra, 0x53 # "S"
-	jmp.r.nz .load_srec_uart_start_of_rec
-
-	# We got an "S", now get the record type
-	# If this is 1, then this is data read to the given address
-	# If this is a 5, then this is a confirmation of the number of records
-	# If this is a 9, then this is an end transmission
-	# If this is anything else, don't care, read out the data, but ignore
-	loada .__read_uart
-	call .__read_uart
-	sub ra, 0x30 # this is an ascii number so sub off the offset
-	mov rb ra # backup the value in rb
-	sub ra, 1
-	jmp.r.z .load_srec_uart_handle_data
-	mov ra, rb
-	sub ra, 5
-	jmp.r.z .load_srec_uart_handle_number_of_rec
-	mov ra, rb
-	sub ra, 9
-	jmp.r.z .load_srec_uart_handle_end_of_transmission
-
-	########### Fall through, anything else we don't care
-	# this will go back to keep reading till an 'S' is found
-	jmp.r .load_srec_uart_start_of_rec
-
-	############ Handle data line
-	.load_srec_uart_handle_data:
-	call.r ._read_hex_byte
-	# ra is now size of line in bytes
-	store.sp ra 3 # store in remaining_bytes
-	store.sp ra 2 # start checksum with this value
-
-	# sub 2 bytes from the remaing for the address
-	load.sp ra 3
-	sub ra 2
-	store.sp ra 3
-	call.r ._read_hex_byte  # high byte of address
-	mov rp ra
-	shftl rp 8
-	# add to the cksum total
-	load.sp rb 2 # load cksum
-	add ra rb
-	store.sp ra 2 # store cksum
-
-	call.r ._read_hex_byte  # low byte of address
-	or rp ra
-	# add to the cksum total
-	load.sp rb 2
-	add ra rb
-	store.sp ra 2
-	# RP is now the address we want to start writing to
-
-	# if this is the first data line, we need to store the address
-	load.sp ra 0
-	jmp.r.nz .load_srec_uart_read_data_loop
-	mov ra rp
-	store.sp ra 0
-
-	# NOTE: THIS ASSUMES THERE IS AT LEAST 2 DATA BYTES!
-	.load_srec_uart_read_data_loop:
-		# do {
-		#   sub 2 count
-		#   read hex
-		#   update cksum
-		#   shift
-		#   read hex
-		#   update cksum
-		#   write value to location
-		#   increment ptr for next loop
-		# } while (count != 1)
-		load.sp ra 3
-		sub ra 2
-		store.sp ra 3
-
-		call.r ._read_hex_byte
-		load.sp rb 2
-		add rb ra
-		store.sp rb 2
-
-		shftl ra 8  # we always get the high byte first
-		store.sp ra 4 # store to temp location
-
-		call.r ._read_hex_byte
-		load.sp rb 2
-		add rb ra
-		store.sp rb 2
-
-		load.sp rb 4 # load back the high half
-		or ra rb
-
-		store.rp ra 0 # actually write the number
-		add rp 1 # increment rp for next loop
-
-		load.sp ra 3 # load remaining count
-		sub ra 1 # we expect 1 to remain for the cksum
-	jmp.r.nz .load_srec_uart_read_data_loop
-
-	# handle the cksum
-	load.sp rb 2
-	and rb 0xFF
-	xor rb 0xFF
-
-	call.r ._read_hex_byte
-	sub ra rb # ra will be zero on success
-
-	# add one to the number of lines received
-	load.sp rb 1
-	add rb 1
-	store.sp rb 1
-
-	jmp.r.nz .load_srec_uart_bad_exit # exit on error
-	jmp.r .load_srec_uart_start_of_rec # else wait for another line
-
-	########### Handle S5 record and verify number of received records is correct
-	.load_srec_uart_handle_number_of_rec:
-	# for now just go back to the beginning and wait for 'S'
-	jmp.r .load_srec_uart_start_of_rec
-
-	###########
-	.load_srec_uart_handle_end_of_transmission:
-	load.sp ra, 0 # load the start address to be returned
-	jmp.r .load_srec_uart_good_exit
-
-.load_srec_uart_bad_exit:
+.constant 0 exec_address
 loadi ra 0
-sub ra 1  # return 0xFFFF (-1) on failure
-.load_srec_uart_good_exit:
-add sp, 5 # correspond to push ra's in preamble
-pop rp
+store.sp ra .exec_address
+
+.constant 1 number_of_data_lines
+store.sp ra .number_of_data_lines
+
+.constant 2 is_first_line
+loadi ra 1
+store.sp ra .is_first_line
+
+
+
+########### READ START OF LINE
+.start_line:
+# Read until we get an "S"
+loada .__read_uart
+call .__read_uart
+sub ra, 0x53 # "S"
+jmp.r.nz .start_line
+
+call.r .init_crc
+
+# We got an "S", now get the record type
+# If this is 1, then this is data to write to the given address
+# If this is a 5, then this is a confirmation of the number of records
+# If this is a 9, then this is an end transmission (note we don't use the given addr)
+# If this is anything else, don't care, read out the data, but ignore
+loada .__read_uart
+call .__read_uart
+sub ra, 0x30 # this is an ascii number so sub off the offset
+mov rb ra # backup the value in rb
+sub ra, 1
+jmp.r.z .handle_data
+mov ra, rb
+sub ra, 5
+jmp.r.z .handle_number_of_rec
+mov ra, rb
+sub ra, 9
+jmp.r.z .handle_end_of_transmission
+
+########### Fall through, anything else we don't care
+# this will go back to keep reading till an 'S' is found
+jmp.r .start_line
+
+########### HANDLE DATA LINE
+.handle_data:
+call.r .read_hex_byte
+call.r .crc_byte
+sub ra 3 # 1 byte crc and 2 bytes address
+jmp.r.z .start_line # if this is empty line
+shftr ra 1 # div 2
+mov rb ra # rb will hold the count
+call.r .read_word # read addr
+mov rp ra
+
+# store exec_address if required
+load.sp ra .is_first_line
+jmp.r.z .handle_data_top_loop
+store.sp rp .exec_address
+loadi ra 0
+store.sp ra .is_first_line
+
+.handle_data_top_loop:
+call.r .read_word
+store.rp ra 0
+add rp 1
+sub rb 1
+mov ra rb
+jmp.r.z .finished_reading_data_words
+jmp.r .handle_data_top_loop
+.finished_reading_data_words:
+call.r .read_hex_byte
+mov rb ra
+call.r .get_crc
+sub ra rb
+jmp.r.nz .bad_exit  # check crc for this line
+# if everything went well, add one to the line count
+load.sp ra .number_of_data_lines
+add ra 1
+store.sp ra .number_of_data_lines
+jmp.r .start_line
+
+########### HANDLE NUMBER OF REC LINE
+.handle_number_of_rec:
+call.r .read_hex_byte
+call.r .crc_byte
+sub ra 0x03
+jmp.r.nz .bad_exit # size of S5 rec should always be 3
+call.r .read_word # built in crc
+# ra is now the current number of records
+load.sp rb .number_of_data_lines
+sub ra rb
+jmp.r.nz .bad_exit # count of previous rec should be the same
+call.r .get_crc
+mov rb ra
+call.r .read_hex_byte
+sub ra rb
+jmp.r.nz .bad_exit # check CRC on count record
+jmp.r .start_line
+
+########### HANDLE END OF TRANSMISSION
+.handle_end_of_transmission:
+# Don't actually care about the contents of the address,
+# just read and discard two words
+# i.e. 1 byte size, 2 bytes addr, 1 byte crc
+call.r .read_word
+call.r .read_word
+
+# Once we're done reading all the extra stuff,
+# return the exe addr
+load.sp ra .exec_address
+jmp.r .exit
+
+.bad_exit:
+loadi ra 0xFF
+loadi.h ra 0xFF
+
+.exit:
+add sp 6
 pop rb
 ret
 
-# _read_hex_byte - read the next two hex ascii characters and converts to number
+
+.static 1 CRC_state
+#############################
+# void init_crc (void)
+.init_crc:
+#############################
+push ra
+loada .CRC_state
+loadi ra 0
+store ra .CRC_state
+pop ra
+ret
+
+#############################
+# int crc_byte(int)
+# CRC's a byte with the current state,
+# then returns that same byte
+.crc_byte:
+#############################
+push rb
+loada .CRC_state
+load rb .CRC_state
+add rb ra
+store rb .CRC_state
+pop rb
+ret
+
+#############################
+# int get_crc(void)
+.get_crc:
+#############################
+loada .CRC_state
+load ra .CRC_state
+and ra 0xFF
+xor ra 0xFF
+ret
+
+#############################
+# int read_word(void)
+# reads the next word (16bits) from uart and crc's it
+#############################
+.read_word:
+push rb
+call.r .read_hex_byte
+call.r .crc_byte
+shftl ra 0x08
+mov rb ra
+call.r .read_hex_byte
+call.r .crc_byte
+or ra rb
+pop rb
+ret
+
+
+#############################
+# read_hex_byte - read the next two hex ascii characters and converts to number
 # OUTPUT
 #   ra - the number
-._read_hex_byte:
+#############################
+.read_hex_byte:
 push rb
 # sp + 1 = __return_address
 # sp + 0 = __saved rb
