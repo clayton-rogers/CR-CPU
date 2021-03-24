@@ -22,6 +22,7 @@ build_only=(
 	"mpmp_marching_band"
 	"mpmp_no_squares"
 	"mpmp_triangle"
+	"fake_os"
 	)
 
 for i in "${sim_dirs[@]}"
