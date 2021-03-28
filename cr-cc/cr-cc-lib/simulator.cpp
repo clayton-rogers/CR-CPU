@@ -31,12 +31,12 @@ std::string program_loader_s =
 
 Simulator::Simulator() :
 	bus(std::make_shared<Simulator_Bus>()),
+	core(bus),
 	ram(bus),
 	io(bus, 0x8100),
 	timer(bus, 0x8200),
 	uart(bus, 0x8300),
-	vga(bus, 0x8400),
-	core(bus)
+	vga(bus, 0x8400)
 { }
 
 void Simulator::load_sim_overlay() {

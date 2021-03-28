@@ -36,10 +36,10 @@ public:
 
 private:
 	std::shared_ptr<Simulator_Bus> bus;
+	Simulator_Core core;
 	Simulator_Ram ram;
 	Simulator_IO io;
 	Simulator_Timer timer;
-	Simulator_Core core;
 	Simulator_Uart uart;
 	Simulator_Vga vga;
 	int steps_remaining = 0;
