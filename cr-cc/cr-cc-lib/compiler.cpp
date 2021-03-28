@@ -100,7 +100,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
-int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
+int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const std::string& stdlib_path) {
 
 	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
@@ -142,7 +142,11 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 	if (opt.should_sim) {
 
 		Simulator sim;
+		auto stream = read_bin_file(stdlib_path + "/os.bin");
+		auto os = Object::Object_Container::from_stream(stream);
+		sim.load(os);
 		sim.load(exe);
+		sim.load_sim_overlay();
 		try {
 			sim.run_until_halted(opt.sim_steps);
 		} catch (const std::exception& e) {
@@ -187,14 +191,6 @@ int compile(Compiler_Options opt) {
 
 		return 0;
 	}
-	if (opt.filenames.size() == 1 &&
-		get_file_extension(opt.filenames.at(0)) == "bin") {
-
-		const auto stream = read_bin_file(opt.filenames.at(0));
-		auto exe = Object::Object_Container::from_stream(stream);
-
-		return handle_exe(exe, opt);
-	}
 
 	std::string stdlib_path = ".";
 	if (opt.include_stdlib) {
@@ -204,6 +200,15 @@ int compile(Compiler_Options opt) {
 		} else {
 			throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
 		}
+	}
+
+	if (opt.filenames.size() == 1 &&
+		get_file_extension(opt.filenames.at(0)) == "bin") {
+
+		const auto stream = read_bin_file(opt.filenames.at(0));
+		auto exe = Object::Object_Container::from_stream(stream);
+
+		return handle_exe(exe, opt, stdlib_path);
 	}
 
 	FileReader f(stdlib_path);
@@ -281,7 +286,7 @@ int compile(Compiler_Options opt) {
 		}
 
 		// Handle any outputs and simulation
-		return handle_exe(exe, opt);
+		return handle_exe(exe, opt, stdlib_path);
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors

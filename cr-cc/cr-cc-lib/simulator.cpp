@@ -36,7 +36,9 @@ Simulator::Simulator() :
 	timer(bus, 0x8200),
 	uart(bus, 0x8300),
 	core(bus)
-{
+{ }
+
+void Simulator::load_sim_overlay() {
 	// By default setup stack and jump to 0x0200, then halt when return is called
 	auto program_loader_o = assemble(program_loader_s);
 	auto program_loader_exe = link({ program_loader_o }, 0); // Load PL to 0x0000
@@ -71,7 +73,7 @@ void Simulator::run_until_halted(const int number_steps) {
 Simulator::State Simulator::get_state() {
 	State s{
 		core.get_ra(),
-		core.pc,
+		core.get_pc(),
 		core.is_halted,
 
 		io.output,

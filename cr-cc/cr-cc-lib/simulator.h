@@ -26,6 +26,7 @@ public:
 		int steps_remaining;
 	};
 	void load(const Object::Object_Container& obj);
+	void load_sim_overlay();
 
 	void step();
 	void run_until_halted(const int number_steps);
