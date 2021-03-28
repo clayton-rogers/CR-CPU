@@ -35,6 +35,7 @@ Simulator::Simulator() :
 	io(bus, 0x8100),
 	timer(bus, 0x8200),
 	uart(bus, 0x8300),
+	vga(bus, 0x8400),
 	core(bus)
 { }
 
@@ -59,6 +60,7 @@ void Simulator::step() {
 	io.step();
 	timer.step();
 	uart.step();
+	vga.step();
 	bus->check_bus_state_and_reset();
 }
 

@@ -2,17 +2,14 @@
 
 #include "simulator_bus.h"
 
-#include <cstdint>
 #include <memory>
 
-// 0x00 = tx size
-// 0x01 = rx size
-// 0x02 = tx data
-// 0x03 = rx data
-
-class Simulator_Uart {
+// 0x00 = vga data
+// 0x01 = cursor location
+class Simulator_Vga {
 public:
-	Simulator_Uart(std::shared_ptr<Simulator_Bus> bus, std::uint16_t base_addr)
+
+	Simulator_Vga(std::shared_ptr<Simulator_Bus> bus, std::uint16_t base_addr)
 		: bus(bus), base_addr(base_addr)
 	{}
 
