@@ -34,6 +34,7 @@ Simulator::Simulator() :
 	ram(bus),
 	io(bus, 0x8100),
 	timer(bus, 0x8200),
+	uart(bus, 0x8300),
 	core(bus)
 {
 	// By default setup stack and jump to 0x0200, then halt when return is called
@@ -55,6 +56,7 @@ void Simulator::step() {
 	ram.step();
 	io.step();
 	timer.step();
+	uart.step();
 	bus->check_bus_state_and_reset();
 }
 

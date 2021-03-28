@@ -5,6 +5,7 @@
 #include "simulator_io.h"
 #include "simulator_ram.h"
 #include "simulator_timer.h"
+#include "simulator_uart.h"
 
 #include "object_code.h"
 
@@ -37,5 +38,6 @@ private:
 	Simulator_IO io;
 	Simulator_Timer timer;
 	Simulator_Core core;
+	Simulator_Uart uart;
 	int steps_remaining = 0;
 };

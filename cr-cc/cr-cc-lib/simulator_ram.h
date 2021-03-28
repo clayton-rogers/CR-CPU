@@ -1,6 +1,5 @@
 #pragma once
 
-#include "utilities.h"
 #include "simulator_bus.h"
 
 #include <cstdint>

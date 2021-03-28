@@ -66,6 +66,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_bus.cpp">
       <Filter>Simulator</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_uart.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />
@@ -125,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)type.h">
       <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_uart.h">
+      <Filter>Simulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -35,6 +35,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_ram.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_timer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_uart.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)tokenizer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)tokens.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)type.cpp" />
@@ -61,6 +62,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_io.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_ram.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)simulator_timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)simulator_uart.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tokenizer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tokens.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)type.h" />
