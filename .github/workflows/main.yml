@@ -32,7 +32,9 @@ jobs:
     - name: Run unit test
       run: |
         cd cr-cc
-        ./build/cr-cc-test  "*,[.]" --benchmark-no-analysis
+        ./build/cr-cc-test
+        ./build/cr-cc-test "[bench]" --benchmark-no-analysis --benchmark-samples 25
+        ./build/cr-cc-test "[long_bench]" --benchmark-no-analysis --benchmark-samples 5
 
     - name: Build and run test code
       run: |

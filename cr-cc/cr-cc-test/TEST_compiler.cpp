@@ -1,9 +1,11 @@
+
 #include "c_to_asm.h"
 #include "file_io.h"
 #include "compiler.h"
 #include "utilities.h"
 #include "simulator.h"
 #include "linker.h"
+#include "file_io.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
@@ -17,14 +19,42 @@ TEST_CASE("Test basic function of compiler", "[c]") {
 	auto ret = compile_tu("./test_data/first.c", fr);
 }
 
-TEST_CASE("Compiler Benchmarks", "[.][bench]") {
-	FileReader fr("./test_data");
+TEST_CASE("Compiler program Benchmarks", "[.][bench][c_bench]") {
+	FileReader fr("./stdlib/");
+	fr.add_directory("./test_data/");
 
-	std::string filename = "./test_data/first.c";
-
-	BENCHMARK(std::string("File: ") + filename) {
-		return c_to_asm(filename, fr);
+	struct Program {
+		std::string name;
+		std::vector<std::string> filenames;
 	};
+
+	std::vector<Program> programs = {
+		{"first", {"./test_data/first.c"}},
+		{"pong", {"./test_data/pong/asm.s", "./test_data/pong/main.c", "./test_data/pong/print_as_dec.c"} },
+		{"mpmp_marching_band", {"./test_data/mpmp_marching_band/asm.s", "./test_data/mpmp_marching_band/mpmp_alt.c", "./test_data/mpmp_marching_band/mpmp_march.c"}}
+	};
+
+	auto stream = read_bin_file("./stdlib/stdlib.a");
+	auto stdlib = Object::Object_Container::from_stream(stream);
+	stream = read_bin_file("./stdlib/os.map");
+	auto os_map = Object::Object_Container::from_stream(stream);
+
+	for (const auto& program : programs) {
+		BENCHMARK(std::string("Program name: ") + program.name) {
+
+			std::vector<Object::Object_Container> objs;
+
+			for (const auto& filename : program.filenames) {
+				auto obj = compile_tu(filename, fr);
+				objs.push_back(obj);
+			}
+
+			objs.push_back(stdlib);
+			objs.push_back(os_map);
+
+			return link(std::move(objs), 0x200);
+		};
+	}
 }
 
 static int get_expected_return(std::string filename) {
@@ -99,22 +129,21 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 	}
 }
 
-// We don't actually want to burden the auto build with this
+// Takes too long on autobuild
+TEST_CASE("Compiler Benchmarks", "[.][long_bench][c_bench]") {
 
-//TEST_CASE("Exaustive Compiler Benchmarks", "[.][bench]") {
-//
-//	const std::string DIR = "test_data/valid_c/";
-//	auto dir_list = read_directory(DIR);
-//
-//	for (const auto& item : dir_list) {
-//		FileReader fr("./stdlib");
-//		fr.add_directory(DIR);
-//
-//		BENCHMARK(std::string("Filename: " ) + item) {
-//			return compile_tu(item, fr);
-//		};
-//	}
-//}
+	const std::string DIR = "test_data/valid_c/";
+	auto dir_list = read_directory(DIR);
+
+	FileReader fr("./stdlib");
+
+	for (const auto& item : dir_list) {
+
+		BENCHMARK(std::string("Filename: " + get_base_filename(item) + ".c")) {
+			return compile_tu(item, fr);
+		};
+	}
+}
 
 TEST_CASE("Invalid C programs", "[c]") {
 
