@@ -234,7 +234,18 @@ TEST_CASE("Test assembler programs", "[asm]") {
 
 		Simulator sim;
 		sim.load(exe);
-		sim.run_until_halted(200);
+		try {
+			sim.run_until_halted(200);
+		} catch (const std::exception& e) {
+			std::cout << "Caught exception while running sim on ASM code: " << e.what() << std::endl;
+
+			auto state = sim.get_state();
+			std::cout << "PC: " << std::hex << state.pc << std::endl;
+			std::cout << "RA: " << std::hex << state.ra << std::endl;
+			std::cout << "Steps remaining: " << state.steps_remaining << std::endl;
+
+			throw; // rethrow to catch2
+		}
 
 		// Check that the simulated assembled program actually does as expected
 		if (test_point.expected_output_required) {

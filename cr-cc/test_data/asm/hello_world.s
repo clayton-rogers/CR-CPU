@@ -5,7 +5,11 @@
 .static 12 HELLO_STR "Hello world!"
 .static 1 unused 0x00 # NULL
 
-# must be the first instruction of the program
+# In case this program is compiled without the stdlib:
+loadi sp 0x00
+loadi.h sp 0x01 # sp <= 0x0100
+# Fall through to main:
+
 .main:
 	loadi ra 0x0D
 	call.r ._write_uart

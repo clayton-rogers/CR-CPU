@@ -100,7 +100,7 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
-int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
+int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const std::string& stdlib_path) {
 
 	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
@@ -142,8 +142,16 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 	if (opt.should_sim) {
 
 		Simulator sim;
+		auto stream = read_bin_file(stdlib_path + "/os.bin");
+		auto os = Object::Object_Container::from_stream(stream);
+		sim.load(os);
 		sim.load(exe);
-		sim.run_until_halted(opt.sim_steps);
+		sim.load_sim_overlay();
+		try {
+			sim.run_until_halted(opt.sim_steps);
+		} catch (const std::exception& e) {
+			std::cout << "Simulator Error: " << e.what() << std::endl;
+		}
 
 		std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
 			<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;
@@ -183,23 +191,22 @@ int compile(Compiler_Options opt) {
 
 		return 0;
 	}
-	if (opt.filenames.size() == 1 &&
-		get_file_extension(opt.filenames.at(0)) == "bin") {
-
-		const auto stream = read_bin_file(opt.filenames.at(0));
-		auto exe = Object::Object_Container::from_stream(stream);
-
-		return handle_exe(exe, opt);
-	}
 
 	std::string stdlib_path = ".";
 	if (opt.include_stdlib) {
 		auto stdlib_path_c = std::getenv(STDLIB_ENV_VAR);
 		if (stdlib_path_c) {
 			stdlib_path = std::string(stdlib_path_c);
-		} else {
-			throw std::logic_error(std::string("Could not find stdlib path: ") + STDLIB_ENV_VAR);
 		}
+	}
+
+	if (opt.filenames.size() == 1 &&
+		get_file_extension(opt.filenames.at(0)) == "bin") {
+
+		const auto stream = read_bin_file(opt.filenames.at(0));
+		auto exe = Object::Object_Container::from_stream(stream);
+
+		return handle_exe(exe, opt, stdlib_path);
 	}
 
 	FileReader f(stdlib_path);
@@ -277,7 +284,7 @@ int compile(Compiler_Options opt) {
 		}
 
 		// Handle any outputs and simulation
-		return handle_exe(exe, opt);
+		return handle_exe(exe, opt, stdlib_path);
 
 	} catch (const std::logic_error& e) {
 		// TODO actually separate out the types of errors

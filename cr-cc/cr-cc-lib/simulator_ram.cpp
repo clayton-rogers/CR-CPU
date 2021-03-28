@@ -1,12 +1,15 @@
 #include "simulator_ram.h"
 
 void Simulator_Ram::step() {
-	if (bus->read_addr < ram.size()) {
-		bus->read_data = ram.at(bus->read_addr);
+
+	if (bus->slave_get_read_addr() < ram.size()) {
+		bus->slave_return_data(ram.at(bus->slave_get_read_addr()));
 	}
 
-	if (bus->write_strobe && bus->write_addr < ram.size()) {
-		ram.at(bus->write_addr) = bus->write_data;
+	if (bus->slave_is_write_strobe() &&
+		bus->slave_get_write_addr() < ram.size()) {
+
+		ram.at(bus->slave_get_write_addr()) = bus->slave_get_write_data();
 	}
 }
 

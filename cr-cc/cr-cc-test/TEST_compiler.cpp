@@ -71,9 +71,13 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 			objs.push_back(stdlib); // link stdlib for those couple that need it
 			auto exe = link(std::move(objs), 0x200);
 
+			stream = read_bin_file("./stdlib/os.bin");
+			auto os = Object::Object_Container::from_stream(stream);
 
 			// Load the compiled code into the simulator and see that the return is correct
 			Simulator sim;
+			sim.load(os);
+			sim.load_sim_overlay(); // sets up sp and jumps to 0x200, then halts
 			sim.load(exe);
 
 			sim.run_until_halted(55000); // longest test is currently isqrt.c
@@ -140,7 +144,10 @@ TEST_CASE("Whole C program", "[c]") {
 	auto exe = link(std::move(objs), 0x200);
 
 
+
+
 	Simulator sim;
+	sim.load_sim_overlay();
 	sim.load(exe);
 
 	sim.run_until_halted(20000);
@@ -200,6 +207,7 @@ TEST_CASE("Linker with multi segment files", "[link]") {
 	auto exe = link(std::move(objs), 0x200);
 
 	Simulator sim;
+	sim.load_sim_overlay(); // sets up sp and jumps to 0x200, then halts
 	sim.load(exe);
 
 	sim.run_until_halted(20000);

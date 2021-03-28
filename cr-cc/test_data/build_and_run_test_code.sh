@@ -3,7 +3,7 @@
 
 sim_dirs=(
 	#"echo"  # missing devices in sim
-	"flash"
+	#"flash"  # buildin sleeps take too long
 	#"map_test"  # can't load multiple bin into sim
 	"mpmp_cats"
 	#"mpmp_marching_band" # takes too long???
@@ -15,6 +15,7 @@ sim_dirs=(
 	)
 
 build_only=(
+	"flash"
 	"echo"
 	"pong"
 	"os_link"

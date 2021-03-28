@@ -34,8 +34,12 @@ Simulator::Simulator() :
 	ram(bus),
 	io(bus, 0x8100),
 	timer(bus, 0x8200),
+	uart(bus, 0x8300),
+	vga(bus, 0x8400),
 	core(bus)
-{
+{ }
+
+void Simulator::load_sim_overlay() {
 	// By default setup stack and jump to 0x0200, then halt when return is called
 	auto program_loader_o = assemble(program_loader_s);
 	auto program_loader_exe = link({ program_loader_o }, 0); // Load PL to 0x0000
@@ -55,27 +59,23 @@ void Simulator::step() {
 	ram.step();
 	io.step();
 	timer.step();
+	uart.step();
+	vga.step();
+	bus->check_bus_state_and_reset();
 }
 
 void Simulator::run_until_halted(const int number_steps) {
 	steps_remaining = number_steps;
 	while (!get_state().is_halted && steps_remaining != 0) {
 		--steps_remaining;
-		try {
-			step();
-		} catch (const std::logic_error& e) {
-			// TODO actually separate out the types of errors
-			std::cout << "SIMULATOR ERROR: \n";
-			std::cout << e.what() << std::endl;
-			break;
-		}
+		step();
 	}
 }
 
 Simulator::State Simulator::get_state() {
 	State s{
 		core.get_ra(),
-		core.pc,
+		core.get_pc(),
 		core.is_halted,
 
 		io.output,
