@@ -43,10 +43,8 @@ static int ALU(int opcode, int shift_dir, int data1, int data2) {
 void Simulator_Core::step() {
 	if (is_halted) { return; }
 
-	bus->write_strobe = false; // will be overwritten if an actual write occurs
-
-	const std::uint16_t inst = (state == 0) ? bus->read_data : cached_ins;
-	const std::uint16_t next_cached_inst = bus->read_data;
+	const std::uint16_t inst = (state == 0) ? bus->core_read_data() : cached_ins;
+	const std::uint16_t next_cached_inst = bus->core_read_data();
 
 	const std::uint16_t opcode = (inst & 0xF000) >> 12;
 	const std::uint16_t extra_high = (inst & 0x0C00) >> 10;
@@ -63,7 +61,7 @@ void Simulator_Core::step() {
 	const std::uint16_t cj_addr = is_rel ? rel_cj_addr : full_addr;
 
 	// Popped addr for ret inst
-	const std::uint16_t popped_addr = bus->read_data;
+	const std::uint16_t popped_addr = bus->core_read_data();
 
 	// Calculate new PC's
 	const std::uint16_t calced_pc = (opcode == CALL_RET && (extra_low & 0x01)) ? popped_addr : cj_addr;
@@ -144,14 +142,12 @@ void Simulator_Core::step() {
 		if (state == 0) {
 			// do nothing, read address will automatically be ram addr
 		} else { // state == 1
-			dest_reg = bus->read_data; // retrieve the data that was previously requested
+			dest_reg = bus->core_read_data(); // retrieve the data that was previously requested
 		}
 		break;
 	}
 	case STORE:
-		bus->write_addr = load_addr;
-		bus->write_data = get_reg(extra_high);
-		bus->write_strobe = true;
+		bus->core_write_data(load_addr, get_reg(extra_high));
 		break;
 	case JMP:
 	{
@@ -172,9 +168,7 @@ void Simulator_Core::step() {
 		switch (extra_low) {
 		case 0:
 		{
-			bus->write_addr = --sp;
-			bus->write_data = get_reg(extra_high);
-			bus->write_strobe = true;
+			bus->core_write_data(--sp, get_reg(extra_high));
 		}
 		break;
 		case 1:
@@ -182,7 +176,7 @@ void Simulator_Core::step() {
 			if (state == 0) {
 				// address to load from is combinatoric
 			} else {
-				get_reg(extra_high) = bus->read_data;
+				get_reg(extra_high) = bus->core_read_data();
 				++sp;
 			}
 			break;
@@ -201,9 +195,7 @@ void Simulator_Core::step() {
 		} else {
 			// Call
 			// Update of pc is combinatoric
-			bus->write_addr = --sp;
-			bus->write_data = inc_pc;
-			bus->write_strobe = true;
+			bus->core_write_data(--sp, inc_pc);
 		}
 		break;
 	} // end CALL_RET
@@ -242,9 +234,9 @@ void Simulator_Core::step() {
 		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // first cycle of ret
 		(opcode == PUSH_POP && extra_low == 0x01 && state == 0)  // pop
 	) {
-		bus->read_addr = load_addr;
+		bus->core_set_next_read_address(load_addr);
 	} else {
-		bus->read_addr = next_pc;
+		bus->core_set_next_read_address(next_pc);
 	}
 
 	pc = next_pc;

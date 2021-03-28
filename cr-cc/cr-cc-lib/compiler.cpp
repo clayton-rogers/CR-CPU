@@ -143,7 +143,11 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt) {
 
 		Simulator sim;
 		sim.load(exe);
-		sim.run_until_halted(opt.sim_steps);
+		try {
+			sim.run_until_halted(opt.sim_steps);
+		} catch (const std::exception& e) {
+			std::cout << "Simulator Error: " << e.what() << std::endl;
+		}
 
 		std::cout << "Sim result: 0x" << std::hex << sim.get_state().ra
 			<< " (" << std::dec << sim.get_state().ra << ")" << std::endl;

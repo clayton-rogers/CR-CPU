@@ -63,6 +63,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)type.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_bus.cpp">
+      <Filter>Simulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)file_io.h" />

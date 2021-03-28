@@ -30,6 +30,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)preprocessor.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)simulator_bus.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_core.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_io.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)simulator_ram.cpp" />

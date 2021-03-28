@@ -9,11 +9,11 @@ void Simulator_Timer::step() {
 		timer_low += 1;
 	}
 
-	if (bus->read_addr == base_addr) {
-		bus->read_data = timer_low;
+	if (bus->slave_get_read_addr() == base_addr) {
+		bus->slave_return_data(timer_low);
 	}
 
-	if (bus->read_addr == base_addr + 1) {
-		bus->read_data = timer_high;
+	if (bus->slave_get_read_addr() == base_addr + 1) {
+		bus->slave_return_data(timer_high);
 	}
 }

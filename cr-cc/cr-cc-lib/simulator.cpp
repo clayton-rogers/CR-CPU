@@ -55,20 +55,14 @@ void Simulator::step() {
 	ram.step();
 	io.step();
 	timer.step();
+	bus->check_bus_state_and_reset();
 }
 
 void Simulator::run_until_halted(const int number_steps) {
 	steps_remaining = number_steps;
 	while (!get_state().is_halted && steps_remaining != 0) {
 		--steps_remaining;
-		try {
-			step();
-		} catch (const std::logic_error& e) {
-			// TODO actually separate out the types of errors
-			std::cout << "SIMULATOR ERROR: \n";
-			std::cout << e.what() << std::endl;
-			break;
-		}
+		step();
 	}
 }
 
