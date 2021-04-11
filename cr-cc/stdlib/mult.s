@@ -15,7 +15,7 @@ push rp
 	push ra
 	push rb
 	sub ra rb
-	jmp.r.gz .mult_swap
+	jmp.r.ge .mult_swap
 	.mult_no_swap:
 	pop rb
 	pop ra

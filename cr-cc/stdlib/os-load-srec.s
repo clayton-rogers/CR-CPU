@@ -229,7 +229,7 @@ push rb
 
 	mov rb ra # backup
 	sub ra 0x3A # if lower than this then it is a hex digit, else alpha
-	jmp.r.gz .char_to_number_handle_alpha
+	jmp.r.ge .char_to_number_handle_alpha
 	# else digitA
 	mov ra rb
 	sub ra 0x30

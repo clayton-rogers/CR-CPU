@@ -6,7 +6,7 @@
 .print_hex:
 push ra
 sub ra 10  # >= 10
-jmp.r.gz ._is_letter
+jmp.r.ge ._is_letter
 load.sp ra 0
 add ra 48
 jmp.r ._print_after
