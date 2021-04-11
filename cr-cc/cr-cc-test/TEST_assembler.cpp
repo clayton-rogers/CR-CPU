@@ -60,6 +60,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 		{"jmp.nz .beg \n .beg: \n nop", "9A01 F000 "},
 		{"nop \n jmp.gz.r .beg \n .beg: \n nop", "F000 9C01 F000 "},
 		{"nop \n jmp.gz .beg \n .beg: \n nop", "F000 9E02 F000 "},
+		{"nop \n jmp.ge.r .beg \n .beg: \n nop", "F000 9C01 F000 "},
+		{"nop \n jmp.ge .beg \n .beg: \n nop", "F000 9E02 F000 "},
 		{"loadi ra, 0x30", "A030 "},
 		{"loadi rb, 0xFF", "A4FF "},
 		{"loadi rp 32",    "A820 "},

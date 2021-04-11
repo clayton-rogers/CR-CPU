@@ -706,7 +706,7 @@ static std::string machine_to_string(const std::uint16_t instruction, const std:
 			ss << ".nz";
 			break;
 		case 3:
-			ss << ".gz";
+			ss << ".ge";
 			break;
 		}
 		ss << " ";

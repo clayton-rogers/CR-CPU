@@ -82,7 +82,7 @@ enum class FLAGS_TYPE {
 	RELATIVE, // For jumps and calls
 	IF_ZERO,  // For conditional jumps
 	IF_NON_ZERO, // "
-	IF_GREATER_ZERO, // "
+	IF_GREATER_EQUAL_ZERO, // "
 	HIGH_BYTE, // For load immediate
 	POINTER_REGISTER, // For load/store
 	STACK_POINTER, // "
@@ -92,10 +92,11 @@ static const std::map<std::string, FLAGS_TYPE> flags_str_map = {
 	{"r", FLAGS_TYPE::RELATIVE},
 	{"z", FLAGS_TYPE::IF_ZERO},
 	{"nz", FLAGS_TYPE::IF_NON_ZERO},
-	{"gz", FLAGS_TYPE::IF_GREATER_ZERO},
+	{"ge", FLAGS_TYPE::IF_GREATER_EQUAL_ZERO},
 	{"h", FLAGS_TYPE::HIGH_BYTE},
 	{"rp", FLAGS_TYPE::POINTER_REGISTER},
 	{"sp", FLAGS_TYPE::STACK_POINTER},
+	{"gz", FLAGS_TYPE::IF_GREATER_EQUAL_ZERO}, // for legacy purpose only
 };
 
 struct Argument {
@@ -141,7 +142,7 @@ static std::map<OPCODE, Instruction_Info> instruction_definitions = {
 	{OPCODE::LOAD,  {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::POINTER_REGISTER, FLAGS_TYPE::STACK_POINTER}}},
 	{OPCODE::STORE, {ALL_REGISTER, ADDRESS_OFFSET, {FLAGS_TYPE::POINTER_REGISTER, FLAGS_TYPE::STACK_POINTER}}},
 	{OPCODE::MOV,   {ALL_REGISTER, ALL_REGISTER, {}}},
-	{OPCODE::JMP,   {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE, FLAGS_TYPE::IF_GREATER_ZERO, FLAGS_TYPE::IF_NON_ZERO, FLAGS_TYPE::IF_ZERO}}},
+	{OPCODE::JMP,   {{ARG_TYPE::CONST}, NO_ARG, {FLAGS_TYPE::RELATIVE, FLAGS_TYPE::IF_GREATER_EQUAL_ZERO, FLAGS_TYPE::IF_NON_ZERO, FLAGS_TYPE::IF_ZERO}}},
 	{OPCODE::LOADI, {ALL_REGISTER, {ARG_TYPE::CONST}, {FLAGS_TYPE::HIGH_BYTE}}},
 	{OPCODE::PUSH,  {ALL_REGISTER, NO_ARG, {}}},
 	{OPCODE::POP,   {ALL_REGISTER, NO_ARG, {}}},
@@ -873,7 +874,7 @@ static std::uint16_t instruction_to_machine(
 		if (vector_contains(FLAGS_TYPE::IF_NON_ZERO, inst.flags)) {
 			type_of_jmp = 2;
 		}
-		if (vector_contains(FLAGS_TYPE::IF_GREATER_ZERO, inst.flags)) {
+		if (vector_contains(FLAGS_TYPE::IF_GREATER_EQUAL_ZERO, inst.flags)) {
 			type_of_jmp = 3;
 		}
 
@@ -1131,7 +1132,7 @@ bool assembler_internal_test() {
 
 	// check flags str map
 	{
-		int size = static_cast<int>(flags_str_map.size());
+		int size = static_cast<int>(flags_str_map.size()) - 1; // minus 1 for "gz" which is only for legacy
 		if (size - 1 != static_cast<int>(FLAGS_TYPE::STACK_POINTER)) {
 			std::cout << "Flags map size wrong" << std::endl;
 			return false;
