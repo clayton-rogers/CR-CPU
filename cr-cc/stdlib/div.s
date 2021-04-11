@@ -141,7 +141,7 @@ store.sp ra .result
 load.sp ra .dividend
 load.sp rb .divisor
 sub ra rb
-jmp.r.gz .inside_if
+jmp.r.ge .inside_if
 jmp.r .after_if_2
 .inside_if:
 store.sp ra .dividend

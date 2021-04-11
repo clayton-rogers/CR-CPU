@@ -123,7 +123,7 @@ void Simulator_Core::step() {
 		case 0: should_jump = true; break;          // jmp
 		case 1: should_jump = ra == 0; break;       // jmp z
 		case 2: should_jump = ra != 0; break;       // jmp nz
-		case 3: should_jump = !(ra & 0x8000); break;// jmp gz (positive)
+		case 3: should_jump = !(ra & 0x8000); break;// jmp ge (positive)
 		default: throw std::out_of_range("Simulator_Core::step(): type of jump, extra high must be in range 0 .. 3");
 	}
 

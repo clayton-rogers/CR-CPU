@@ -70,7 +70,7 @@ namespace AST {
 		std::stringstream ss;
 		std::string l_true = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
-		ss << "jmp.r.gz " << l_true << " # is positive\n";
+		ss << "jmp.r.ge " << l_true << " # is positive\n";
 		ss << "loadi ra, 0x00\n";
 		ss << "jmp.r " << l_end << "\n";
 		ss << l_true << ":\n";
@@ -122,7 +122,7 @@ namespace AST {
 			"",
 			".z",
 			".nz",
-			".gz",
+			".ge",
 		};
 
 		return lhs + map.at(static_cast<int>(rhs));
