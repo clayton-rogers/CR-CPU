@@ -36,7 +36,8 @@ Simulator::Simulator():
 	io(bus, 0x8100),
 	timer(bus, 0x8200),
 	uart(bus, 0x8300),
-	vga(bus, 0x8400)
+	vga(bus, 0x8400),
+	spi(bus, 0x8500)
 {}
 
 void Simulator::load_sim_overlay()
@@ -64,6 +65,7 @@ void Simulator::step(bool output_state)
 	timer.step();
 	uart.step();
 	vga.step();
+	spi.step();
 
 	if (output_state) {
 		dump_state();
@@ -112,6 +114,7 @@ Simulator::State Simulator::get_state()
 
 		io.output,
 		steps_remaining,
+		uart.get_output()
 	};
 
 	return s;

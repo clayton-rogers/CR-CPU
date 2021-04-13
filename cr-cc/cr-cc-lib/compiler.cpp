@@ -165,6 +165,11 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const 
 			<< " (" << std::dec << sim.get_state().pc << ")" << std::endl;
 		std::cout.imbue(std::locale(std::locale(), new Thousand_Sep));
 		std::cout << "Is halted: " << std::boolalpha << sim.get_state().is_halted << " steps used: " << (opt.sim_steps - sim.get_state().steps_remaining) << std::endl;
+		std::string uart_out = sim.get_state().uart_output;
+		if (uart_out.length() != 0) {
+			std::cout << "Simulator UART output: " << std::endl;
+			std::cout << sim.get_state().uart_output << std::endl;
+		}
 		if (sim.get_state().is_halted) {
 			return 0;
 		} else {

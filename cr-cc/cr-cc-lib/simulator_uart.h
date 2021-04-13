@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 // 0x00 = tx size
 // 0x01 = rx size
@@ -18,7 +19,11 @@ public:
 
 	void step();
 
+	std::string get_output();
+
 private:
 	std::shared_ptr<Simulator_Bus> bus;
 	std::uint16_t base_addr;
+
+	std::string output;
 };

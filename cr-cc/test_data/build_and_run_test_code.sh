@@ -12,6 +12,7 @@ sim_dirs=(
 	#"os_link"  # sim does not use os yet
 	"sieve_of_eratosthenese"
 	"universal_makefile"
+	"spi_test"
 	)
 
 build_only=(

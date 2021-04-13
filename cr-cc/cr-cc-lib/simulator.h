@@ -7,6 +7,7 @@
 #include "simulator_timer.h"
 #include "simulator_uart.h"
 #include "simulator_vga.h"
+#include "simulator_spi.h"
 
 #include "object_code.h"
 
@@ -27,6 +28,8 @@ public:
 
 		std::uint16_t output;
 		int steps_remaining;
+
+		std::string uart_output;
 	};
 	void load(const Object::Object_Container& obj);
 	void load_sim_overlay();
@@ -44,6 +47,7 @@ private:
 	Simulator_Timer timer;
 	Simulator_Uart uart;
 	Simulator_Vga vga;
+	Simulator_Spi spi;
 	int steps_remaining = 0;
 
 	std::ofstream f;

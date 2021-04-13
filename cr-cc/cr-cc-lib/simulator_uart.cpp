@@ -20,6 +20,10 @@ void Simulator_Uart::step()
 		bus->slave_get_write_addr() == base_addr + 0x2) {
 
 		// get the data to show that we're handling it, but don't do anything with it
-		bus->slave_get_write_data();
+		output = output + static_cast<char>(bus->slave_get_write_data());
 	}
+}
+
+std::string Simulator_Uart::get_output() {
+	return output;
 }
