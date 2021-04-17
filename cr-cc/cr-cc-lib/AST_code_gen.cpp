@@ -65,7 +65,7 @@ namespace AST {
 		return ss.str();
 	}
 
-	// returns 1 if ra > 0
+	// returns 1 if ra >= 0
 	static std::string gen_is_positive(std::shared_ptr<VarMap> scope) {
 		std::stringstream ss;
 		std::string l_true = scope->env->label_maker.get_next_label();
