@@ -10,7 +10,7 @@ namespace AST {
 
 	static std::string output_byte(int a) {
 		if (a < 0 || a > 0xFF) {
-			throw std::logic_error("Cannot generate byte for " + a);
+			throw std::logic_error("Cannot generate byte for " + std::to_string(a));
 		}
 		std::stringstream ss;
 		ss << "0x"
@@ -24,7 +24,7 @@ namespace AST {
 
 	static std::string output_signed_byte(int a) {
 		if (a < -128 || a > 127) {
-			throw std::logic_error("Cannot generate signed byte for " + a);
+			throw std::logic_error("Cannot generate signed byte for " + std::to_string(a));
 		}
 		const unsigned char out_val = static_cast<char>(a);
 		std::stringstream ss;
