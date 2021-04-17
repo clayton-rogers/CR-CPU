@@ -20,7 +20,10 @@ public:
 	// **** PUBLIC DATA *** //
 	bool is_halted = false;
 
-	std::uint16_t get_ra() { return ra; }
+	struct Reg {
+		std::uint16_t ra = 0, rb = 0, rp = 0, sp = 0;
+	};
+	Reg get_reg() { return Reg{ ra, rb, rp, sp }; }
 	std::uint16_t get_pc() { return pc; }
 
 private:

@@ -12,6 +12,8 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
+#include <fstream>
 
 class Simulator {
 public:
@@ -29,8 +31,8 @@ public:
 	void load(const Object::Object_Container& obj);
 	void load_sim_overlay();
 
-	void step();
-	void run_until_halted(const int number_steps);
+	void step(bool output_state = false);
+	void run_until_halted(const int number_steps, bool output_state = false);
 
 	State get_state();
 
@@ -43,4 +45,7 @@ private:
 	Simulator_Uart uart;
 	Simulator_Vga vga;
 	int steps_remaining = 0;
+
+	std::ofstream f;
+	void dump_state();
 };

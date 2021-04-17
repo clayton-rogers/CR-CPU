@@ -8,6 +8,7 @@ struct Compiler_Options {
 	bool verbose = false;
 	bool function_size = false;
 	bool should_sim = false;
+	bool sim_out = false;
 	bool compile_only = false;
 	bool include_main = true;
 	bool include_stdlib = true;

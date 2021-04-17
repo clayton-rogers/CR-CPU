@@ -3,9 +3,9 @@
 // To be able to build the below program loader.
 #include "assembler.h"
 #include "linker.h"
+#include "utilities.h"
 
 #include <stdexcept>
-#include <iostream>
 
 std::string program_loader_s =
 ".constant 0x1000 RAM_SIZE\n"
@@ -54,27 +54,52 @@ void Simulator::load(const Object::Object_Container& obj) {
 	ram.load_ram(exe.load_address, exe.machine_code);
 }
 
-void Simulator::step() {
+void Simulator::step(bool output_state) {
 	core.step();
 	ram.step();
 	io.step();
 	timer.step();
 	uart.step();
 	vga.step();
+
+	if (output_state) {
+		dump_state();
+	}
+
 	bus->check_bus_state_and_reset();
 }
 
-void Simulator::run_until_halted(const int number_steps) {
+void Simulator::dump_state() {
+	Simulator_Core::Reg r = core.get_reg();
+	f
+		<< u16_to_string(r.ra) << " "
+		<< u16_to_string(r.rb) << " "
+		<< u16_to_string(r.rp) << " "
+		<< u16_to_string(r.sp) << " "
+		<< u16_to_string(core.get_pc()) << " "
+		<< std::endl;
+}
+
+static void output_header(std::ofstream* f) {
+	auto& file = *f;
+	file << "ra   rb   rp   sp   pc_n " << std::endl;
+}
+
+void Simulator::run_until_halted(const int number_steps, bool output_state) {
 	steps_remaining = number_steps;
+	if (output_state) {
+		f = std::ofstream("sim_out.txt");
+		output_header(&f);
+	}
 	while (!get_state().is_halted && steps_remaining != 0) {
 		--steps_remaining;
-		step();
+		step(output_state);
 	}
 }
 
 Simulator::State Simulator::get_state() {
 	State s{
-		core.get_ra(),
+		core.get_reg().ra,
 		core.get_pc(),
 		core.is_halted,
 

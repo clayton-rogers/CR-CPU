@@ -148,7 +148,7 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const 
 		sim.load(exe);
 		sim.load_sim_overlay();
 		try {
-			sim.run_until_halted(opt.sim_steps);
+			sim.run_until_halted(opt.sim_steps, opt.sim_out);
 		} catch (const std::exception& e) {
 			std::cout << "Simulator Error: " << e.what() << std::endl;
 		}
