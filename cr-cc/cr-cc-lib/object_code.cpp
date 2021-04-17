@@ -658,9 +658,9 @@ static std::string machine_to_string(const std::uint16_t instruction, const std:
 		}
 		ss << high_reg << " ";
 		if (low & 2) {
-			ss << "rb";
-		} else {
 			should_print_literal = true;
+		} else {
+			ss << "rb";
 		}
 		break;
 	case LOAD:
