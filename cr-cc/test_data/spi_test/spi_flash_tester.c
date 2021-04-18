@@ -120,6 +120,81 @@ int test_write() {
 	return 0;
 }
 
+int test_erase() {
+	int ret;
+
+	ret = spi_flash_erase(0);
+	if (ret != 0) return 1;
+
+
+	// Try erasing the first page
+	data[0] = 0xCAFE;
+	ret = spi_flash_write(0, &data, 1);
+	if (ret != 0) return 2;
+
+	data[0] = 0;
+	ret = spi_flash_read(0, &data, 1);
+	if (ret != 0) return 3;
+	if (data[0] != 0xCAFE) return 4;
+
+	ret = spi_flash_erase(0);
+	if (ret != 0) return 5;
+
+	data[0] = 0;
+	ret = spi_flash_read(0, &data, 1);
+	if (ret != 0) return 6;
+	if (data[0] != 0xFFFF) return 7;
+
+
+	// Erasing the first page should also clear the second-fourth
+	data[0] = 0xCAFE;
+	ret = spi_flash_write(2, &data, 1);
+	if (ret != 0) return 8;
+
+	data[0] = 0;
+	ret = spi_flash_read(2, &data, 1);
+	if (ret != 0) return 9;
+	if (data[0] != 0xCAFE) return 4;
+
+	ret = spi_flash_erase(0);
+	if (ret != 0) return 10;
+
+	data[0] = 0;
+	ret = spi_flash_read(2, &data, 1);
+	if (ret != 0) return 11;
+	if (data[0] != 0xFFFF) return 12;
+
+
+	// Check page must be aligned
+	ret = spi_flash_erase(1);
+	if (ret != -1) return 13;
+	ret = spi_flash_erase(2);
+	if (ret != -1) return 14;
+	ret = spi_flash_erase(3);
+	if (ret != -1) return 15;
+	ret = spi_flash_erase(5);
+	if (ret != -1) return 16;
+
+	// Lower bound
+	ret = spi_flash_erase(-1);
+	if (ret != -1) return 17;
+
+	ret = spi_flash_erase(-100);
+	if (ret != -1) return 18;
+
+	// Upper bound
+	ret = spi_flash_erase(0xAFC);
+	if (ret != 0) return 19;
+
+	ret = spi_flash_erase(0xB00);
+	if (ret != -1) return 20;
+
+	ret = spi_flash_erase(0xB04);
+	if (ret != -1) return 21;
+
+	return 0;
+}
+
 int test() {
 
 	int mf = test_mf();
@@ -131,6 +206,8 @@ int test() {
 	int write = test_write();
 	if (write != 0) return 0x300 + write;
 
+	int erase = test_erase();
+	if (erase != 0) return 0x400 + erase;
 
 	return 0;
 }
