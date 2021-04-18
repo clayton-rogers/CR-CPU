@@ -74,7 +74,7 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 				throw std::logic_error("Tried to write to an already written location: " + std::to_string(address + i));
 			}
 
-			data.at(address + i) = transfer->at(i - 4);
+			data.at(address + i) = transfer->at(i + 4);
 			data_erased.at(address + i) = false;
 		}
 

@@ -61,6 +61,65 @@ int test_read() {
 	return 0;
 }
 
+int test_write() {
+	int ret;
+
+	data[0] = 0xABCD;
+	data[1] = 0xEF12;
+	data[2] = 3213;
+	data[3] = 9513;
+
+	ret = spi_flash_write(0, &data, 4);
+	if (ret != 0) return 1;
+	for (int i = 0; i < 4; ++i) {
+		data[i] = 0;
+	}
+	ret = spi_flash_read(0, &data, 4);
+	if (ret != 0) return 2;
+	if (data[0] != 0xABCD) return 3;
+	if (data[1] != 0xEF12) return 4;
+	if (data[2] != 3213) return 5;
+	if (data[3] != 9513) return 6;
+
+	ret = spi_flash_write(1, &data, 128);
+	if (ret != 0) return 7;
+
+	// size upper
+	ret = spi_flash_write(0, &data, 129);
+	if (ret != -1) return 8;
+
+	ret = spi_flash_write(0, &data, 130);
+	if (ret != -1) return 9;
+
+	// size lower
+	ret = spi_flash_write(0, &data, -1);
+	if (ret != -1) return 10;
+
+	ret = spi_flash_write(0, &data, -100);
+	if (ret != -1) return 11;
+
+	// page lower
+	ret = spi_flash_write(-1, &data, 1);
+	if (ret != -1) return 12;
+
+	// page upper
+	data[0] = 0xCAFE;
+	ret = spi_flash_write(0xAFF, &data, 1);
+	if (ret != 0) return 13;
+	data[0] = 0;
+	ret = spi_flash_read(0xAFF, &data, 1);
+	if (ret != 0) return 14;
+	if (data[0] != 0xCAFE) return 15;
+
+	ret = spi_flash_write(0xB00, &data, 1);
+	if (ret != -1) return 16;
+
+	ret = spi_flash_write(0xB01, &data, 1);
+	if (ret != -1) return 17;
+
+	return 0;
+}
+
 int test() {
 
 	int mf = test_mf();
@@ -68,6 +127,9 @@ int test() {
 
 	int read = test_read();
 	if (read != 0) return 0x200 + read;
+
+	int write = test_write();
+	if (write != 0) return 0x300 + write;
 
 
 	return 0;

@@ -27,3 +27,11 @@ int spi_flash_read(int page_addr, int* data, int data_size);
 // Each page is 256 bytes, thus the max data size is 128, since the data will
 // be packed.
 // Returns 0 on success and -1 on failure
+
+
+///////////////////////////////////////////////////////////////////////////////
+int spi_flash_write(int page_addr, int* data, int data_size);
+// Writes up to a page of data.
+// Each page is 256 bytes, thus the max data size is 128, since the data will
+// be packed.
+// Returns 0 on success and -1 on failure
