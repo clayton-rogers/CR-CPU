@@ -1,4 +1,3 @@
-.extern __write_uart
 
 # MEMORY MAP
 # 0x00 = data (read and write)
@@ -68,8 +67,6 @@ push rb
 push ra
 sub sp 5
 
-call.r .wait_for_bus_idle
-
 ### same constants used from below
 #.constant 8 data_size
 # 7 = ret addr
@@ -86,26 +83,16 @@ add ra rb
 store.sp ra .data_ptr_end
 
 
-### if the transfer size is too big, then exit
-.constant 129 FIRST_BAD_READ_SIZE
+### Check data size is valid
 load.sp ra .data_size
-jmp.r.ge .read_good_data_size
-jmp.r .read_bad_exit
-.read_good_data_size:
-loadi rb .FIRST_BAD_READ_SIZE
-sub ra rb
-jmp.r.ge .read_bad_exit
+call.r .is_data_size_valid
+jmp.r.z .read_bad_exit
 
-### if the page_addr is too large, exit
-.constant 0x0B00 FIRST_BAD_PAGE
+
+### Check page addr is valid
 load.sp ra .page_addr
-jmp.r.ge .read_good_page_addr
-jmp.r .read_bad_exit
-.read_good_page_addr:
-loadi rb .FIRST_BAD_PAGE
-loadi.h rb .FIRST_BAD_PAGE
-sub ra rb
-jmp.r.ge .read_bad_exit
+call.r .is_page_addr_valid
+jmp.r.z .read_bad_exit
 
 
 ### Setup the transfer
@@ -182,6 +169,7 @@ ret
 
 
 ##########################################################
+# void wait_for_bus_idle(void)
 .wait_for_bus_idle:
 push ra
 loada .spi
@@ -191,12 +179,14 @@ jmp.r.nz .wait_top
 pop ra
 ret
 
+
 ##########################################################
 # void wait_for_not_busy_flash(void)
 .wait_for_not_busy_flash:
 push ra
 
 call.r .wait_for_bus_idle
+
 
 ### keep sampling the busy bit until it is zero
 .wait_busy_top:
@@ -222,6 +212,73 @@ pop ra
 ret
 
 
+##########################################################
+# int is_page_addr_valid(int page_addr)
+.is_page_addr_valid:
+push rb
+
+.constant 0x0B00 FIRST_BAD_PAGE
+#load.sp ra 0 # ra is already loaded
+jmp.r.ge .good_page_addr  #check that its positive
+jmp.r .bad_page_addr
+.good_page_addr:
+loadi rb .FIRST_BAD_PAGE
+loadi.h rb .FIRST_BAD_PAGE
+sub ra rb
+jmp.r.ge .bad_page_addr  # if page addr is >= FIRST_BAD_PAGE
+
+loadi ra 1  # everything is good if we got here
+jmp.r .page_addr_exit
+
+.bad_page_addr:
+loadi ra 0
+
+.page_addr_exit:
+pop rb
+ret
+
+
+##########################################################
+# int is_data_size_valid(int data_size)
+.is_data_size_valid:
+push rb
+
+.constant 129 FIRST_BAD_READ_SIZE
+# load.sp ra .data_size # ra already loaded with data size
+jmp.r.ge .good_data_size
+jmp.r .bad_data_size
+.good_data_size:
+loadi rb .FIRST_BAD_READ_SIZE
+sub ra rb
+jmp.r.ge .bad_data_size
+
+loadi ra 1 # everything is good if we got here
+jmp.r .data_size_exit
+
+.bad_data_size:
+loadi ra 0
+
+.data_size_exit:
+pop rb
+ret
+
+
+##########################################################
+# void set_WEL(void)
+.set_WEL:
+loada .spi
+loadi ra 1
+store ra .spi[3] # tx size = 1
+loadi ra 0
+store ra .spi[1] # reset data ptr
+loadi ra .OPT_WRITE_EN
+store ra .spi[0] # enter the opcode
+loadi ra 1
+store ra .spi[2] # initiate the transfer
+
+call.r .wait_for_bus_idle
+ret
+
 
 ##########################################################
 # int spi_flash_write(int page_addr, int* data, int data_size);
@@ -235,7 +292,6 @@ push rb
 push ra
 sub sp 5
 
-call.r .wait_for_bus_idle
 
 .constant 8 data_size
 # 7 = ret addr
@@ -251,40 +307,18 @@ load.sp ra .data_size
 add ra rb
 store.sp ra .data_ptr_end
 
-### if the transfer size is too big, then exit
-#.constant 129 FIRST_BAD_READ_SIZE # defined above
+### Check that data size is valid
 load.sp ra .data_size
-jmp.r.ge .write_good_data_size
-jmp.r .write_bad_exit
-.write_good_data_size:
-loadi rb .FIRST_BAD_READ_SIZE
-sub ra rb
-jmp.r.ge .write_bad_exit
+call.r .is_data_size_valid
+jmp.r.z .write_bad_exit
 
-### if the page_addr is too large, exit
-#.constant 0x0B00 FIRST_BAD_PAGE # defined above
+### Check page_addr is valid
 load.sp ra .page_addr
-jmp.r.ge .write_good_page_addr
-jmp.r .write_bad_exit
-.write_good_page_addr:
-loadi rb .FIRST_BAD_PAGE
-loadi.h rb .FIRST_BAD_PAGE
-sub ra rb
-jmp.r.ge .write_bad_exit
-
+call.r .is_page_addr_valid
+jmp.r.z .write_bad_exit
 
 ### When writing, we first need to set the write enable
-loada .spi
-loadi ra 1
-store ra .spi[3] # tx size = 1
-loadi ra 0
-store ra .spi[1] # reset data ptr
-loadi ra .OPT_WRITE_EN
-store ra .spi[0] # enter the opcode
-loadi ra 1
-store ra .spi[2] # initiate the transfer
-
-call.r .wait_for_bus_idle
+call.r .set_WEL
 
 ### Now do the actual write
 # setup the transfer
@@ -383,30 +417,14 @@ and ra 0x3
 jmp.r.nz .erase_bad_exit
 
 
-### Verify page address is in bounds
-#.constant 0x0B00 FIRST_BAD_PAGE # defined above
+### Check page addr is valid
 load.sp ra .erase_page_addr
-jmp.r.ge .erase_good_page_addr
-jmp.r .erase_bad_exit
-.erase_good_page_addr:
-loadi rb .FIRST_BAD_PAGE
-loadi.h rb .FIRST_BAD_PAGE
-sub ra rb
-jmp.r.ge .erase_bad_exit
+call.r .is_page_addr_valid
+jmp.r.z .erase_bad_exit
 
 
 ### Turn on WEL
-loada .spi
-loadi ra 1
-store ra .spi[3] # tx size = 1
-loadi ra 0
-store ra .spi[1] # reset data ptr
-loadi ra .OPT_WRITE_EN
-store ra .spi[0] # enter the opcode
-loadi ra 1
-store ra .spi[2] # initiate the transfer
-
-call.r .wait_for_bus_idle
+call.r .set_WEL
 
 
 ### Send the erase command
@@ -438,7 +456,8 @@ loadi ra 1
 store ra .spi[2] # initiate the transfer
 
 # wait for bus idle then poll flash busy bit
-call.r .wait_for_not_busy_flash
+loada .wait_for_not_busy_flash
+call .wait_for_not_busy_flash
 
 
 loadi ra 0 # return 0 on success
