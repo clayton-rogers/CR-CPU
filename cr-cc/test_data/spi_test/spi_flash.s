@@ -24,7 +24,6 @@
 .spi_flash_read_mf_id:
 .export spi_flash_read_mf_id
 mov rp ra
-call.r .wait_for_bus_idle
 
 loada .spi
 loadi ra 0x04 # transfer size, op plus 3 returned bytes
@@ -77,23 +76,21 @@ sub sp 5
 # ...
 # 0 =
 
+### Calculate the end of the array
 load.sp ra .data_size
 #load.sp rb .data_ptr # rb still had data_ptr in it
 add ra rb
 store.sp ra .data_ptr_end
-
 
 ### Check data size is valid
 load.sp ra .data_size
 call.r .is_data_size_valid
 jmp.r.z .read_bad_exit
 
-
 ### Check page addr is valid
 load.sp ra .page_addr
 call.r .is_page_addr_valid
 jmp.r.z .read_bad_exit
-
 
 ### Setup the transfer
 load.sp ra .data_size
@@ -108,23 +105,8 @@ store ra .spi[0] # set opcode
 
 
 ### Calculate and set the address
-# address is three bytes
-# addr = page_addr * 256 + 0x5.0000
-# addr = page_addr << 8 + 0x5.0000
-# addr_high = page_addr >> 8 + 0x5
-# addr_low = page_addr << 8
-# The address is pushed into the peripheral MSB first
 load.sp ra .page_addr
-shftr ra 8
-add ra 0x5
-store ra .spi[0]
-
-load.sp ra .page_addr
-and ra 0xFF
-store ra .spi[0]
-
-loadi ra 0 # TODO future, allow intra page offset
-store ra .spi[0]
+call.r .calculate_and_load_addr
 
 
 ### Perform the transfer
@@ -211,6 +193,33 @@ jmp.r.nz .wait_busy_top
 pop ra
 ret
 
+
+##########################################################
+# void calculate_and_load_addr(int page_addr)
+# Converts the page addr to read addr and loads it into the
+# peripheral.
+.calculate_and_load_addr:
+# address is three bytes
+# addr = page_addr * 256 + 0x5.0000
+# addr = page_addr << 8 + 0x5.0000
+# addr_high = page_addr >> 8 + 0x5
+# addr_low = page_addr << 8
+# The address is pushed into the peripheral MSB first
+push ra
+
+shftr ra 8
+add ra 0x5
+store ra .spi[0]
+
+load.sp ra 0 # load given page address again
+and ra 0xFF
+store ra .spi[0]
+
+loadi ra 0 # TODO future, allow intra page offset
+store ra .spi[0]
+
+add sp 1
+ret
 
 ##########################################################
 # int is_page_addr_valid(int page_addr)
@@ -333,24 +342,11 @@ store ra .spi[3]
 # enter the opcode
 loadi ra .OPT_WRITE
 store ra .spi[0]
-# calculate and enter the addr
-# address is three bytes
-# addr = page_addr * 256 + 0x5.0000
-# addr = page_addr << 8 + 0x5.0000
-# addr_high = page_addr >> 8 + 0x5
-# addr_low = page_addr << 8
-# The address is pushed into the peripheral MSB first
-load.sp ra .page_addr
-shftr ra 8
-add ra 0x5
-store ra .spi[0]
 
+### Calculate and load address into peripheral
 load.sp ra .page_addr
-and ra 0xFF
-store ra .spi[0]
+call.r .calculate_and_load_addr
 
-loadi ra 0 # TODO future, allow intra page offset
-store ra .spi[0]
 
 ### Write the data to the peripheral
 load.sp rp .data_ptr
@@ -436,28 +432,12 @@ store ra .spi[1] # reset data ptr
 loadi ra .OPT_ERASE_4K
 store ra .spi[0] # enter the opcode
 
-# calculate and enter the addr
-# address is three bytes
-# addr = page_addr * 256 + 0x5.0000
-# addr = page_addr << 8 + 0x5.0000
-# addr_high = page_addr >> 8 + 0x5
-# addr_low = page_addr << 8
-# The address is pushed into the peripheral MSB first
+### Calculate and load the address into peripheral
 load.sp ra .erase_page_addr
-shftr ra 8
-add ra 0x5
-store ra .spi[0]
-
-load.sp ra .erase_page_addr
-and ra 0xFF
-store ra .spi[0]
-
-loadi ra 1
-store ra .spi[2] # initiate the transfer
+call.r .calculate_and_load_addr
 
 # wait for bus idle then poll flash busy bit
-loada .wait_for_not_busy_flash
-call .wait_for_not_busy_flash
+call.r .wait_for_not_busy_flash
 
 
 loadi ra 0 # return 0 on success
