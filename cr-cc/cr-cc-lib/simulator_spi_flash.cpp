@@ -17,6 +17,10 @@ enum OPCODES {
 	READ_MF_ID = 0x9F,
 };
 
+void Simulator_Spi_Flash::step() {
+	if (busy_count != 0) busy_count--;
+}
+
 void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 	BYTE opcode = transfer->at(0);
 
@@ -27,6 +31,10 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 		}
 		return addr;
 	};
+
+	if (busy_count != 0 && opcode != READ_STATUS_BYTE_1) {
+		throw std::logic_error("Tried to access spi flash while it was busy. OP: " + std::to_string(opcode));
+	}
 
 	switch (opcode) {
 	case READ_ARRAY:
@@ -56,6 +64,9 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 		}
 
 		WEL_bit = false;
+
+		busy_count = 512; // make flash busy for a while after erasing
+
 		break;
 	}
 
@@ -80,6 +91,8 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 
 		WEL_bit = false;
 
+		busy_count = 512; // make flash busy for a while after writing
+
 		break;
 	}
 
@@ -93,11 +106,10 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 
 	case READ_STATUS_BYTE_1:
 	{
-		// for now busy bit is not implemented
-		BYTE ret_val = WEL_bit ? 0x2 : 0x0;
-		for (int i = 1; i < transfer->size(); ++i) {
-			transfer->at(i+1) = ret_val;
-		}
+		BYTE ret_val = (WEL_bit ? 0x2 : 0x0) | (busy_count != 0 ? 0x01 : 0x0);
+		// Technically reading any number is legal, but we are not going to allow it
+		if (transfer->size() != 2) { throw std::logic_error("Tried to read more than one byte of status 1"); }
+		transfer->at(1) = ret_val;
 		break;
 	}
 

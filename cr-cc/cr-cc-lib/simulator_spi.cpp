@@ -11,6 +11,8 @@
 
 void Simulator_Spi::step() {
 
+	flash.step();
+
 	auto read_addr = bus->slave_get_read_addr() - base_addr;
 	auto write_addr = bus->slave_get_write_addr() - base_addr;
 

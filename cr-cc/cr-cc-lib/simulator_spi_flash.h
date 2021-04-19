@@ -7,6 +7,7 @@ class Simulator_Spi_Flash {
 public:
 
 	void transfer(std::vector<std::uint8_t>* transfer_data);
+	void step();
 
 	Simulator_Spi_Flash() :
 		data(1024*1024, 0xFF),
@@ -14,6 +15,7 @@ public:
 
 private:
 	bool WEL_bit = false;
+	int busy_count = 0;
 
 	std::vector<std::uint8_t> data;
 	std::vector<bool> data_erased;

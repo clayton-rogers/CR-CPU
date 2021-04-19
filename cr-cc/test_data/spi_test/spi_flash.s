@@ -13,6 +13,7 @@
 .constant 0x0002 OPT_WRITE
 .constant 0x0005 OPT_STATUS_BYTE
 .constant 0x0020 OPT_ERASE_4K
+.constant 0x0005 OPT_READ_STATUS_1
 
 
 
@@ -190,6 +191,36 @@ jmp.r.nz .wait_top
 pop ra
 ret
 
+##########################################################
+# void wait_for_not_busy_flash(void)
+.wait_for_not_busy_flash:
+push ra
+
+call.r .wait_for_bus_idle
+
+### keep sampling the busy bit until it is zero
+.wait_busy_top:
+loada .spi
+loadi ra 2
+store ra .spi[3] # opcode + 1 rx data byte
+loadi ra 0
+store ra .spi[1] # reset ptr
+loadi ra .OPT_READ_STATUS_1
+store ra .spi[0]
+loadi ra 1
+store ra .spi[2] # init transfer
+
+call.r .wait_for_bus_idle
+
+loadi ra 1
+store ra .spi[1] # reset ptr
+load ra .spi[0]
+and ra 0x01 # mask status bit
+jmp.r.nz .wait_busy_top
+
+pop ra
+ret
+
 
 
 ##########################################################
@@ -310,7 +341,10 @@ jmp.r .write_loop_top
 ### Perform the transfer
 loadi ra 1 # start the transfer
 store ra .spi[2]
-call.r .wait_for_bus_idle
+
+# wait for the spi bus to be idle
+# then poll the flash busy bit
+call.r .wait_for_not_busy_flash
 # Transfer is now complete
 
 
@@ -403,6 +437,8 @@ store ra .spi[0]
 loadi ra 1
 store ra .spi[2] # initiate the transfer
 
+# wait for bus idle then poll flash busy bit
+call.r .wait_for_not_busy_flash
 
 
 loadi ra 0 # return 0 on success
