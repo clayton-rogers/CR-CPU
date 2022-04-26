@@ -25,6 +25,8 @@ add_library(${PROJECT_NAME}
     simulator_timer.cpp
     simulator_uart.cpp
     simulator_vga.cpp
+    simulator_spi.cpp
+    simulator_spi_flash.cpp
     simulator.cpp
     tokenizer.cpp
     tokens.cpp
