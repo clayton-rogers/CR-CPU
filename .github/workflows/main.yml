@@ -18,26 +18,27 @@ jobs:
     - name: Build
       run: |
         cd cr-cc
-        make -j
         mkdir build
-        mv cc build/cr-cc
-        mv test build/cr-cc-test
+        cd build
+        cmake ..
+        make -j
 
     - name: Build stdlib
       run: |
+        PATH=$(pwd)/cr-cc/build/cr-cc/:$PATH
         cd cr-cc/stdlib
-        PATH=../build:$PATH
         make
 
     - name: Run unit test
       run: |
+        PATH=$(pwd)/cr-cc/build/cr-cc-test/:$PATH
         cd cr-cc
-        ./build/cr-cc-test
-        ./build/cr-cc-test "[bench]" --benchmark-no-analysis --benchmark-samples 25
-        ./build/cr-cc-test "[long_bench]" --benchmark-no-analysis --benchmark-samples 5
+        cr-cc-test
+        cr-cc-test "[bench]" --benchmark-no-analysis --benchmark-samples 25
+        cr-cc-test "[long_bench]" --benchmark-no-analysis --benchmark-samples 5
 
     - name: Build and run test code
       run: |
+        PATH=$(pwd)/cr-cc/build/cr-cc/:$PATH
         cd cr-cc/test_data
-        chmod 755 build_and_run_test_code.sh
-        PATH=../../build:$PATH CRSTDLIBPATH=../../stdlib ./build_and_run_test_code.sh
+        CRSTDLIBPATH=../../stdlib ./build_and_run_test_code.sh
