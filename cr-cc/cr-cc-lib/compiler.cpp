@@ -198,6 +198,9 @@ int compile(Compiler_Options opt) {
 		auto stdlib_path_c = std::getenv(STDLIB_ENV_VAR);
 		if (stdlib_path_c) {
 			stdlib_path = std::string(stdlib_path_c);
+		} else {
+			std::cout << "Error reading " << STDLIB_ENV_VAR << " path." << std::endl;
+			return 1;
 		}
 	}
 
