@@ -1,0 +1,39 @@
+{
+  "name": "cr-asm",
+  "displayName": "cr-asm",
+  "description": "Language syntax for cr-asm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clayton-rogers/CR-CPU.git"
+  },
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cr-asm",
+        "aliases": [
+          "CR-ASM",
+          "cr-asm"
+        ],
+        "extensions": [
+          ".s"
+        ],
+        "scopeName": "source.cr-asm",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cr-asm",
+        "scopeName": "source.cr-asm",
+        "path": "./syntaxes/cr-asm.tmLanguage.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+	"name": "cr-asm",
+	"scopeName": "source.cr-asm",
+	"fileTypes": [
+		"cr-asm"
+	],
+	"patterns": [
+		{
+			"include": "#comment"
+		},
+		{
+			"include": "#string"
+		},
+		{
+			"include": "#register"
+		},
+		{
+			"include": "#storage"
+		},
+		{
+			"include": "#number"
+		},
+		{
+			"include": "#instruction"
+		},
+		{
+			"include": "#entity"
+		},
+		{
+			"include": "#label"
+		},
+		{
+			"include": "#sp-instruction"
+		}
+	],
+	"repository": {
+		"comment": {
+			"patterns": [
+				{
+					"match": "#.*$",
+					"name": "comment.line.hash.cr-asm"
+				}
+			]
+		},
+		"string": {
+			"patterns": [
+				{
+					"begin": "\"",
+					"end": "\"",
+					"name": "string.quoted.double.cr-asm"
+				}
+			]
+		},
+		"register": {
+			"patterns": [
+				{
+					"match": "\\b(?:ra|rb|sp|rp)\\b",
+					"name": "variable.other.register.cr-asm"
+				}
+			]
+		},
+		"storage": {
+			"patterns": [
+				{
+					"match": "^(?:\\.static|\\.constant)\\b",
+					"name": "storage.modifier.cr-asm"
+				},
+				{
+					"match": "^(?:\\.extern)\\b",
+					"name": "storage.type.cr-asm"
+				}
+			]
+		},
+		"number": {
+			"patterns": [
+				{
+					"match": "\\b(?:0x[0-9A-Fa-f]+|[0-9]+(?:\\.[0-9]+)?)\\b",
+					"name": "constant.numeric.cr-asm"
+				}
+			]
+		},
+		"instruction": {
+			"patterns": [
+				{
+					"match": "\\b(?:add|sub|and|or|xor|shftl|shftr|mov|push|pop|loada|ret|loadi.h|loadi|load.rp|load.sp|store.rp|store.sp|call.r|jmp.r|jmp.r.z|jmp.r.nz|jmp.r.ge|jmp.r.gz)\\b",
+					"name": "keyword.instruction.cr-asm"
+				}
+			]
+		},
+		"sp-instruction": {
+			"patterns": [
+				{
+					"match": "\\b(?:load|store|call|jmp|halt)\\b",
+					"name": "keyword.sp-instruction.cr-asm"
+				}
+			]
+		},
+		"entity": {
+			"patterns": [
+				{
+					"match": "^.*:$",
+					"name": "entity.name.function.cr-asm"
+				}
+			]
+		},
+		"label": {
+			"patterns": [
+				{
+					"match": "\\.[a-zA-Z_]+",
+					"name": "variable.other.cr-asm"
+				}
+			]
+		}
+	}
+}
