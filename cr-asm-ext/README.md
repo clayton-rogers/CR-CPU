@@ -70,6 +70,10 @@ None.
 
 ## Release Notes
 
+### 0.2.0
+
+Added language-configuration.json.
+
 ### 0.1.0
 
 Initial useful release.
