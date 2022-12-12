@@ -6,7 +6,7 @@
 static const int PTR_SIZE = 1;
 static const int INT_SIZE = 1;
 
-static int calc_struct_size(const Declaration_Specifier& specifer) {
+static int calc_struct_size(const Declaration_Specifier& /*specifer*/) {
 
 	throw std::logic_error("struct size not yet implemented");
 }
