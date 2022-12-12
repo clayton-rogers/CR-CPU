@@ -1,4 +1,4 @@
-# CR-ASM-EXT
+# CR-CPU Assembly
 
 This is a VS Code extension which provides syntax highlighting for CR-CPU assembly. If you are using a dark theme, it's recommened to copy the following additional syntax colors into you VS Code user settings:
 
