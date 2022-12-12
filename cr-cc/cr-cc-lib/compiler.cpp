@@ -23,16 +23,19 @@ static const char* STDLIB_ENV_VAR = "CRSTDLIBPATH";
 
 
 // Stupid workaround just to get thousands separator to print
-struct Thousand_Sep : public std::numpunct<char> {
-	char do_thousands_sep() const override {
+struct Thousand_Sep: public std::numpunct<char> {
+	char do_thousands_sep() const override
+	{
 		return ',';
 	}
-	std::string do_grouping() const override {
+	std::string do_grouping() const override
+	{
 		return "\3";
 	}
 };
 
-Object::Object_Container compile_tu(std::string filename, FileReader f) {
+Object::Object_Container compile_tu(std::string filename, FileReader f)
+{
 
 	std::string file_extension = get_file_extension(filename);
 
@@ -52,7 +55,8 @@ Object::Object_Container compile_tu(std::string filename, FileReader f) {
 
 }
 
-static void print_function_names(const Object::Object_Container& obj) {
+static void print_function_names(const Object::Object_Container& obj)
+{
 
 	struct Symbol {
 		int offset;
@@ -100,7 +104,8 @@ static void print_function_names(const Object::Object_Container& obj) {
 	std::cout << " Total: " << total << std::endl;
 }
 
-int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const std::string& stdlib_path) {
+int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const std::string& stdlib_path)
+{
 
 	const auto& machine_code = std::get<Object::Executable>(exe.contents).machine_code;
 
@@ -170,7 +175,8 @@ int handle_exe(const Object::Object_Container& exe, Compiler_Options opt, const 
 	return 0;
 }
 
-int compile(Compiler_Options opt) {
+int compile(Compiler_Options opt)
+{
 	if (opt.should_exit) {
 		return 1;
 	}

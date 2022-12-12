@@ -1,6 +1,7 @@
 #include "simulator_vga.h"
 
-void Simulator_Vga::step() {
+void Simulator_Vga::step()
+{
 	if (bus->slave_is_write_strobe()) {
 		if (bus->slave_get_write_addr() == base_addr ||
 			bus->slave_get_write_addr() == base_addr + 1) {

@@ -29,7 +29,7 @@ std::string program_loader_s =
 ;
 
 
-Simulator::Simulator() :
+Simulator::Simulator():
 	bus(std::make_shared<Simulator_Bus>()),
 	core(bus),
 	ram(bus),
@@ -37,16 +37,18 @@ Simulator::Simulator() :
 	timer(bus, 0x8200),
 	uart(bus, 0x8300),
 	vga(bus, 0x8400)
-{ }
+{}
 
-void Simulator::load_sim_overlay() {
+void Simulator::load_sim_overlay()
+{
 	// By default setup stack and jump to 0x0200, then halt when return is called
 	auto program_loader_o = assemble(program_loader_s);
 	auto program_loader_exe = link({ program_loader_o }, 0); // Load PL to 0x0000
 	load(program_loader_exe);
 }
 
-void Simulator::load(const Object::Object_Container& obj) {
+void Simulator::load(const Object::Object_Container& obj)
+{
 	if (obj.contents.index() != Object::Object_Container::EXECUTABLE) {
 		throw std::logic_error("Tried to load invalid object into simulator");
 	}
@@ -54,7 +56,8 @@ void Simulator::load(const Object::Object_Container& obj) {
 	ram.load_ram(exe.load_address, exe.machine_code);
 }
 
-void Simulator::step(bool output_state) {
+void Simulator::step(bool output_state)
+{
 	core.step();
 	ram.step();
 	io.step();
@@ -69,7 +72,8 @@ void Simulator::step(bool output_state) {
 	bus->check_bus_state_and_reset();
 }
 
-void Simulator::dump_state() {
+void Simulator::dump_state()
+{
 	Simulator_Core::Reg r = core.get_reg();
 	f
 		<< u16_to_string(r.ra) << " "
@@ -80,12 +84,14 @@ void Simulator::dump_state() {
 		<< std::endl;
 }
 
-static void output_header(std::ofstream* f) {
+static void output_header(std::ofstream* f)
+{
 	auto& file = *f;
 	file << "ra   rb   rp   sp   pc_n " << std::endl;
 }
 
-void Simulator::run_until_halted(const int number_steps, bool output_state) {
+void Simulator::run_until_halted(const int number_steps, bool output_state)
+{
 	steps_remaining = number_steps;
 	if (output_state) {
 		f = std::ofstream("sim_out.txt");
@@ -97,7 +103,8 @@ void Simulator::run_until_halted(const int number_steps, bool output_state) {
 	}
 }
 
-Simulator::State Simulator::get_state() {
+Simulator::State Simulator::get_state()
+{
 	State s{
 		core.get_reg().ra,
 		core.get_pc(),

@@ -3,7 +3,8 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.h"
 
-TEST_CASE("Test object serialization", "[obj]") {
+TEST_CASE("Test object serialization", "[obj]")
+{
 	using namespace Object;
 
 	Object_Container container;
@@ -42,7 +43,8 @@ TEST_CASE("Test object serialization", "[obj]") {
 	CHECK(new_container == container);
 }
 
-TEST_CASE("Test library serialization", "[obj]") {
+TEST_CASE("Test library serialization", "[obj]")
+{
 	using namespace Object;
 
 	Object_Container container;
@@ -121,7 +123,8 @@ TEST_CASE("Test library serialization", "[obj]") {
 	CHECK(new_container == container);
 }
 
-TEST_CASE("Test executable serialization", "[obj]") {
+TEST_CASE("Test executable serialization", "[obj]")
+{
 	using namespace Object;
 
 	Object_Container container;
@@ -154,7 +157,8 @@ TEST_CASE("Test executable serialization", "[obj]") {
 	CHECK(new_container == container);
 }
 
-TEST_CASE("Test map serialization", "[obj]") {
+TEST_CASE("Test map serialization", "[obj]")
+{
 	using namespace Object;
 
 	Object_Container container;

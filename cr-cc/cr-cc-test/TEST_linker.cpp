@@ -7,10 +7,12 @@
 static constexpr auto SECTION_HEADER_SIZE = 2;
 static constexpr auto OC_HEADER_SIZE = 4;
 
-TEST_CASE("Test linker", "[link]") {
+TEST_CASE("Test linker", "[link]")
+{
 	using namespace Object;
 
-	SECTION("Relocations") {
+	SECTION("Relocations")
+	{
 		Object_Container item1;
 		{
 			Object_Type obj;
@@ -19,7 +21,7 @@ TEST_CASE("Test linker", "[link]") {
 			obj.machine_code.push_back(0xabcd);
 
 			obj.relocations.emplace_back(
-				Relocation{HI_LO_TYPE::HI_BYTE, 0, 0x1200} );
+				Relocation{ HI_LO_TYPE::HI_BYTE, 0, 0x1200 });
 
 			item1.contents = obj;
 		}
@@ -52,7 +54,7 @@ TEST_CASE("Test linker", "[link]") {
 
 		CHECK(output.contents.index() == Object_Container::EXECUTABLE);
 		CHECK(std::get<Executable>(output.contents).load_address == DEFAULT_LOAD_ADDR);
-		
+
 		const auto& debug_external_ref = std::get<Executable>(output.contents).exported_symbols;
 		CHECK(debug_external_ref.at(0).name == "fun");
 		CHECK(debug_external_ref.at(0).type == Symbol_Type::FUNCTION);
@@ -69,7 +71,8 @@ TEST_CASE("Test linker", "[link]") {
 		CHECK(code.at(6) == 0x1011);
 	}
 
-	SECTION("External references and exported symbols") {
+	SECTION("External references and exported symbols")
+	{
 		std::vector<Object_Container> items(2);
 
 		{
@@ -144,10 +147,12 @@ TEST_CASE("Test linker", "[link]") {
 	}
 }
 
-TEST_CASE("Test library creation", "[link]") {
+TEST_CASE("Test library creation", "[link]")
+{
 	using namespace Object;
 
-	SECTION("Test that libraries can be created") {
+	SECTION("Test that libraries can be created")
+	{
 		Object_Container item1;
 		{
 			Object_Type obj;
@@ -156,7 +161,7 @@ TEST_CASE("Test library creation", "[link]") {
 			obj.machine_code.push_back(0xabcd);
 
 			obj.relocations.emplace_back(
-				Relocation{ HI_LO_TYPE::HI_BYTE, 0, 0x1200});
+				Relocation{ HI_LO_TYPE::HI_BYTE, 0, 0x1200 });
 
 			item1.contents = obj;
 		}
@@ -218,7 +223,8 @@ TEST_CASE("Test library creation", "[link]") {
 		CHECK(lib_contents.objects.at(2) == item3_contents);
 	}
 
-	SECTION("TEST that libraries can be linked") {
+	SECTION("TEST that libraries can be linked")
+	{
 		std::vector<Object_Container> lib_items(3);
 
 		{
@@ -312,7 +318,8 @@ TEST_CASE("Test library creation", "[link]") {
 			main_item.contents = obj;
 		}
 
-		SECTION("Link library first") {
+		SECTION("Link library first")
+		{
 			std::vector<Object_Container> items_to_be_linked
 			{ lib, main_item };
 
@@ -320,7 +327,8 @@ TEST_CASE("Test library creation", "[link]") {
 			CHECK_THROWS(link(std::move(items_to_be_linked), 0));
 		}
 
-		SECTION("Link library second") {
+		SECTION("Link library second")
+		{
 			std::vector<Object_Container> items_to_be_linked
 			{ main_item, lib };
 
@@ -361,10 +369,11 @@ TEST_CASE("Test library creation", "[link]") {
 			CHECK(debug_external_ref.at(2).name == "funa");
 			CHECK(debug_external_ref.at(2).type == Symbol_Type::FUNCTION);
 			CHECK(debug_external_ref.at(2).offset == 0x0109);
-			
+
 		}
 
-		SECTION("Link a library") {
+		SECTION("Link a library")
+		{
 
 			lib_items.push_back(main_item);
 
@@ -373,7 +382,8 @@ TEST_CASE("Test library creation", "[link]") {
 			CHECK(index == Object_Container::Variant_Type::LIBRARY);
 		}
 
-		SECTION("Link a library with duplicate exported symbols") {
+		SECTION("Link a library with duplicate exported symbols")
+		{
 			lib_items.push_back(main_item);
 			lib_items.push_back(main_item);
 
@@ -382,7 +392,8 @@ TEST_CASE("Test library creation", "[link]") {
 	}
 }
 
-TEST_CASE("Test map creation", "[link]") {
+TEST_CASE("Test map creation", "[link]")
+{
 	using namespace Object;
 
 	Object_Container item;
@@ -394,7 +405,7 @@ TEST_CASE("Test map creation", "[link]") {
 		obj.machine_code.push_back(0x7893);
 
 		obj.relocations.emplace_back(
-			Relocation{ HI_LO_TYPE::HI_BYTE, 1, 0x8700});
+			Relocation{ HI_LO_TYPE::HI_BYTE, 1, 0x8700 });
 		obj.relocations.emplace_back(
 			Relocation{ HI_LO_TYPE::LO_BYTE, 0, 0x0012 });
 
@@ -412,7 +423,7 @@ TEST_CASE("Test map creation", "[link]") {
 
 	const auto& obj_contents = std::get<Executable>(exe.contents);
 	const auto& map_contents = std::get<Map>(map.contents);
-	
+
 	CHECK(obj_contents.exported_symbols.at(0) == map_contents.exported_symbols.at(0));
 	CHECK(obj_contents.exported_symbols.at(1) == map_contents.exported_symbols.at(1));
 }

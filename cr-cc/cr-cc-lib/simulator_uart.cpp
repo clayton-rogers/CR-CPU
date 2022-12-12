@@ -1,6 +1,7 @@
 #include "simulator_uart.h"
 
-void Simulator_Uart::step() {
+void Simulator_Uart::step()
+{
 
 	auto read_addr = bus->slave_get_read_addr();
 
@@ -17,7 +18,7 @@ void Simulator_Uart::step() {
 
 	if (bus->slave_is_write_strobe() &&
 		bus->slave_get_write_addr() == base_addr + 0x2) {
-		
+
 		// get the data to show that we're handling it, but don't do anything with it
 		bus->slave_get_write_data();
 	}

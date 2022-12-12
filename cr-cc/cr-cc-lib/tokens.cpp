@@ -133,7 +133,8 @@ static const std::map<TokenType, std::string> TOKEN_STRINGS =
 	{TokenType::last_token, "last_token"},
 };
 
-std::string tokenType_to_string(TokenType token) {
+std::string tokenType_to_string(TokenType token)
+{
 	if (TOKEN_STRINGS.count(token) == 1) {
 		return TOKEN_STRINGS.at(token);
 	} else {

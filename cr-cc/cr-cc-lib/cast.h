@@ -4,7 +4,8 @@
 #include <stdexcept>
 
 template<typename T>
-std::uint16_t u16(T value) {
+std::uint16_t u16(T value)
+{
 
 	constexpr T UPPER = static_cast<T>(65535);
 	constexpr T LOWER = static_cast<T>(0);

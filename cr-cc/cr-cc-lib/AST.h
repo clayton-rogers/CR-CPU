@@ -10,7 +10,8 @@
 #include <string>
 #include <memory>
 
-namespace AST {
+namespace AST
+{
 
 	class Compilable {
 	public:
@@ -80,20 +81,24 @@ namespace AST {
 		std::string push_reg(std::string reg_name);
 		std::string pop_reg(std::string reg_name);
 
-		void push_loop(const Loop_Labels& l) {
+		void push_loop(const Loop_Labels& l)
+		{
 			loop_labels.push_back(l);
 		}
-		void pop_loop() {
+		void pop_loop()
+		{
 			loop_labels.pop_back();
 		}
 
-		std::string get_top_label() {
+		std::string get_top_label()
+		{
 			if (loop_labels.size() == 0) {
 				throw std::logic_error("Break or continue not in loop");
 			}
 			return loop_labels.back().top;
 		}
-		std::string get_after_label() {
+		std::string get_after_label()
+		{
 			if (loop_labels.size() == 0) {
 				throw std::logic_error("Break or continue not in loop");
 			}
@@ -129,9 +134,9 @@ namespace AST {
 		Scope_Id get_stack_var_scope_id(const std::string& name);
 	};
 
-	class Expression : public Compilable {
+	class Expression: public Compilable {
 	public:
-		Expression(std::shared_ptr<VarMap> scope) : scope(scope) {}
+		Expression(std::shared_ptr<VarMap> scope): scope(scope) {}
 		virtual ~Expression() {}
 		virtual std::shared_ptr<Type> get_type() const = 0;
 	protected:
@@ -139,11 +144,12 @@ namespace AST {
 	};
 	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
-	class Assignment_Expression : public Expression {
+	class Assignment_Expression: public Expression {
 	public:
 		Assignment_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		Assignment_Expression(std::string name, std::shared_ptr<Expression> exp, std::shared_ptr<VarMap> scope)
-			: Expression(scope), var_name(name), exp(exp) {}
+			: Expression(scope), var_name(name), exp(exp)
+		{}
 		std::string generate_code() const override;
 		std::shared_ptr<Type> get_type() const override { return exp->get_type(); }
 	private:
@@ -155,7 +161,7 @@ namespace AST {
 	};
 
 	// For when a variable is referenced
-	class Variable_Expression : public Expression {
+	class Variable_Expression: public Expression {
 	public:
 		enum class Variable_Type {
 			direct,
@@ -175,7 +181,7 @@ namespace AST {
 		std::shared_ptr<Expression> array_index;
 	};
 
-	class Unary_Expression : public Expression {
+	class Unary_Expression: public Expression {
 	public:
 		enum class Unary_Type {
 			negation,
@@ -190,7 +196,7 @@ namespace AST {
 		std::shared_ptr<Expression> sub;
 	};
 
-	class Constant_Expression : public Expression {
+	class Constant_Expression: public Expression {
 	public:
 		Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -201,7 +207,7 @@ namespace AST {
 		std::uint16_t constant_value;
 	};
 
-	class Binary_Expression : public Expression {
+	class Binary_Expression: public Expression {
 	public:
 		enum class Bin_Type {
 			addition,
@@ -225,11 +231,11 @@ namespace AST {
 			std::shared_ptr<Expression> left,
 			std::shared_ptr<Expression> right,
 			std::shared_ptr<VarMap> scope)
-				: Expression(scope),
-				  type(token_to_type(type)),
-				  sub_left(left),
-				  sub_right(right)
-				  {}
+			: Expression(scope),
+			type(token_to_type(type)),
+			sub_left(left),
+			sub_right(right)
+		{}
 		std::string generate_code() const override;
 		std::shared_ptr<Type> get_type() const override;
 	private:
@@ -239,7 +245,7 @@ namespace AST {
 		std::shared_ptr<Expression> sub_right;
 	};
 
-	class Conditional_Expression : public Expression {
+	class Conditional_Expression: public Expression {
 	public:
 		Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -250,7 +256,7 @@ namespace AST {
 		std::shared_ptr<Expression> false_exp;
 	};
 
-	class Function_Call_Expression : public Expression {
+	class Function_Call_Expression: public Expression {
 	public:
 		Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -260,15 +266,15 @@ namespace AST {
 		std::vector<std::shared_ptr<Expression>> arguments;
 	};
 
-	class Statement : public Compilable {
+	class Statement: public Compilable {
 	public:
-		Statement(std::shared_ptr<VarMap> scope) : scope(scope) {}
+		Statement(std::shared_ptr<VarMap> scope): scope(scope) {}
 	protected:
 		std::shared_ptr<VarMap> scope;
 	};
 	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 
-	class Return_Statement : public Statement {
+	class Return_Statement: public Statement {
 	public:
 		Return_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -276,17 +282,18 @@ namespace AST {
 		std::shared_ptr<Expression> ret_expression;
 	};
 
-	class Expression_Statement : public Statement {
+	class Expression_Statement: public Statement {
 	public:
 		Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		Expression_Statement(std::shared_ptr<Expression> sub, std::shared_ptr<VarMap> scope)
-			: Statement(scope), maybe_sub(sub) {}
+			: Statement(scope), maybe_sub(sub)
+		{}
 		std::string generate_code() const override;
 	private:
 		std::shared_ptr<Expression> maybe_sub;
 	};
 
-	class Compount_Statement : public Statement {
+	class Compount_Statement: public Statement {
 	public:
 		Compount_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -295,16 +302,16 @@ namespace AST {
 		VarMap::Scope_Id scope_id;
 	};
 
-	class Declaration_Statement : public Statement {
+	class Declaration_Statement: public Statement {
 	public:
-		Declaration_Statement(const std::string& name, std::shared_ptr<VarMap> scope) : Statement(scope), var_name(name) {}
+		Declaration_Statement(const std::string& name, std::shared_ptr<VarMap> scope): Statement(scope), var_name(name) {}
 		Declaration_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	private:
 		std::string var_name;
 	};
 
-	class If_Statement : public Statement {
+	class If_Statement: public Statement {
 	public:
 		If_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -315,7 +322,7 @@ namespace AST {
 		std::shared_ptr<Statement> false_statement;
 	};
 
-	class While_Statement : public Statement {
+	class While_Statement: public Statement {
 	public:
 		While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -324,7 +331,7 @@ namespace AST {
 		std::shared_ptr<Statement> contents;
 	};
 
-	class Do_While_Statement : public Statement {
+	class Do_While_Statement: public Statement {
 	public:
 		Do_While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -333,7 +340,7 @@ namespace AST {
 		std::shared_ptr<Statement> contents;
 	};
 
-	class For_Statement : public Statement {
+	class For_Statement: public Statement {
 	public:
 		For_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
@@ -345,19 +352,19 @@ namespace AST {
 		VarMap::Scope_Id scope_id;
 	};
 
-	class Break_Statement : public Statement {
+	class Break_Statement: public Statement {
 	public:
 		Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	};
 
-	class Continue_Statement : public Statement {
+	class Continue_Statement: public Statement {
 	public:
 		Continue_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 	};
 
-	class Function : public Compilable {
+	class Function: public Compilable {
 	public:
 		enum class Parse_Type {
 			DECLARATION,

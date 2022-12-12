@@ -13,7 +13,7 @@ static void handle_object(
 	Object_Type& output_object,
 	Object_Type& input_object, // Gets modified, cannot be const
 	std::uint16_t link_addr
-	)
+)
 {
 	const std::uint16_t relocation_offset =
 		u16(output_object.machine_code.size())
@@ -43,7 +43,7 @@ static void handle_object(
 	for (const auto& existing_symbol : output_object.exported_symbols) {
 		for (const auto& new_symbol : input_object.exported_symbols) {
 			if (existing_symbol.name == new_symbol.name &&
-					new_symbol.type != Symbol_Type::DATA) {
+				new_symbol.type != Symbol_Type::DATA) {
 				throw std::logic_error("Link(): Duplicate symbol exported: " + existing_symbol.name);
 			}
 		}
@@ -83,7 +83,7 @@ static void handle_object(
 static void handle_map(
 	Map& output_object,
 	const Map& input_map
-	)
+)
 {
 
 	// Double check that this new object doesn't export any already exported symbols
@@ -107,7 +107,7 @@ static void handle_lib(
 	Object_Type& output_object,
 	Library_Type& library,
 	const std::uint16_t link_address
-	)
+)
 {
 	bool at_least_one_obj_used = true;
 	const int size_of_lib = static_cast<int>(library.objects.size());
@@ -124,7 +124,7 @@ static void handle_lib(
 
 			// If this object exports a symbol that is needed, then link it
 			for (const auto& symbol : obj.exported_symbols) {
-				for(const auto & extern_ref : output_object.external_references) {
+				for (const auto& extern_ref : output_object.external_references) {
 					if (symbol.name == extern_ref.name) {
 						at_least_one_obj_used = true;
 						object_used.at(i) = true;
@@ -133,7 +133,7 @@ static void handle_lib(
 					}
 				}
 			}
-			after:
+		after:
 			;
 		}
 	}
@@ -175,7 +175,7 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 	std::uint16_t real_link_addr = 0;
 	try {
 		real_link_addr = u16(link_addr);
-	} catch (const std::logic_error& ) {
+	} catch (const std::logic_error&) {
 		throw std::logic_error("Link address out of range: " + link_addr);
 	}
 
@@ -185,30 +185,29 @@ Object_Container link(std::vector<Object::Object_Container>&& link_items, int li
 	Map collector_map;
 
 	for (auto& item : link_items) {
-		switch (item.contents.index())
-		{
-		case Object_Container::OBJECT:
-		{
-			auto& object = std::get<Object_Type>(item.contents);
-			handle_object(collector_object, object, real_link_addr);
-			break;
-		}
-		case Object_Container::LIBRARY:
-		{
-			auto& lib = std::get<Library_Type>(item.contents);
-			handle_lib(collector_object, lib, real_link_addr);
-			break;
-		}
-		case Object_Container::MAP:
-		{
-			auto& map = std::get<Map>(item.contents);
-			handle_map(collector_map, map);
-			break;
-		}
-		case Object_Container::EXECUTABLE:
-			throw std::logic_error("link(): should never get here: exe is not a valid input object");
-		default:
-			throw std::logic_error("link(): invalid object type: " + std::to_string(item.contents.index()));
+		switch (item.contents.index()) {
+			case Object_Container::OBJECT:
+				{
+					auto& object = std::get<Object_Type>(item.contents);
+					handle_object(collector_object, object, real_link_addr);
+					break;
+				}
+			case Object_Container::LIBRARY:
+				{
+					auto& lib = std::get<Library_Type>(item.contents);
+					handle_lib(collector_object, lib, real_link_addr);
+					break;
+				}
+			case Object_Container::MAP:
+				{
+					auto& map = std::get<Map>(item.contents);
+					handle_map(collector_map, map);
+					break;
+				}
+			case Object_Container::EXECUTABLE:
+				throw std::logic_error("link(): should never get here: exe is not a valid input object");
+			default:
+				throw std::logic_error("link(): invalid object type: " + std::to_string(item.contents.index()));
 		}
 	}
 
@@ -231,7 +230,7 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 	Library_Type library;
 
 	std::unordered_set<std::string> exported_symbols;
-	
+
 	for (const auto& obj : objects) {
 		const auto& contents = std::get<Object_Type>(obj.contents);
 		library.objects.push_back(contents);
@@ -250,7 +249,8 @@ Object::Object_Container make_lib(const std::vector<Object::Object_Container>& o
 	return output;
 }
 
-Object::Object_Container to_map(const Object::Object_Container& obj) {
+Object::Object_Container to_map(const Object::Object_Container& obj)
+{
 	auto object = std::get<Executable>(obj.contents);
 
 	Map map_contents;

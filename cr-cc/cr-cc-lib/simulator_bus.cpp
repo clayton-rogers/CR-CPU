@@ -5,7 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
-void Simulator_Bus::check_bus_state_and_reset() {
+void Simulator_Bus::check_bus_state_and_reset()
+{
 	std::stringstream r_ss;
 	r_ss << "0x" << std::hex << std::setfill('0') << std::setw(4) << read_addr;
 	auto r_addr = r_ss.str();
@@ -35,40 +36,47 @@ void Simulator_Bus::check_bus_state_and_reset() {
 	write_strobe = false;
 }
 
-bool Simulator_Bus::slave_is_write_strobe() {
+bool Simulator_Bus::slave_is_write_strobe()
+{
 	return write_strobe;
 }
 
-std::uint16_t Simulator_Bus::slave_get_write_addr() {
+std::uint16_t Simulator_Bus::slave_get_write_addr()
+{
 	return write_addr;
 }
 
-std::uint16_t Simulator_Bus::slave_get_write_data() {
+std::uint16_t Simulator_Bus::slave_get_write_data()
+{
 	// We assume that if the slave is getting the write data that they're going to use it
 	write_data_fulfilled++;
 	return write_data;
 }
 
-std::uint16_t Simulator_Bus::slave_get_read_addr() {
+std::uint16_t Simulator_Bus::slave_get_read_addr()
+{
 	return read_addr;
 }
 
-void Simulator_Bus::slave_return_data(std::uint16_t data) {
+void Simulator_Bus::slave_return_data(std::uint16_t data)
+{
 	read_data = data;
 	read_data_fulfilled++;
 }
 
-void Simulator_Bus::core_write_data(std::uint16_t addr, std::uint16_t data) {
+void Simulator_Bus::core_write_data(std::uint16_t addr, std::uint16_t data)
+{
 	write_strobe = true;
 	write_addr = addr;
 	write_data = data;
 }
 
-void Simulator_Bus::core_set_next_read_address(std::uint16_t addr) {
+void Simulator_Bus::core_set_next_read_address(std::uint16_t addr)
+{
 	read_addr = addr;
 }
 
-std::uint16_t Simulator_Bus::core_read_data() {
+std::uint16_t Simulator_Bus::core_read_data()
+{
 	return read_data;
 }
-

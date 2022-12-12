@@ -13,13 +13,15 @@
 #include <string>
 #include <iostream>
 
-TEST_CASE("Test basic function of compiler", "[c]") {
+TEST_CASE("Test basic function of compiler", "[c]")
+{
 	FileReader fr("./test_data");
-	
+
 	auto ret = compile_tu("./test_data/first.c", fr);
 }
 
-TEST_CASE("Compiler program Benchmarks", "[.][bench][c_bench]") {
+TEST_CASE("Compiler program Benchmarks", "[.][bench][c_bench]")
+{
 	FileReader fr("./stdlib/");
 	fr.add_directory("./test_data/");
 
@@ -40,7 +42,8 @@ TEST_CASE("Compiler program Benchmarks", "[.][bench][c_bench]") {
 	auto os_map = Object::Object_Container::from_stream(stream);
 
 	for (const auto& program : programs) {
-		BENCHMARK(std::string("Program name: ") + program.name) {
+		BENCHMARK(std::string("Program name: ") + program.name)
+		{
 
 			std::vector<Object::Object_Container> objs;
 
@@ -57,7 +60,8 @@ TEST_CASE("Compiler program Benchmarks", "[.][bench][c_bench]") {
 	}
 }
 
-static int get_expected_return(std::string filename) {
+static int get_expected_return(std::string filename)
+{
 	std::string file_contents = read_file(filename);
 
 	// For each file we expect the following line to be at the top
@@ -75,8 +79,9 @@ static int get_expected_return(std::string filename) {
 	return std::stoi(file_contents.substr(location), nullptr, 0); // get the number in any base
 }
 
-TEST_CASE("Exaustive test of Compiler", "[c]") {
-	
+TEST_CASE("Exaustive test of Compiler", "[c]")
+{
+
 	// These test programs were mostly stolen and slightly modified from:
 	// https://github.com/nlsandler/write_a_c_compiler.git
 	const std::string DIR = "test_data/valid_c/";
@@ -119,7 +124,7 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 
 			CHECK(actual_program_output == expected_program_output);
 
-		} catch (const std::exception & e) {
+		} catch (const std::exception& e) {
 			std::string message("Unexpected exception with message:\n");
 			message = message + e.what();
 			INFO(message);
@@ -130,7 +135,8 @@ TEST_CASE("Exaustive test of Compiler", "[c]") {
 }
 
 // Takes too long on autobuild
-TEST_CASE("Compiler Benchmarks", "[.][long_bench][c_bench]") {
+TEST_CASE("Compiler Benchmarks", "[.][long_bench][c_bench]")
+{
 
 	const std::string DIR = "test_data/valid_c/";
 	auto dir_list = read_directory(DIR);
@@ -139,13 +145,15 @@ TEST_CASE("Compiler Benchmarks", "[.][long_bench][c_bench]") {
 
 	for (const auto& item : dir_list) {
 
-		BENCHMARK(std::string("Filename: " + get_base_filename(item) + ".c")) {
+		BENCHMARK(std::string("Filename: " + get_base_filename(item) + ".c"))
+		{
 			return compile_tu(item, fr);
 		};
 	}
 }
 
-TEST_CASE("Invalid C programs", "[c]") {
+TEST_CASE("Invalid C programs", "[c]")
+{
 
 	const std::string DIR = "test_data/invalid_c/";
 	auto dir_list = read_directory(DIR);
@@ -159,7 +167,8 @@ TEST_CASE("Invalid C programs", "[c]") {
 	}
 }
 
-TEST_CASE("Whole C program", "[c]") {
+TEST_CASE("Whole C program", "[c]")
+{
 	FileReader fr("./stdlib");
 
 	fr.add_directory("./test_data/whole_program/sub");
@@ -189,7 +198,8 @@ TEST_CASE("Whole C program", "[c]") {
 	CHECK(actual_program_output == expected_program_output);
 }
 
-TEST_CASE("Test file io filename methods", "[c]") {
+TEST_CASE("Test file io filename methods", "[c]")
+{
 	std::string filename("test.txt");
 
 	CHECK(get_base_filename(filename) == std::string("test"));
@@ -210,7 +220,8 @@ TEST_CASE("Test file io filename methods", "[c]") {
 	CHECK(get_directory_name(filename) == std::string("another_longer/"));
 }
 
-TEST_CASE("Linker with multi segment files", "[link]") {
+TEST_CASE("Linker with multi segment files", "[link]")
+{
 	// These two relocation files are specially crafted so that addresses
 	// that need relocation span a page boundary.
 	//

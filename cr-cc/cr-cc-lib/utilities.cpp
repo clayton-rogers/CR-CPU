@@ -10,7 +10,8 @@ std::uint16_t string_to_u16(const std::string& instruction)
 	return static_cast<std::uint16_t>(value);
 }
 
-std::string u16_to_string(std::uint16_t value) {
+std::string u16_to_string(std::uint16_t value)
+{
 	std::stringstream output;
 	output << std::hex << std::setfill('0') << std::setw(4) << value;
 	std::string temp = output.str();
@@ -18,7 +19,8 @@ std::string u16_to_string(std::uint16_t value) {
 	return temp;
 }
 
-std::string u8_to_string(std::uint8_t value) {
+std::string u8_to_string(std::uint8_t value)
+{
 	std::stringstream output;
 	output << std::hex << std::setfill('0') << std::setw(2) << static_cast<std::uint16_t>(value);// doesn't actually matter what we cast it as, as long as it's not char
 	std::string temp = output.str();
@@ -26,7 +28,8 @@ std::string u8_to_string(std::uint8_t value) {
 	return temp;
 }
 
-std::string machine_inst_to_simple_hex(const std::vector<std::uint16_t>& machine_instructions) {
+std::string machine_inst_to_simple_hex(const std::vector<std::uint16_t>& machine_instructions)
+{
 
 	std::ostringstream ss;
 
@@ -37,7 +40,8 @@ std::string machine_inst_to_simple_hex(const std::vector<std::uint16_t>& machine
 	return ss.str();
 }
 
-std::string machine_inst_to_hex(const std::vector<std::uint16_t>& machine_instructions) {
+std::string machine_inst_to_hex(const std::vector<std::uint16_t>& machine_instructions)
+{
 
 	std::ostringstream ss;
 
@@ -62,7 +66,8 @@ std::string machine_inst_to_hex(const std::vector<std::uint16_t>& machine_instru
 	return ss.str();
 }
 
-std::string exe_to_srec(const Object::Object_Container& obj) {
+std::string exe_to_srec(const Object::Object_Container& obj)
+{
 
 	if (obj.contents.index() != Object::Object_Container::EXECUTABLE) {
 		throw std::logic_error("Tried to output invalid object as srec");
@@ -79,7 +84,7 @@ std::string exe_to_srec(const Object::Object_Container& obj) {
 
 		std::uint8_t sum = 0;
 
-		std::uint8_t size = static_cast<std::uint8_t>( 2/*addr*/ + data.size() + 1/*checksum*/ );
+		std::uint8_t size = static_cast<std::uint8_t>(2/*addr*/ + data.size() + 1/*checksum*/);
 
 		output << u8_to_string(size);
 		sum += size;
@@ -111,7 +116,7 @@ std::string exe_to_srec(const Object::Object_Container& obj) {
 	ss << write_line(0, 0, { 0x43,0x52,0x2D,0x43,0x50,0x55,0x00 }); // "CR-CPU"
 
 	// Length
-	const int number_of_data_lines = static_cast<int>((exe.machine_code.size()-1) / 16 + 1); // 32 bytes per line, 16 words
+	const int number_of_data_lines = static_cast<int>((exe.machine_code.size() - 1) / 16 + 1); // 32 bytes per line, 16 words
 
 	// Data
 	for (int i = 0; i < number_of_data_lines; ++i) {

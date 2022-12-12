@@ -1,7 +1,8 @@
 #include "simulator_timer.h"
 
 
-void Simulator_Timer::step() {
+void Simulator_Timer::step()
+{
 	if (timer_low == 0xFFFF) {
 		timer_low = 0;
 		timer_high += 1;

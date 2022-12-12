@@ -1,11 +1,13 @@
 #include "AST.h"
 
-namespace AST {
+namespace AST
+{
 
 	static void add_declarations_to_stack(
-			const std::vector<Declaration>& declaration_list,
-			std::vector<std::shared_ptr<Statement>>* out_statement_list,
-			std::shared_ptr<VarMap> scope) {
+		const std::vector<Declaration>& declaration_list,
+		std::vector<std::shared_ptr<Statement>>* out_statement_list,
+		std::shared_ptr<VarMap> scope)
+	{
 
 		for (const auto& declaration : declaration_list) {
 			// Add var to the current scope
@@ -21,43 +23,45 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	std::shared_ptr<Statement> parse_statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::statement);
 
 		const auto& child = node.children.at(0);
 
 		// statements will only have a single child
 		switch (child.token.token_type) {
-		case TokenType::if_statement:
-			return std::make_shared<If_Statement>(child, scope);
-		case TokenType::while_statement:
-			return std::make_shared<While_Statement>(child, scope);
-		case TokenType::do_while_statement:
-			return std::make_shared<Do_While_Statement>(child, scope);
-		case TokenType::for_statement:
-			return std::make_shared<For_Statement>(child, scope);
-		case TokenType::compound_statement:
-			return std::make_shared<Compount_Statement>(child, scope);
-		case TokenType::break_statement:
-			return std::make_shared<Break_Statement>(child, scope);
-		case TokenType::continue_statement:
-			return std::make_shared<Continue_Statement>(child, scope);
-		case TokenType::jump_statement:
-			if (child.children.at(0).token.token_type == TokenType::key_return) {
-				return std::make_shared<Return_Statement>(child, scope);
-			} else {
-				throw std::logic_error("Invalid jump_statement");
-			}
-		case TokenType::expression_statement:
-			return std::make_shared<Expression_Statement>(child, scope);
-		default:
-			throw std::logic_error("Tried to parse_statement with invalid type: " +
-				tokenType_to_string(child.token.token_type));
+			case TokenType::if_statement:
+				return std::make_shared<If_Statement>(child, scope);
+			case TokenType::while_statement:
+				return std::make_shared<While_Statement>(child, scope);
+			case TokenType::do_while_statement:
+				return std::make_shared<Do_While_Statement>(child, scope);
+			case TokenType::for_statement:
+				return std::make_shared<For_Statement>(child, scope);
+			case TokenType::compound_statement:
+				return std::make_shared<Compount_Statement>(child, scope);
+			case TokenType::break_statement:
+				return std::make_shared<Break_Statement>(child, scope);
+			case TokenType::continue_statement:
+				return std::make_shared<Continue_Statement>(child, scope);
+			case TokenType::jump_statement:
+				if (child.children.at(0).token.token_type == TokenType::key_return) {
+					return std::make_shared<Return_Statement>(child, scope);
+				} else {
+					throw std::logic_error("Invalid jump_statement");
+				}
+			case TokenType::expression_statement:
+				return std::make_shared<Expression_Statement>(child, scope);
+			default:
+				throw std::logic_error("Tried to parse_statement with invalid type: " +
+					tokenType_to_string(child.token.token_type));
 		}
 	}
 
 	Return_Statement::Return_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-			: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::jump_statement);
 
 		// Double check that this is actually a return
@@ -72,7 +76,8 @@ namespace AST {
 	}
 
 	Expression_Statement::Expression_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::expression_statement);
 
 		// Expression statement is an expression followed by a semi colon
@@ -82,7 +87,8 @@ namespace AST {
 	}
 
 	Compount_Statement::Compount_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::compound_statement);
 
 		scope_id = scope->create_scope();
@@ -97,24 +103,23 @@ namespace AST {
 
 		for (const auto& block_item : block_item_list.children) {
 
-			switch (block_item.token.token_type)
-			{
+			switch (block_item.token.token_type) {
 				// Code blocks can optionally have a list of declarations
 				case TokenType::declaration:
-				{
-					auto declarations = parse_declaration(block_item, scope);
-					add_declarations_to_stack(declarations, &statement_list, scope);
-				}
-				break;
-				// Code blocks can optionally have a list of statements
+					{
+						auto declarations = parse_declaration(block_item, scope);
+						add_declarations_to_stack(declarations, &statement_list, scope);
+					}
+					break;
+					// Code blocks can optionally have a list of statements
 				case TokenType::statement:
-				{
-					std::shared_ptr<Statement> s = parse_statement(block_item, scope);
-					this->statement_list.push_back(s);
-				}
-				break;
-			default:
-				throw std::logic_error("Compound statement should never get here: " + tokenType_to_string(block_item.token.token_type));
+					{
+						std::shared_ptr<Statement> s = parse_statement(block_item, scope);
+						this->statement_list.push_back(s);
+					}
+					break;
+				default:
+					throw std::logic_error("Compound statement should never get here: " + tokenType_to_string(block_item.token.token_type));
 			}
 		}
 
@@ -122,7 +127,8 @@ namespace AST {
 	}
 
 	If_Statement::If_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::if_statement);
 
 		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
@@ -139,13 +145,15 @@ namespace AST {
 	}
 
 	Declaration_Statement::Declaration_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::identifier);
 		var_name = node.token.value;
 	}
 
 	While_Statement::While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::while_statement);
 
 		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
@@ -153,7 +161,8 @@ namespace AST {
 	}
 
 	Do_While_Statement::Do_While_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::do_while_statement);
 
 		condition = parse_expression(node.get_child_with_type(TokenType::expression), scope);
@@ -161,7 +170,8 @@ namespace AST {
 	}
 
 	For_Statement::For_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::for_statement);
 
 		// For statement creates its own scope to enclose any 'i' loop vars
@@ -200,12 +210,14 @@ namespace AST {
 	}
 
 	Break_Statement::Break_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::break_statement);
 	}
 
 	Continue_Statement::Continue_Statement(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Statement(scope) {
+		: Statement(scope)
+	{
 		node.check_type(TokenType::continue_statement);
 	}
 }

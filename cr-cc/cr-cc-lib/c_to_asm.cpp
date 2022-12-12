@@ -19,7 +19,8 @@ public:
 };
 
 
-std::string c_to_asm(const std::string& tu_filename, FileReader fr) {
+std::string c_to_asm(const std::string& tu_filename, FileReader fr)
+{
 	Front_End_State cs;
 
 	cs.code_preprocessed = preprocess(tu_filename, fr);

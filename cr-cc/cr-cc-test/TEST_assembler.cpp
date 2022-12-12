@@ -12,7 +12,8 @@
 #include <iomanip>
 #include <memory>
 
-TEST_CASE("Internal assembler test", "[asm]") {
+TEST_CASE("Internal assembler test", "[asm]")
+{
 	// Don't bother checking anything else if the internal test fails
 	REQUIRE(assembler_internal_test() == true);
 }
@@ -22,7 +23,8 @@ struct Test_Point {
 	std::string expected_out;
 };
 
-TEST_CASE("Test assembler instructions", "[asm]") {
+TEST_CASE("Test assembler instructions", "[asm]")
+{
 	std::vector<Test_Point> test_points = {
 		{"", ""},
 		{" ", ""},
@@ -127,7 +129,8 @@ TEST_CASE("Test assembler instructions", "[asm]") {
 	}
 }
 
-TEST_CASE("Test assembler should throw", "[asm]") {
+TEST_CASE("Test assembler should throw", "[asm]")
+{
 	std::vector<std::string> test_points = {
 		"jmp", // missing argument
 		"add ra", // missing argument
@@ -220,7 +223,8 @@ static const std::vector<Test_Program> test_programs = {
 	{"hello_world.s", false, 0x0000},
 };
 
-TEST_CASE("Test assembler programs", "[asm]") {
+TEST_CASE("Test assembler programs", "[asm]")
+{
 
 	for (const auto& test_point : test_programs) {
 		INFO(test_point.name);
@@ -256,25 +260,28 @@ TEST_CASE("Test assembler programs", "[asm]") {
 	}
 }
 
-TEST_CASE("Assembler Benchmarks", "[.][bench]") {
+TEST_CASE("Assembler Benchmarks", "[.][bench]")
+{
 	for (const auto& test_point : test_programs) {
 		std::string program = read_file(std::string("./test_data/asm/") + test_point.name);
 
 		REQUIRE(program.length() != 0);
 
-		BENCHMARK(std::string("Benchmark: ") + test_point.name) {
+		BENCHMARK(std::string("Benchmark: ") + test_point.name)
+		{
 			return assemble(program);
 		};
 	}
 }
 
-TEST_CASE("Assembler object Relocations", "[asm]") {
+TEST_CASE("Assembler object Relocations", "[asm]")
+{
 	using namespace Object;
 
 	std::string input = read_file("./test_data/asm/relocation_test.s");
 	auto object_file = assemble(input);
 	auto object = std::get<Object_Type>(object_file.contents);
-	auto exe = link( { object_file }, 0);
+	auto exe = link({ object_file }, 0);
 
 	// Check that we have the required relocations
 	{
@@ -288,9 +295,9 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 		CHECK(reloc.at(5) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x15, 0x04 });
 		CHECK(reloc.at(6) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x16, 0x04 });
 
-		CHECK(reloc.at(7)  == Relocation{ HI_LO_TYPE::HI_BYTE, 0x17, 0x1E });
-		CHECK(reloc.at(8)  == Relocation{ HI_LO_TYPE::LO_BYTE, 0x18, 0x1E });
-		CHECK(reloc.at(9)  == Relocation{ HI_LO_TYPE::LO_BYTE, 0x19, 0x1E });
+		CHECK(reloc.at(7) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x17, 0x1E });
+		CHECK(reloc.at(8) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x18, 0x1E });
+		CHECK(reloc.at(9) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x19, 0x1E });
 		CHECK(reloc.at(10) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1A, 0x1E });
 		CHECK(reloc.at(11) == Relocation{ HI_LO_TYPE::LO_BYTE, 0x1B, 0x1E });
 		CHECK(reloc.at(12) == Relocation{ HI_LO_TYPE::HI_BYTE, 0x1C, 0x1E });
@@ -312,7 +319,8 @@ TEST_CASE("Assembler object Relocations", "[asm]") {
 	}
 }
 
-TEST_CASE("Assembler object External references", "[asm]") {
+TEST_CASE("Assembler object External references", "[asm]")
+{
 	using namespace Object;
 
 	std::string input = read_file("./test_data/asm/external_references_test.s");
@@ -337,7 +345,8 @@ TEST_CASE("Assembler object External references", "[asm]") {
 	}
 }
 
-TEST_CASE("Assembler object Exported referencs", "[asm]") {
+TEST_CASE("Assembler object Exported referencs", "[asm]")
+{
 	using namespace Object;
 
 	std::string input = read_file("./test_data/asm/exported_references_test.s");

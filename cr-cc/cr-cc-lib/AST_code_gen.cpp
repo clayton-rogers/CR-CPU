@@ -4,11 +4,13 @@
 #include <iomanip>
 #include <algorithm>
 
-namespace AST {
+namespace AST
+{
 
 	static constexpr int MAX_SHORT_JUMP = 128;
 
-	static std::string output_byte(int a) {
+	static std::string output_byte(int a)
+	{
 		if (a < 0 || a > 0xFF) {
 			throw std::logic_error("Cannot generate byte for " + std::to_string(a));
 		}
@@ -22,7 +24,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	static std::string output_signed_byte(int a) {
+	static std::string output_signed_byte(int a)
+	{
 		if (a < -128 || a > 127) {
 			throw std::logic_error("Cannot generate signed byte for " + std::to_string(a));
 		}
@@ -38,7 +41,8 @@ namespace AST {
 	}
 
 	// returns logical not of ra
-	static std::string gen_logical_negation(std::shared_ptr<VarMap> scope) {
+	static std::string gen_logical_negation(std::shared_ptr<VarMap> scope)
+	{
 		std::stringstream ss;
 		std::string l_zero = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -52,7 +56,8 @@ namespace AST {
 	}
 
 	// return the truthiness of ra
-	static std::string gen_is_true(std::shared_ptr<VarMap> scope) {
+	static std::string gen_is_true(std::shared_ptr<VarMap> scope)
+	{
 		std::stringstream ss;
 		std::string l_false = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -66,7 +71,8 @@ namespace AST {
 	}
 
 	// returns 1 if ra >= 0
-	static std::string gen_is_positive(std::shared_ptr<VarMap> scope) {
+	static std::string gen_is_positive(std::shared_ptr<VarMap> scope)
+	{
 		std::stringstream ss;
 		std::string l_true = scope->env->label_maker.get_next_label();
 		std::string l_end = scope->env->label_maker.get_next_label();
@@ -80,7 +86,8 @@ namespace AST {
 	}
 
 	// Returns the approx number of instructions in a section of code
-	static int get_code_length(const std::string code) {
+	static int get_code_length(const std::string code)
+	{
 		const char* current_char = code.c_str();
 		const int size = static_cast<int>(code.size());
 		int count = 0;
@@ -93,7 +100,8 @@ namespace AST {
 		return count;
 	}
 
-	static std::string expression_to_byte_array(std::shared_ptr<Expression> expression) {
+	static std::string expression_to_byte_array(std::shared_ptr<Expression> expression)
+	{
 
 		// For now will only support numeric constants.
 		// In the future should support any const expression
@@ -116,7 +124,8 @@ namespace AST {
 		if_not_zero_true,
 		if_greater_equal_zero,
 	};
-	std::string operator+(std::string lhs, Jump_Type rhs) {
+	std::string operator+(std::string lhs, Jump_Type rhs)
+	{
 		std::vector<std::string> map =
 		{
 			"",
@@ -130,9 +139,10 @@ namespace AST {
 
 	// Generates a long or short jump depending on the code size
 	static std::string gen_jump(std::string label,
-								Jump_Type type_of_jmp,
-								std::string comment,
-								int jump_size) {
+		Jump_Type type_of_jmp,
+		std::string comment,
+		int jump_size)
+	{
 		std::string jump;
 		if (jump_size > MAX_SHORT_JUMP) {
 			jump += "loada " + label + "\n";
@@ -144,41 +154,43 @@ namespace AST {
 		return jump;
 	}
 
-	std::string Unary_Expression::generate_code() const {
+	std::string Unary_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		// calculate the sub expression and leave it in RA
 		ss << sub->generate_code();
 
 		switch (type) {
-		case Unary_Type::negation:
-			// to negate must invert all bits and then add one
-			ss << "loadi rb, 0xFF # negate RA\n";
-			ss << "loadi.h rb, 0xFF\n";
-			ss << "xor ra, rb\n";
-			//ss << "not ra, 0xFF \n"; TODO add not to CPU
-			ss << "add ra, 1\n";
-			break;
-		case Unary_Type::bitwise_complement:
-			ss << "loadi rb, 0xFF # complement RA\n";
-			ss << "loadi.h rb, 0xFF\n";
-			ss << "xor ra, rb\n";
-			//ss << "not ra, 0xFF # complement RA\n"; TODO add not to CPU
-			break;
-		case Unary_Type::logical_negation:
-		{
-			ss << gen_logical_negation(scope);
-			break;
-		}
+			case Unary_Type::negation:
+				// to negate must invert all bits and then add one
+				ss << "loadi rb, 0xFF # negate RA\n";
+				ss << "loadi.h rb, 0xFF\n";
+				ss << "xor ra, rb\n";
+				//ss << "not ra, 0xFF \n"; TODO add not to CPU
+				ss << "add ra, 1\n";
+				break;
+			case Unary_Type::bitwise_complement:
+				ss << "loadi rb, 0xFF # complement RA\n";
+				ss << "loadi.h rb, 0xFF\n";
+				ss << "xor ra, rb\n";
+				//ss << "not ra, 0xFF # complement RA\n"; TODO add not to CPU
+				break;
+			case Unary_Type::logical_negation:
+				{
+					ss << gen_logical_negation(scope);
+					break;
+				}
 
-		default:
-			throw std::logic_error("Unary generate code: should never happen");
+			default:
+				throw std::logic_error("Unary generate code: should never happen");
 		}
 
 		return ss.str();
 	}
 
-	std::string Constant_Expression::generate_code() const {
+	std::string Constant_Expression::generate_code() const
+	{
 		// If the constant is small, we can do it in one load, else two
 		std::stringstream ss;
 		ss << "loadi ra, " << output_byte(constant_value & 0xFF) << " # load const value: " << constant_value << '\n';
@@ -190,7 +202,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Binary_Expression::generate_code() const {
+	std::string Binary_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		// Generate code for the left hand side
@@ -218,81 +231,81 @@ namespace AST {
 
 		// Perform actual binary operation
 		switch (type) {
-		case Bin_Type::addition:
-			ss << "add ra, rb # binary exp add\n";
-			break;
-		case Bin_Type::subtraction:
-			ss << "sub ra, rb # binary exp sub\n";
-			break;
-		case Bin_Type::multiplication:
-			// mult and div are not instructions but function calls
-			// if they're used we have to make sure there's an .external
-			// directive for them
-			ss << "loada .__mult\n";
-			ss << "call .__mult\n";
-			break;
-		case Bin_Type::division:
-			// mult and div are not instructions but function calls
-			// if they're used we have to make sure there's an .external
-			// directive for them
-			ss << "loada .__div\n";
-			ss << "call .__div\n";
-			break;
-		case Bin_Type::remainder:
-			// mod is also a function and not an instruction
-			ss << "loada .__rem\n";
-			ss << "call .__rem\n";
-			break;
-		case Bin_Type::logical_and:
-			ss << "and ra, rb # binary exp logical and\n";
-			break;
-		case Bin_Type::logical_or:
-			ss << "or ra, rb # binary exp logical or\n";
-			break;
-		case Bin_Type::equal:
-			// A == B is the same as !(A - B)
-			// if A == B then A-B => 0 then !0 is 1
-			ss << "sub ra, rb # binary exp logical equal\n";
-			ss << gen_logical_negation(scope);
-			break;
-		case Bin_Type::not_equal:
-			// if A == B is the same as !(A - B) from above
-			// then A != B is the same as !!(A - B) which is just (A - B)
-			ss << "sub ra, rb # binary exp logical not equal\n";
-			ss << gen_is_true(scope); // probably not required
-			break;
-		case Bin_Type::less_than:
-			// A < B is (B - A - 1) >= 0
-			ss << "sub rb, ra # binary less than\n";
-			ss << "mov ra, rb\n";
-			ss << "sub ra, 0x01\n";
-			ss << gen_is_positive(scope);
-			break;
-		case Bin_Type::less_than_or_equal:
-			// A <= B is (B - A) >= 0
-			ss << "sub rb, ra # binary less than equal\n";
-			ss << "mov ra, rb\n";
-			ss << gen_is_positive(scope);
-			break;
-		case Bin_Type::greater_than:
-			// A > B  is (A - B - 1) >= 0
-			ss << "sub ra, rb # binary greater than\n";
-			ss << "sub ra, 0x01\n";
-			ss << gen_is_positive(scope);
-			break;
-		case Bin_Type::greater_than_or_equal:
-			// A >= B is (A - B) >= 0
-			ss << "sub ra, rb # binary greater than equal\n";
-			ss << gen_is_positive(scope);
-			break;
-		case Bin_Type::shift_left:
-			ss << "shftl ra, rb # binary shift left\n";
-			break;
-		case Bin_Type::shift_right:
-			ss << "shftr ra, rb # binary shift right\n";
-			break;
-		default:
-			throw std::logic_error("Should never get here binary_expression::generate_code");
+			case Bin_Type::addition:
+				ss << "add ra, rb # binary exp add\n";
+				break;
+			case Bin_Type::subtraction:
+				ss << "sub ra, rb # binary exp sub\n";
+				break;
+			case Bin_Type::multiplication:
+				// mult and div are not instructions but function calls
+				// if they're used we have to make sure there's an .external
+				// directive for them
+				ss << "loada .__mult\n";
+				ss << "call .__mult\n";
+				break;
+			case Bin_Type::division:
+				// mult and div are not instructions but function calls
+				// if they're used we have to make sure there's an .external
+				// directive for them
+				ss << "loada .__div\n";
+				ss << "call .__div\n";
+				break;
+			case Bin_Type::remainder:
+				// mod is also a function and not an instruction
+				ss << "loada .__rem\n";
+				ss << "call .__rem\n";
+				break;
+			case Bin_Type::logical_and:
+				ss << "and ra, rb # binary exp logical and\n";
+				break;
+			case Bin_Type::logical_or:
+				ss << "or ra, rb # binary exp logical or\n";
+				break;
+			case Bin_Type::equal:
+				// A == B is the same as !(A - B)
+				// if A == B then A-B => 0 then !0 is 1
+				ss << "sub ra, rb # binary exp logical equal\n";
+				ss << gen_logical_negation(scope);
+				break;
+			case Bin_Type::not_equal:
+				// if A == B is the same as !(A - B) from above
+				// then A != B is the same as !!(A - B) which is just (A - B)
+				ss << "sub ra, rb # binary exp logical not equal\n";
+				ss << gen_is_true(scope); // probably not required
+				break;
+			case Bin_Type::less_than:
+				// A < B is (B - A - 1) >= 0
+				ss << "sub rb, ra # binary less than\n";
+				ss << "mov ra, rb\n";
+				ss << "sub ra, 0x01\n";
+				ss << gen_is_positive(scope);
+				break;
+			case Bin_Type::less_than_or_equal:
+				// A <= B is (B - A) >= 0
+				ss << "sub rb, ra # binary less than equal\n";
+				ss << "mov ra, rb\n";
+				ss << gen_is_positive(scope);
+				break;
+			case Bin_Type::greater_than:
+				// A > B  is (A - B - 1) >= 0
+				ss << "sub ra, rb # binary greater than\n";
+				ss << "sub ra, 0x01\n";
+				ss << gen_is_positive(scope);
+				break;
+			case Bin_Type::greater_than_or_equal:
+				// A >= B is (A - B) >= 0
+				ss << "sub ra, rb # binary greater than equal\n";
+				ss << gen_is_positive(scope);
+				break;
+			case Bin_Type::shift_left:
+				ss << "shftl ra, rb # binary shift left\n";
+				break;
+			case Bin_Type::shift_right:
+				ss << "shftr ra, rb # binary shift right\n";
+				break;
+			default:
+				throw std::logic_error("Should never get here binary_expression::generate_code");
 		}
 
 		// In case of short circuit, skip the operation:
@@ -304,7 +317,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Return_Statement::generate_code() const {
+	std::string Return_Statement::generate_code() const
+	{
 		std::stringstream ss;
 		if (ret_expression) {
 			ss << ret_expression->generate_code();
@@ -316,7 +330,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Expression_Statement::generate_code() const {
+	std::string Expression_Statement::generate_code() const
+	{
 		// Expression statement may be empty, in which case it's a nop
 		if (maybe_sub) {
 			return maybe_sub->generate_code();
@@ -325,7 +340,8 @@ namespace AST {
 		}
 	}
 
-	std::string Compount_Statement::generate_code() const {
+	std::string Compount_Statement::generate_code() const
+	{
 		std::string ret;
 
 		scope->set_current_scope(scope_id);
@@ -337,7 +353,8 @@ namespace AST {
 		return ret;
 	}
 
-	std::string Function::generate_code() const {
+	std::string Function::generate_code() const
+	{
 		std::stringstream ss;
 
 		if (is_defined()) {
@@ -407,7 +424,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string AST::generate_code() {
+	std::string AST::generate_code()
+	{
 		std::stringstream ss;
 		ss << '\n';
 
@@ -419,7 +437,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Environment::generate_code() {
+	std::string Environment::generate_code()
+	{
 		std::stringstream ss;
 
 		// generate code for all global symbols (functions and vars)
@@ -460,7 +479,7 @@ namespace AST {
 		if (symbol == nullptr || symbol->type != Global_Symbol::Global_Symbol_Type::FUNCTION) {
 			throw std::logic_error("Called a function that has not been declared: " + name);
 		}
-		
+
 		auto function = symbol->function;
 
 		if (!function->signature_matches(name, args)) {
@@ -468,7 +487,8 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Type> Environment::get_function_return_type(const std::string& name) {
+	std::shared_ptr<Type> Environment::get_function_return_type(const std::string& name)
+	{
 		// This function should never be called before "check_function()" has,
 		// so we should not need to check that the function exists. We will anyways
 
@@ -482,7 +502,8 @@ namespace AST {
 		return function->get_return_type();
 	}
 
-	std::string VarMap::gen_scope_entry() {
+	std::string VarMap::gen_scope_entry()
+	{
 		std::stringstream ss;
 
 		if (size_of_var_map != 0) {
@@ -496,7 +517,7 @@ namespace AST {
 					int offset;
 					std::string name;
 					int size;
-					Temp_Var_Map(int offset, std::string name, int size) : offset(offset), name(name), size(size) {}
+					Temp_Var_Map(int offset, std::string name, int size): offset(offset), name(name), size(size) {}
 				};
 				std::vector<Temp_Var_Map> vars;
 				for (const auto& var : scope.offset_map) {
@@ -519,7 +540,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string VarMap::gen_scope_exit() {
+	std::string VarMap::gen_scope_exit()
+	{
 		std::stringstream ss;
 
 		const int total_size = size_of_var_map + stack_offset;
@@ -538,12 +560,14 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string VarMap::push_reg(std::string reg_name) {
+	std::string VarMap::push_reg(std::string reg_name)
+	{
 		stack_offset++;
 		return "push " + reg_name;
 	}
 
-	std::string VarMap::pop_reg(std::string reg_name) {
+	std::string VarMap::pop_reg(std::string reg_name)
+	{
 		stack_offset--;
 		return "pop " + reg_name;
 	}
@@ -574,7 +598,8 @@ namespace AST {
 	//	return ss.str();
 	//}
 
-	std::string Assignment_Expression::generate_code() const {
+	std::string Assignment_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		// calculate the result of the sub expression
@@ -611,75 +636,77 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Variable_Expression::generate_code() const {
+	std::string Variable_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		switch (var_type) {
-		case Variable_Type::reference:
-			// need to load the address of the given identifier into RA
-			ss << scope->load_address(var_name, "ra");
-			break;
-		case Variable_Type::dereference:
-			// need to load the value from the given identifier into RP
-			// then load the value it points to
-			ss << scope->load_word(var_name, "rp");
-			ss << "load.rp ra, 0x00 # dereference pointer\n";
-			break;
-		case Variable_Type::direct:
-			// Emit instruction to load var directly into ra
-			if (scope->is_var_array(var_name)) {
-				// Array decays into point to first element
+			case Variable_Type::reference:
+				// need to load the address of the given identifier into RA
 				ss << scope->load_address(var_name, "ra");
-			} else {
-				ss << scope->load_word(var_name, "ra");
-			}
-			break;
-		case Variable_Type::increment:
-		case Variable_Type::decrement:
-		{
-			if (scope->is_var_array(var_name)) {
-				throw std::logic_error("Cannot increment array: " + var_name);
-			}
-			int inc_amount = 1;
-			if (scope->is_var_ptr(var_name)) {
-				auto type_of_var = scope->get_var_type(var_name);
-				throw std::logic_error("Can't increment pointers yet");
-			}
-			ss << scope->load_word(var_name, "ra");
-			if (var_type == Variable_Type::increment) {
-				ss << "add ra " << output_byte(inc_amount) << " # increment\n";
-			} else if (var_type == Variable_Type::decrement) {
-				ss << "sub ra " << output_byte(inc_amount) << " # decrement\n";
-			} else {
-				throw std::logic_error("Variable_Expression::generate_code(): Should never get here");
-			}
-			ss << scope->store_word(var_name, "ra");
-		}
-		break;
-		case Variable_Type::array:
-			// Calculate the offset, then get the dereference
-			ss << array_index->generate_code();
-			ss << "mov rp, ra # move array offset to ptr reg\n";
-			if (scope->is_var_ptr(var_name)) {
-				// Use ptr contents directly
-				ss << scope->load_word(var_name, "ra");
-			} else if (scope->is_var_array(var_name)) {
-				// Array turns into pointer
-				ss << scope->load_address(var_name, "ra");
-			} else {
-				throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
-			}
-			ss << "add rp, ra # calculate final array addr\n";
-			ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
-			break;
-		default:
-			throw std::logic_error("variable_expression::generate_code(): should never get here: default case");
+				break;
+			case Variable_Type::dereference:
+				// need to load the value from the given identifier into RP
+				// then load the value it points to
+				ss << scope->load_word(var_name, "rp");
+				ss << "load.rp ra, 0x00 # dereference pointer\n";
+				break;
+			case Variable_Type::direct:
+				// Emit instruction to load var directly into ra
+				if (scope->is_var_array(var_name)) {
+					// Array decays into point to first element
+					ss << scope->load_address(var_name, "ra");
+				} else {
+					ss << scope->load_word(var_name, "ra");
+				}
+				break;
+			case Variable_Type::increment:
+			case Variable_Type::decrement:
+				{
+					if (scope->is_var_array(var_name)) {
+						throw std::logic_error("Cannot increment array: " + var_name);
+					}
+					int inc_amount = 1;
+					if (scope->is_var_ptr(var_name)) {
+						auto type_of_var = scope->get_var_type(var_name);
+						throw std::logic_error("Can't increment pointers yet");
+					}
+					ss << scope->load_word(var_name, "ra");
+					if (var_type == Variable_Type::increment) {
+						ss << "add ra " << output_byte(inc_amount) << " # increment\n";
+					} else if (var_type == Variable_Type::decrement) {
+						ss << "sub ra " << output_byte(inc_amount) << " # decrement\n";
+					} else {
+						throw std::logic_error("Variable_Expression::generate_code(): Should never get here");
+					}
+					ss << scope->store_word(var_name, "ra");
+				}
+				break;
+			case Variable_Type::array:
+				// Calculate the offset, then get the dereference
+				ss << array_index->generate_code();
+				ss << "mov rp, ra # move array offset to ptr reg\n";
+				if (scope->is_var_ptr(var_name)) {
+					// Use ptr contents directly
+					ss << scope->load_word(var_name, "ra");
+				} else if (scope->is_var_array(var_name)) {
+					// Array turns into pointer
+					ss << scope->load_address(var_name, "ra");
+				} else {
+					throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
+				}
+				ss << "add rp, ra # calculate final array addr\n";
+				ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
+				break;
+			default:
+				throw std::logic_error("variable_expression::generate_code(): should never get here: default case");
 		}
 
 		return ss.str();
 	}
 
-	int VarMap::get_stack_var_offset(const std::string& name) {
+	int VarMap::get_stack_var_offset(const std::string& name)
+	{
 
 		const Var* var = get_stack_var(name);
 		if (var != nullptr) {
@@ -690,7 +717,8 @@ namespace AST {
 
 	}
 
-	VarMap::Scope_Id VarMap::get_stack_var_scope_id(const std::string& name) {
+	VarMap::Scope_Id VarMap::get_stack_var_scope_id(const std::string& name)
+	{
 		Scope_Id id = current_scope;
 		while (id != NULL_SCOPE) {
 			// Only catch vars that exist at the current or parents scopes
@@ -707,7 +735,8 @@ namespace AST {
 		return MAGIC_NO_SCOPE;
 	}
 
-	const VarMap::Var* VarMap::get_stack_var(const std::string& name) {
+	const VarMap::Var* VarMap::get_stack_var(const std::string& name)
+	{
 		Scope_Id id = current_scope;
 		while (id != NULL_SCOPE) {
 			// Only catch vars that exist at the current or parents scopes
@@ -724,7 +753,8 @@ namespace AST {
 		return nullptr;
 	}
 
-	std::string VarMap::store_word(const std::string& name, const std::string& source_reg) {
+	std::string VarMap::store_word(const std::string& name, const std::string& source_reg)
+	{
 
 		// Try for stack var first
 		{
@@ -749,7 +779,8 @@ namespace AST {
 		throw std::logic_error("Referenced unknown var: " + name);
 	}
 
-	std::string VarMap::load_word(const std::string& name, const std::string& dest_reg) {
+	std::string VarMap::load_word(const std::string& name, const std::string& dest_reg)
+	{
 
 		// Try for stack var first
 		{
@@ -774,7 +805,8 @@ namespace AST {
 		throw std::logic_error("Referenced unknown var: " + name);
 	}
 
-	std::string VarMap::load_address(const std::string& name, const std::string& dest_reg) {
+	std::string VarMap::load_address(const std::string& name, const std::string& dest_reg)
+	{
 
 		// Try for stack var first
 		{
@@ -804,7 +836,8 @@ namespace AST {
 		throw std::logic_error("Tried to get address of unknown var: " + name);
 	}
 
-	bool VarMap::is_var_array(const std::string& name) {
+	bool VarMap::is_var_array(const std::string& name)
+	{
 
 		// Try for stack var
 		{
@@ -825,7 +858,8 @@ namespace AST {
 		throw std::logic_error("Tried to get the array status of an unknown var: " + name);
 	}
 
-	bool VarMap::is_var_ptr(const std::string& name) {
+	bool VarMap::is_var_ptr(const std::string& name)
+	{
 
 		// Try for stack var
 		{
@@ -846,7 +880,8 @@ namespace AST {
 		throw std::logic_error("Tried to get the pointer status of an unknown var: " + name);
 	}
 
-	std::shared_ptr<Type> VarMap::get_var_type(const std::string& name) {
+	std::shared_ptr<Type> VarMap::get_var_type(const std::string& name)
+	{
 
 		// Try for stack var
 		{
@@ -867,7 +902,8 @@ namespace AST {
 		return std::shared_ptr<Type>();
 	}
 
-	std::string If_Statement::generate_code() const {
+	std::string If_Statement::generate_code() const
+	{
 		std::stringstream ss;
 
 		// evaluate the condition
@@ -899,7 +935,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Conditional_Expression::generate_code() const {
+	std::string Conditional_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		// WTF are you doing if you need a long jmp for a ternary?
@@ -924,7 +961,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Function_Call_Expression::generate_code() const {
+	std::string Function_Call_Expression::generate_code() const
+	{
 		std::stringstream ss;
 
 		// TODO we need to modify this if types other than int exist
@@ -972,14 +1010,16 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Declaration_Statement::generate_code() const {
+	std::string Declaration_Statement::generate_code() const
+	{
 		// Don't actually do anything for a declaration, just
 		// mark the var as available to the subsequent code.
 		scope->declare_var(var_name);
 		return "";
 	}
 
-	std::string While_Statement::generate_code() const {
+	std::string While_Statement::generate_code() const
+	{
 		std::stringstream ss;
 
 		VarMap::Loop_Labels label;
@@ -999,13 +1039,14 @@ namespace AST {
 		ss << while_contents;
 		ss << gen_jump(label.top, Jump_Type::unconditional, " # end of while statement", while_contents_size);
 		ss << label.after << ":\n";
-		
+
 		scope->pop_loop();
 
 		return ss.str();
 	}
 
-	std::string Do_While_Statement::generate_code() const {
+	std::string Do_While_Statement::generate_code() const
+	{
 		std::stringstream ss;
 
 		VarMap::Loop_Labels label;
@@ -1017,7 +1058,7 @@ namespace AST {
 		// Check the condition, if false(zero) skip to end
 		const auto do_while_contents = contents->generate_code() + condition->generate_code();
 		const auto do_while_contents_size = get_code_length(do_while_contents);
-		
+
 		ss << label.top << ": # do while statement\n";
 		ss << do_while_contents;
 		ss << "jmp.r.z " << label.after << "\n";
@@ -1029,7 +1070,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string For_Statement::generate_code() const {
+	std::string For_Statement::generate_code() const
+	{
 		std::stringstream ss;
 		scope->set_current_scope(scope_id);
 
@@ -1071,7 +1113,8 @@ namespace AST {
 		return ss.str();
 	}
 
-	std::string Break_Statement::generate_code() const {
+	std::string Break_Statement::generate_code() const
+	{
 		// No way to know how far a break jump has to go, so always long jump
 		std::string ret;
 		ret += "loada " + scope->get_after_label() + "\n";
@@ -1079,7 +1122,8 @@ namespace AST {
 		return ret;
 	}
 
-	std::string Continue_Statement::generate_code() const {
+	std::string Continue_Statement::generate_code() const
+	{
 		// No way to know how far a continue jump has to go, so always long jump
 		std::string ret;
 		ret += "loada " + scope->get_top_label() + "\n";

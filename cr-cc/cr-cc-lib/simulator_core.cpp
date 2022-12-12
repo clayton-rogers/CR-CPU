@@ -22,25 +22,27 @@ enum SIM_OPCODES {
 	NOP,
 };
 
-static int ALU(int opcode, int shift_dir, int data1, int data2) {
+static int ALU(int opcode, int shift_dir, int data1, int data2)
+{
 	switch (opcode) {
-	case ADD: return data1 + data2;
-	case SUB: return data1 - data2;
-	case AND: return data1 & data2;
-	case OR:  return data1 | data2;
-	case XOR: return data1 ^ data2; // WOW xor!
-	case SHIFT:
-		switch (shift_dir) {
-		case 0: return data1 >> data2;
-		case 1: return data1 << data2;
-		default: throw std::out_of_range("Simulator_Core::ALU: Shift dir must be 0 or 1");
-		}
-	case MOV: return data2;
-	default: return 0;
+		case ADD: return data1 + data2;
+		case SUB: return data1 - data2;
+		case AND: return data1 & data2;
+		case OR:  return data1 | data2;
+		case XOR: return data1 ^ data2; // WOW xor!
+		case SHIFT:
+			switch (shift_dir) {
+				case 0: return data1 >> data2;
+				case 1: return data1 << data2;
+				default: throw std::out_of_range("Simulator_Core::ALU: Shift dir must be 0 or 1");
+			}
+		case MOV: return data2;
+		default: return 0;
 	}
 }
 
-void Simulator_Core::step() {
+void Simulator_Core::step()
+{
 	if (is_halted) { return; }
 
 	const std::uint16_t inst = (state == 0) ? bus->core_read_data() : cached_ins;
@@ -83,35 +85,35 @@ void Simulator_Core::step() {
 	const int input1 = get_reg(extra_high);
 	int input2 = 0;
 	switch (opcode) {
-	case ADD:
-	case SUB:
-	case AND:
-	case OR:
-	case XOR:
-	{
-		if (extra_low == 3) {
-			input2 = constant;
-		} else {
-			input2 = get_reg(extra_low);
-		}
-		break;
-	}
-	case SHIFT:
-	{
-		if (extra_low & 0x2) {
-			input2 = constant;
-		} else {
-			input2 = rb;
-		}
-		break;
-	}
-	case MOV:
-	{
-		input2 = get_reg(extra_low);
-		break;
-	}
-	default:
-		break;
+		case ADD:
+		case SUB:
+		case AND:
+		case OR:
+		case XOR:
+			{
+				if (extra_low == 3) {
+					input2 = constant;
+				} else {
+					input2 = get_reg(extra_low);
+				}
+				break;
+			}
+		case SHIFT:
+			{
+				if (extra_low & 0x2) {
+					input2 = constant;
+				} else {
+					input2 = rb;
+				}
+				break;
+			}
+		case MOV:
+			{
+				input2 = get_reg(extra_low);
+				break;
+			}
+		default:
+			break;
 	}
 
 	const std::uint16_t ALU_OUT = static_cast<std::uint16_t>(ALU(opcode, (extra_low & 0x1), input1, input2));
@@ -128,87 +130,87 @@ void Simulator_Core::step() {
 	}
 
 	switch (opcode) {
-	case ADD:
-	case SUB:
-	case AND:
-	case OR:
-	case XOR:
-	case SHIFT:
-	case MOV:
-		dest_reg = ALU_OUT;
-		break;
-	case LOAD:
-	{
-		if (state == 0) {
-			// do nothing, read address will automatically be ram addr
-		} else { // state == 1
-			dest_reg = bus->core_read_data(); // retrieve the data that was previously requested
-		}
-		break;
-	}
-	case STORE:
-		bus->core_write_data(load_addr, get_reg(extra_high));
-		break;
-	case JMP:
-	{
-		// Handled by combinatoric logic
-		break;
-	}
-	case LOADI:
-	{
-		if (extra_low & 0x2) {
-			get_reg(extra_high) = static_cast<std::uint16_t>((constant << 8) + (get_reg(extra_high) & 0x00FF));
-		} else {
-			get_reg(extra_high) = static_cast<std::uint16_t>(constant);
-		}
-		break;
-	}
-	case PUSH_POP:
-	{
-		switch (extra_low) {
-		case 0:
-		{
-			bus->core_write_data(--sp, get_reg(extra_high));
-		}
-		break;
-		case 1:
-		{
-			if (state == 0) {
-				// address to load from is combinatoric
-			} else {
-				get_reg(extra_high) = bus->core_read_data();
-				++sp;
-			}
+		case ADD:
+		case SUB:
+		case AND:
+		case OR:
+		case XOR:
+		case SHIFT:
+		case MOV:
+			dest_reg = ALU_OUT;
 			break;
-		}
-		default: throw std::out_of_range("Simulator_Core::step(): extra_low for push/pop must be 0 .. 1");
-		}
-		break;
-	}
-	case CALL_RET:
-	{
-		if (extra_low & 0x01) {
-			// RET handled combinatoric
-			if (state == 1) {
-				sp++;
+		case LOAD:
+			{
+				if (state == 0) {
+					// do nothing, read address will automatically be ram addr
+				} else { // state == 1
+					dest_reg = bus->core_read_data(); // retrieve the data that was previously requested
+				}
+				break;
 			}
-		} else {
-			// Call
-			// Update of pc is combinatoric
-			bus->core_write_data(--sp, inc_pc);
-		}
-		break;
-	} // end CALL_RET
-	case LOADA:
-		addr = static_cast<std::uint8_t>(constant);
-		break;
-	case HALT:
-		is_halted = true;
-		break;
-	case NOP:
-		break;
-	default:
-		throw std::out_of_range("Simulator_Core::step(): Got unknown opcode: " + opcode);
+		case STORE:
+			bus->core_write_data(load_addr, get_reg(extra_high));
+			break;
+		case JMP:
+			{
+				// Handled by combinatoric logic
+				break;
+			}
+		case LOADI:
+			{
+				if (extra_low & 0x2) {
+					get_reg(extra_high) = static_cast<std::uint16_t>((constant << 8) + (get_reg(extra_high) & 0x00FF));
+				} else {
+					get_reg(extra_high) = static_cast<std::uint16_t>(constant);
+				}
+				break;
+			}
+		case PUSH_POP:
+			{
+				switch (extra_low) {
+					case 0:
+						{
+							bus->core_write_data(--sp, get_reg(extra_high));
+						}
+						break;
+					case 1:
+						{
+							if (state == 0) {
+								// address to load from is combinatoric
+							} else {
+								get_reg(extra_high) = bus->core_read_data();
+								++sp;
+							}
+							break;
+						}
+					default: throw std::out_of_range("Simulator_Core::step(): extra_low for push/pop must be 0 .. 1");
+				}
+				break;
+			}
+		case CALL_RET:
+			{
+				if (extra_low & 0x01) {
+					// RET handled combinatoric
+					if (state == 1) {
+						sp++;
+					}
+				} else {
+					// Call
+					// Update of pc is combinatoric
+					bus->core_write_data(--sp, inc_pc);
+				}
+				break;
+			} // end CALL_RET
+		case LOADA:
+			addr = static_cast<std::uint8_t>(constant);
+			break;
+		case HALT:
+			is_halted = true;
+			break;
+		case NOP:
+			break;
+		default:
+			throw std::out_of_range("Simulator_Core::step(): Got unknown opcode: " + opcode);
 	}
 
 	// Calculate next PC
@@ -217,12 +219,12 @@ void Simulator_Core::step() {
 	if ((opcode == JMP && should_jump) ||  // jmp == true
 		(opcode == CALL_RET && (extra_low & 0x01) == 0) || // call
 		(opcode == CALL_RET && extra_low & 0x01 && state == 1) // ret
-	) {
+		) {
 		next_pc = calced_pc;
 	} else if ((opcode == LOAD && state == 0) || // Load first cycle
 		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // Ret first cycle
 		(opcode == PUSH_POP && extra_low == 0x01 && state == 0) // Pop first cycle
-	) {
+		) {
 		next_pc = pc;
 		next_state = 1;
 	} else {
@@ -233,7 +235,7 @@ void Simulator_Core::step() {
 	if ((opcode == LOAD && state == 0) ||  // first cycle of load
 		(opcode == CALL_RET && extra_low & 0x01 && state == 0) || // first cycle of ret
 		(opcode == PUSH_POP && extra_low == 0x01 && state == 0)  // pop
-	) {
+		) {
 		bus->core_set_next_read_address(load_addr);
 	} else {
 		bus->core_set_next_read_address(next_pc);
@@ -247,10 +249,10 @@ void Simulator_Core::step() {
 std::uint16_t& Simulator_Core::get_reg(int index)
 {
 	switch (index) {
-	case 0: return ra;
-	case 1: return rb;
-	case 2: return rp;
-	case 3: return sp;
-	default: throw std::out_of_range("Simulator_Core::get_reg(): reg index must be 0 .. 3, actual: " + index);
+		case 0: return ra;
+		case 1: return rb;
+		case 2: return rp;
+		case 3: return sp;
+		default: throw std::out_of_range("Simulator_Core::get_reg(): reg index must be 0 .. 3, actual: " + index);
 	}
 }

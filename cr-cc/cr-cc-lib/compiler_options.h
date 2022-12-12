@@ -26,7 +26,8 @@ struct Compiler_Options {
 
 	int sim_steps = 1000000;
 
-	std::string get_out_filename(std::string extension) {
+	std::string get_out_filename(std::string extension)
+	{
 		if (output_filename_set) {
 			return output_filename;
 		} else {
@@ -38,7 +39,8 @@ struct Compiler_Options {
 		}
 	}
 
-	void set_output_filename(std::string filename) {
+	void set_output_filename(std::string filename)
+	{
 		output_filename = filename;
 		output_filename_set = true;
 	}

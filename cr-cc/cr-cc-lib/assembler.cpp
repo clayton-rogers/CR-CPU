@@ -179,7 +179,8 @@ struct AssemblerState {
 	Object_Container out;
 };
 
-static std::vector<std::string> split_by_lines(const std::string& assembly) {
+static std::vector<std::string> split_by_lines(const std::string& assembly)
+{
 	std::vector<std::string> lines;
 	std::stringstream asm_wrapper(assembly);
 	std::string temp;
@@ -192,7 +193,8 @@ static std::vector<std::string> split_by_lines(const std::string& assembly) {
 
 // Generic function to see if a vector contains a particular value.
 template <typename T>
-bool vector_contains(const T item, const std::vector<T>& list) {
+bool vector_contains(const T item, const std::vector<T>& list)
+{
 	bool found = false;
 	for (const auto& item_of_list : list) {
 		if (item == item_of_list) {
@@ -204,27 +206,29 @@ bool vector_contains(const T item, const std::vector<T>& list) {
 	return found;
 }
 
-static std::string to_string(ARG_TYPE t) {
+static std::string to_string(ARG_TYPE t)
+{
 	switch (t) {
-	case ARG_TYPE::CONST:
-		return "const";
-	case ARG_TYPE::RA:
-		return "ra";
-	case ARG_TYPE::RB:
-		return "rb";
-	case ARG_TYPE::RP:
-		return "rp";
-	case ARG_TYPE::SP:
-		return "sp";
-	case ARG_TYPE::NONE:
-		return "none";
+		case ARG_TYPE::CONST:
+			return "const";
+		case ARG_TYPE::RA:
+			return "ra";
+		case ARG_TYPE::RB:
+			return "rb";
+		case ARG_TYPE::RP:
+			return "rp";
+		case ARG_TYPE::SP:
+			return "sp";
+		case ARG_TYPE::NONE:
+			return "none";
 	}
 
 	// Should never hit this
 	return "none-unknown";
 }
 
-static const Argument parse_token_for_arg(std::string token) {
+static const Argument parse_token_for_arg(std::string token)
+{
 	Argument output;
 
 	if (argument_str_map.count(token) == 1) {
@@ -268,7 +272,8 @@ static const Argument parse_token_for_arg(std::string token) {
 // - converts punctuation to space
 // - strips extra space
 // - converts each word into a token
-static std::vector<std::string> tokenize_line(const std::string& input) {
+static std::vector<std::string> tokenize_line(const std::string& input)
+{
 	std::string converted;
 	converted.reserve(input.size());
 
@@ -314,7 +319,8 @@ static std::vector<std::string> tokenize_line(const std::string& input) {
 	return output;
 }
 
-static void handle_assembler_directive(const std::vector<std::string>& tokens, AssemblerState* as) {
+static void handle_assembler_directive(const std::vector<std::string>& tokens, AssemblerState* as)
+{
 
 	const std::string& directive = tokens.at(0);
 
@@ -481,7 +487,8 @@ static void handle_assembler_directive(const std::vector<std::string>& tokens, A
 	throw std::logic_error("Encountered unknown assembler directive: " + tokens.at(0));
 }
 
-static Instruction tokens_to_instruction(const std::vector<std::string>& tokens) {
+static Instruction tokens_to_instruction(const std::vector<std::string>& tokens)
+{
 
 	// one input1/destination, one input2/constant
 	static const int MAX_NUMBER_ARGS = 2;
@@ -643,99 +650,99 @@ static std::uint16_t instruction_to_machine(
 				const_value = a.value;
 			} else {
 				switch (inst.opcode) {
-				case OPCODE::JMP:
-				case OPCODE::CALL:
-					// label instruction numbers should be relative to current instruction
-					if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
-						if (extern_label_map.count(a.label_value)) {
-							throw std::logic_error("Should not reference an external symbol with relative flag: " + a.label_value);
-						}
-						const_value = get_label(a.label_value) - instruction_number;
-						if (const_value > +127 || const_value < -128) {
-							throw std::logic_error("Jmp or call to label too far away: " + a.label_value);
-						}
-					} else {
-						if (need_relocation(a.label_value)) {
-							// if relocation is required, then the target is stored in the relocation
-							relocations.push_back(
-								Relocation{
-									HI_LO_TYPE::LO_BYTE,
-									u16(instruction_number),
-									u16(get_label(a.label_value))});
-							const_value = 0;
+					case OPCODE::JMP:
+					case OPCODE::CALL:
+						// label instruction numbers should be relative to current instruction
+						if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+							if (extern_label_map.count(a.label_value)) {
+								throw std::logic_error("Should not reference an external symbol with relative flag: " + a.label_value);
+							}
+							const_value = get_label(a.label_value) - instruction_number;
+							if (const_value > +127 || const_value < -128) {
+								throw std::logic_error("Jmp or call to label too far away: " + a.label_value);
+							}
 						} else {
-							const_value = get_label(a.label_value);
+							if (need_relocation(a.label_value)) {
+								// if relocation is required, then the target is stored in the relocation
+								relocations.push_back(
+									Relocation{
+										HI_LO_TYPE::LO_BYTE,
+										u16(instruction_number),
+										u16(get_label(a.label_value)) });
+								const_value = 0;
+							} else {
+								const_value = get_label(a.label_value);
+							}
+							handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
 						}
-						handle_external_ref_if_needed(a.label_value, HI_LO_TYPE::LO_BYTE);
-					}
-					const_value &= 0xFF;
-					break;
+						const_value &= 0xFF;
+						break;
 
-					// LOADA
-					// LOAD
-					// STORE - constant or var label
-					// ARITHMETIC - constant only
-					// (Not sure if this is correct?)
-					// (TODO spell out the case statement)
-				default:
-				{
-					// else must be a variable label
-					std::string label_str;
-					std::string offset_str;
-					int offset = 0;
-					const auto beg = a.label_value.find('[');
-					const auto end = a.label_value.find(']');
-					if (beg != std::string::npos) {
-						label_str = a.label_value.substr(0, beg);
-						offset_str = a.label_value.substr(beg + 1, end - beg - 1);
-						offset = std::stoi(offset_str, 0, 0);
-					} else {
-						label_str = a.label_value;
-					}
+						// LOADA
+						// LOAD
+						// STORE - constant or var label
+						// ARITHMETIC - constant only
+						// (Not sure if this is correct?)
+						// (TODO spell out the case statement)
+					default:
+						{
+							// else must be a variable label
+							std::string label_str;
+							std::string offset_str;
+							int offset = 0;
+							const auto beg = a.label_value.find('[');
+							const auto end = a.label_value.find(']');
+							if (beg != std::string::npos) {
+								label_str = a.label_value.substr(0, beg);
+								offset_str = a.label_value.substr(beg + 1, end - beg - 1);
+								offset = std::stoi(offset_str, 0, 0);
+							} else {
+								label_str = a.label_value;
+							}
 
-					const_value = get_label(label_str) + offset;
-					if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
-						if (need_relocation(label_str)) {
-							relocations.push_back(
-								Relocation{
-									HI_LO_TYPE::HI_BYTE,
-									u16(instruction_number),
-									u16(const_value)});
-							const_value = 0;
-						} else {
-							const_value >>= 8;
+							const_value = get_label(label_str) + offset;
+							if (inst.opcode == OPCODE::LOADA || vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) {
+								if (need_relocation(label_str)) {
+									relocations.push_back(
+										Relocation{
+											HI_LO_TYPE::HI_BYTE,
+											u16(instruction_number),
+											u16(const_value) });
+									const_value = 0;
+								} else {
+									const_value >>= 8;
+								}
+								handle_external_ref_if_needed(label_str, HI_LO_TYPE::HI_BYTE);
+							} else {
+								if (need_relocation(label_str)) {
+									relocations.push_back(
+										Relocation{
+											HI_LO_TYPE::LO_BYTE,
+											u16(instruction_number),
+											u16(const_value) });
+									const_value = 0;
+								} else {
+									const_value &= 0xFF;
+								}
+								handle_external_ref_if_needed(label_str, HI_LO_TYPE::LO_BYTE);
+							}
 						}
-						handle_external_ref_if_needed(label_str, HI_LO_TYPE::HI_BYTE);
-					} else {
-						if (need_relocation(label_str)) {
-							relocations.push_back(
-								Relocation{
-									HI_LO_TYPE::LO_BYTE,
-									u16(instruction_number),
-									u16(const_value)});
-							const_value = 0;
-						} else {
-							const_value &= 0xFF;
-						}
-						handle_external_ref_if_needed(label_str, HI_LO_TYPE::LO_BYTE);
-					}
-				}
-				break;
+						break;
 				}
 
 			}
 			if (const_value < 0) {
 				switch (inst.opcode) {
-				case OPCODE::ADD:
-				case OPCODE::SUB:
-				case OPCODE::AND:
-				case OPCODE::OR:
-				case OPCODE::XOR:
-				case OPCODE::SHFTL:
-				case OPCODE::SHFTR:
-					throw std::logic_error("Arithmetic instruction cannot have negative constant");
-				default:
-					break; // nop
+					case OPCODE::ADD:
+					case OPCODE::SUB:
+					case OPCODE::AND:
+					case OPCODE::OR:
+					case OPCODE::XOR:
+					case OPCODE::SHFTL:
+					case OPCODE::SHFTR:
+						throw std::logic_error("Arithmetic instruction cannot have negative constant");
+					default:
+						break; // nop
 				}
 			}
 			machine += static_cast<std::uint8_t>(const_value);
@@ -743,240 +750,241 @@ static std::uint16_t instruction_to_machine(
 	}
 
 	switch (inst.opcode) {
-	case OPCODE::ADD:
-	case OPCODE::SUB:
-	case OPCODE::AND:
-	case OPCODE::OR:
-	case OPCODE::XOR:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
+		case OPCODE::ADD:
+		case OPCODE::SUB:
+		case OPCODE::AND:
+		case OPCODE::OR:
+		case OPCODE::XOR:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
 
-		int source = 0;
-		switch (inst.args[1].type) {
-		case ARG_TYPE::RA: source = 0; break;
-		case ARG_TYPE::RB: source = 1; break;
-		case ARG_TYPE::RP: source = 2; break;
-		case ARG_TYPE::CONST: source = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid source1");
-		}
+				int source = 0;
+				switch (inst.args[1].type) {
+					case ARG_TYPE::RA: source = 0; break;
+					case ARG_TYPE::RB: source = 1; break;
+					case ARG_TYPE::RP: source = 2; break;
+					case ARG_TYPE::CONST: source = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid source1");
+				}
 
-		machine |= dest << 10;
-		machine |= source << 8;
+				machine |= dest << 10;
+				machine |= source << 8;
 
-		break;
-	}
-	case OPCODE::SHFTL:
-	case OPCODE::SHFTR:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
-
-		int source = 0;
-		switch (inst.args[1].type) {
-		case ARG_TYPE::RB: source = 0; break;
-		case ARG_TYPE::CONST: source = 1; break;
-		default:
-			throw std::logic_error("Should never get here: invalid source");
-		}
-		if (inst.args[1].type == ARG_TYPE::CONST &&
-			(machine & 0xFF) > 0x000F) {
-			throw std::logic_error("Constant for shift should be 0 .. 15");
-		}
-
-		int direction = (inst.opcode == OPCODE::SHFTR) ? 0 : 1;
-
-		machine |= dest << 10;
-		machine |= source << 9;
-		machine |= direction << 8;
-
-		break;
-	}
-	case OPCODE::LOAD:
-	case OPCODE::STORE:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
-
-		// NOTE: 3 is never used
-		int offset = 2; // by default relative to the address register
-		if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags)) {
-			offset = 0;
-		}
-		if (vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
-			offset = 1;
-		}
-		if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags) &&
-			vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
-			throw std::logic_error("Cannot have both rp and sp offset flags");
-		}
-
-		machine |= dest << 10;
-		machine |= offset << 8;
-
-		break;
-	}
-	case OPCODE::MOV:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
-
-		int source = 0;
-		switch (inst.args[1].type) {
-		case ARG_TYPE::RA: source = 0; break;
-		case ARG_TYPE::RB: source = 1; break;
-		case ARG_TYPE::RP: source = 2; break;
-		case ARG_TYPE::SP: source = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid source reg");
-		}
-
-		machine |= dest << 10;
-		machine |= source << 8;
-
-		break;
-	}
-	case OPCODE::JMP:
-	{
-		int type_of_jmp = 0;
-		if (vector_contains(FLAGS_TYPE::IF_ZERO, inst.flags)) {
-			type_of_jmp = 1;
-		}
-		if (vector_contains(FLAGS_TYPE::IF_NON_ZERO, inst.flags)) {
-			type_of_jmp = 2;
-		}
-		if (vector_contains(FLAGS_TYPE::IF_GREATER_EQUAL_ZERO, inst.flags)) {
-			type_of_jmp = 3;
-		}
-
-		int offset = 0;
-		if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
-			offset = 0;
-
-			if (inst.flags.size() > 2) {
-				throw std::logic_error("Too many jump condition flags specified");
+				break;
 			}
-		} else {
-			offset = 1;
+		case OPCODE::SHFTL:
+		case OPCODE::SHFTR:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
 
-			if (inst.flags.size() > 1) {
-				throw std::logic_error("Too many jump condition flags specified");
+				int source = 0;
+				switch (inst.args[1].type) {
+					case ARG_TYPE::RB: source = 0; break;
+					case ARG_TYPE::CONST: source = 1; break;
+					default:
+						throw std::logic_error("Should never get here: invalid source");
+				}
+				if (inst.args[1].type == ARG_TYPE::CONST &&
+					(machine & 0xFF) > 0x000F) {
+					throw std::logic_error("Constant for shift should be 0 .. 15");
+				}
+
+				int direction = (inst.opcode == OPCODE::SHFTR) ? 0 : 1;
+
+				machine |= dest << 10;
+				machine |= source << 9;
+				machine |= direction << 8;
+
+				break;
 			}
-		}
+		case OPCODE::LOAD:
+		case OPCODE::STORE:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
 
-		machine |= type_of_jmp << 10;
-		machine |= offset << 9;
+				// NOTE: 3 is never used
+				int offset = 2; // by default relative to the address register
+				if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags)) {
+					offset = 0;
+				}
+				if (vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
+					offset = 1;
+				}
+				if (vector_contains(FLAGS_TYPE::POINTER_REGISTER, inst.flags) &&
+					vector_contains(FLAGS_TYPE::STACK_POINTER, inst.flags)) {
+					throw std::logic_error("Cannot have both rp and sp offset flags");
+				}
 
-		break;
-	}
-	case OPCODE::LOADI:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
+				machine |= dest << 10;
+				machine |= offset << 8;
 
-		int high_flag = (vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) ? 1 : 0;
+				break;
+			}
+		case OPCODE::MOV:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
 
-		machine |= dest << 10;
-		machine |= high_flag << 9;
-		break;
-	}
-	case OPCODE::PUSH:
-	case OPCODE::POP:
-	{
-		int dest = 0;
-		switch (inst.args[0].type) {
-		case ARG_TYPE::RA: dest = 0; break;
-		case ARG_TYPE::RB: dest = 1; break;
-		case ARG_TYPE::RP: dest = 2; break;
-		case ARG_TYPE::SP: dest = 3; break;
-		default:
-			throw std::logic_error("Should never get here: invalid dest reg");
-		}
+				int source = 0;
+				switch (inst.args[1].type) {
+					case ARG_TYPE::RA: source = 0; break;
+					case ARG_TYPE::RB: source = 1; break;
+					case ARG_TYPE::RP: source = 2; break;
+					case ARG_TYPE::SP: source = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid source reg");
+				}
 
-		int type_of_operation = 0;
-		switch (inst.opcode) {
-		case OPCODE::PUSH: type_of_operation = 0; break;
-		case OPCODE::POP: type_of_operation = 1; break;
-		default:
-			throw std::logic_error("Should never get here: invalid opcode push,pop");
-		}
+				machine |= dest << 10;
+				machine |= source << 8;
 
-		machine |= dest << 10;
-		machine |= type_of_operation << 8;
+				break;
+			}
+		case OPCODE::JMP:
+			{
+				int type_of_jmp = 0;
+				if (vector_contains(FLAGS_TYPE::IF_ZERO, inst.flags)) {
+					type_of_jmp = 1;
+				}
+				if (vector_contains(FLAGS_TYPE::IF_NON_ZERO, inst.flags)) {
+					type_of_jmp = 2;
+				}
+				if (vector_contains(FLAGS_TYPE::IF_GREATER_EQUAL_ZERO, inst.flags)) {
+					type_of_jmp = 3;
+				}
 
-		break;
-	}
-	case OPCODE::CALL:
-	case OPCODE::RET:
-	{
-		int type_of_operation = 0;
-		switch (inst.opcode) {
+				int offset = 0;
+				if (vector_contains(FLAGS_TYPE::RELATIVE, inst.flags)) {
+					offset = 0;
+
+					if (inst.flags.size() > 2) {
+						throw std::logic_error("Too many jump condition flags specified");
+					}
+				} else {
+					offset = 1;
+
+					if (inst.flags.size() > 1) {
+						throw std::logic_error("Too many jump condition flags specified");
+					}
+				}
+
+				machine |= type_of_jmp << 10;
+				machine |= offset << 9;
+
+				break;
+			}
+		case OPCODE::LOADI:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
+
+				int high_flag = (vector_contains(FLAGS_TYPE::HIGH_BYTE, inst.flags)) ? 1 : 0;
+
+				machine |= dest << 10;
+				machine |= high_flag << 9;
+				break;
+			}
+		case OPCODE::PUSH:
+		case OPCODE::POP:
+			{
+				int dest = 0;
+				switch (inst.args[0].type) {
+					case ARG_TYPE::RA: dest = 0; break;
+					case ARG_TYPE::RB: dest = 1; break;
+					case ARG_TYPE::RP: dest = 2; break;
+					case ARG_TYPE::SP: dest = 3; break;
+					default:
+						throw std::logic_error("Should never get here: invalid dest reg");
+				}
+
+				int type_of_operation = 0;
+				switch (inst.opcode) {
+					case OPCODE::PUSH: type_of_operation = 0; break;
+					case OPCODE::POP: type_of_operation = 1; break;
+					default:
+						throw std::logic_error("Should never get here: invalid opcode push,pop");
+				}
+
+				machine |= dest << 10;
+				machine |= type_of_operation << 8;
+
+				break;
+			}
 		case OPCODE::CALL:
-			type_of_operation = vector_contains(FLAGS_TYPE::RELATIVE, inst.flags) ? 0 : 2;
-			break;
 		case OPCODE::RET:
-			type_of_operation = 1;
-			break;
+			{
+				int type_of_operation = 0;
+				switch (inst.opcode) {
+					case OPCODE::CALL:
+						type_of_operation = vector_contains(FLAGS_TYPE::RELATIVE, inst.flags) ? 0 : 2;
+						break;
+					case OPCODE::RET:
+						type_of_operation = 1;
+						break;
+					default:
+						throw std::logic_error("Should never get here: invalid call/ret type");
+				}
+
+				machine |= type_of_operation << 8;
+
+				break;
+			}
+		case OPCODE::LOADA:
+		case OPCODE::HALT:
+		case OPCODE::NOP:
+			{
+				// No arguments so nothing to fill
+				break;
+			}
+
 		default:
-			throw std::logic_error("Should never get here: invalid call/ret type");
-		}
-
-		machine |= type_of_operation << 8;
-
-		break;
-	}
-	case OPCODE::LOADA:
-	case OPCODE::HALT:
-	case OPCODE::NOP:
-	{
-		// No arguments so nothing to fill
-		break;
-	}
-
-	default:
-		throw std::logic_error("Should never get here: uninplemented instruction");
+			throw std::logic_error("Should never get here: uninplemented instruction");
 	}
 
 	return machine;
 }
 
-static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
+static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as)
+{
 	auto& machine_code = std::get<Object_Type>(as->out.contents).machine_code;
 
 	// Compile instructions
@@ -1051,7 +1059,8 @@ static std::vector<std::uint16_t> generate_machine_code(AssemblerState* as) {
 	return machine_code;
 }
 
-Object_Container assemble(const std::string& assembly) {
+Object_Container assemble(const std::string& assembly)
+{
 
 	const std::vector<std::string> lines = split_by_lines(assembly);
 
@@ -1096,7 +1105,8 @@ Object_Container assemble(const std::string& assembly) {
 	return as.out;
 }
 
-bool assembler_internal_test() {
+bool assembler_internal_test()
+{
 
 	int num_opcodes = 0;
 

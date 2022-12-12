@@ -2,51 +2,54 @@
 
 #include <stdexcept>
 
-namespace AST {
+namespace AST
+{
 
-	AST::AST(const ParseNode& root) :
-		global_scope(std::make_shared<VarMap>(&env)) {
+	AST::AST(const ParseNode& root):
+		global_scope(std::make_shared<VarMap>(&env))
+	{
 		root.check_type(TokenType::translation_unit);
 
 		// Parse each function and type definition
 		for (const auto& external_declaration_node : root.children) {
 			const auto& node = external_declaration_node.children.at(0);
 			switch (node.token.token_type) {
-			case TokenType::function:
-			{
-				// This may be a declaration or a definition.
-				// In case this is a definition that has not been declared, and the function
-				// is recursive, we need to always first parse it as a declaration and add it
-				// to the function map, so that when the definition is parsed, it will be able
-				// to find the declaration.
-				auto fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DECLARATION);
-				env.add_function(fn);
+				case TokenType::function:
+					{
+						// This may be a declaration or a definition.
+						// In case this is a definition that has not been declared, and the function
+						// is recursive, we need to always first parse it as a declaration and add it
+						// to the function map, so that when the definition is parsed, it will be able
+						// to find the declaration.
+						auto fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DECLARATION);
+						env.add_function(fn);
 
-				// If this really is only a declaration, this will just parse it as such again
-				// Otherwise this will parse the definition.
-				fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DEFINITION);
-				env.add_function(fn);
+						// If this really is only a declaration, this will just parse it as such again
+						// Otherwise this will parse the definition.
+						fn = std::make_shared<Function>(node, &env, Function::Parse_Type::DEFINITION);
+						env.add_function(fn);
 
-				break;
-			}
-			case TokenType::declaration:
-			{
-				auto declarations = parse_declaration(node, global_scope);
+						break;
+					}
+				case TokenType::declaration:
+					{
+						auto declarations = parse_declaration(node, global_scope);
 
-				for (const auto& declaration : declarations) {
-					env.create_static_var(declaration);
-				}
+						for (const auto& declaration : declarations) {
+							env.create_static_var(declaration);
+						}
 
-				break;
-			}
-			default:
-				throw std::logic_error("AST::AST() unexpected TokenType: " + tokenType_to_string(node.token.token_type));
+						break;
+					}
+				default:
+					throw std::logic_error("AST::AST() unexpected TokenType: " + tokenType_to_string(node.token.token_type));
 			}
 		}
 	}
 
 	Function::Function(const ParseNode& node, Environment* env, Parse_Type type)
-			: env(env), scope(std::make_shared<VarMap>(env)) {
+		: env(env), scope(std::make_shared<VarMap>(env))
+	{
 		node.check_type(TokenType::function);
 
 		if (node.contains_child_with_type(TokenType::function_definition)) {
@@ -135,7 +138,8 @@ namespace AST {
 		}
 	}
 
-	bool Function::signature_matches(const Function& other) const {
+	bool Function::signature_matches(const Function& other) const
+	{
 		if (name != other.name) return false;
 		if (arguments.size() != other.arguments.size()) return false;
 
@@ -146,7 +150,8 @@ namespace AST {
 		return true;
 	}
 
-	bool Function::signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const {
+	bool Function::signature_matches(const std::string& other_name, std::vector<std::shared_ptr<Expression>> other_args) const
+	{
 		if (name != other_name) return false;
 		if (arguments.size() != other_args.size()) return false;
 
@@ -159,7 +164,8 @@ namespace AST {
 	}
 
 	VarMap::VarMap(Environment* env)
-		: env(env) {
+		: env(env)
+	{
 		// Add a single highest level scope
 		Scope first_scope;
 		first_scope.parent = NULL_SCOPE;
@@ -167,26 +173,30 @@ namespace AST {
 		current_scope = 0;
 	}
 
-	VarMap::Scope_Id VarMap::create_scope() {
+	VarMap::Scope_Id VarMap::create_scope()
+	{
 		Scope new_scope;
 		new_scope.parent = current_scope;
 		scopes.push_back(new_scope);
 
 		Scope_Id id = scopes.size() - 1;
 		set_current_scope(id);
-		
+
 		return id;
 	}
 
-	void VarMap::close_scope() {
+	void VarMap::close_scope()
+	{
 		current_scope = scopes.at(current_scope).parent;
 	}
 
-	void VarMap::set_current_scope(Scope_Id scope) {
+	void VarMap::set_current_scope(Scope_Id scope)
+	{
 		current_scope = scope;
 	}
 
-	void VarMap::create_stack_var(const Declaration& declaration) {
+	void VarMap::create_stack_var(const Declaration& declaration)
+	{
 
 		const std::string& name = declaration.variable->identifier;
 		const int size = declaration.variable->type->get_size();
@@ -207,7 +217,8 @@ namespace AST {
 		increment_all_vars(size);
 	}
 
-	void VarMap::increment_all_vars(int offset) {
+	void VarMap::increment_all_vars(int offset)
+	{
 		for (auto& scope : scopes) {
 			for (auto& var : scope.offset_map) {
 				var.second.offset += offset;
@@ -215,7 +226,8 @@ namespace AST {
 		}
 	}
 
-	void VarMap::create_stack_var_at_offset(int offset, const std::string& name, std::shared_ptr<Type> type) {
+	void VarMap::create_stack_var_at_offset(int offset, const std::string& name, std::shared_ptr<Type> type)
+	{
 		// Double check that the var doesn't exist already
 		if (scopes.at(current_scope).offset_map.count(name) == 1) {
 			throw std::logic_error("Duplicate var with name: " + name);
@@ -228,16 +240,18 @@ namespace AST {
 		scopes.at(current_scope).offset_map[name] = v;
 	}
 
-	void VarMap::declare_var(const std::string& name) {
+	void VarMap::declare_var(const std::string& name)
+	{
 		if (scopes.at(current_scope).offset_map.count(name) == 1 &&
-				scopes.at(current_scope).offset_map.at(name).is_declared == false) {
+			scopes.at(current_scope).offset_map.at(name).is_declared == false) {
 			scopes.at(current_scope).offset_map.at(name).is_declared = true;
 		} else {
 			throw std::logic_error("Should never get here: tried to declare a var that doesn't exist: " + name);
 		}
 	}
 
-	void Environment::add_function(std::shared_ptr<Function> new_function)	{
+	void Environment::add_function(std::shared_ptr<Function> new_function)
+	{
 
 		auto existing_symbol = get_symbol_with_name(new_function->get_name());
 		const bool symbol_exists = existing_symbol != nullptr;
@@ -273,14 +287,15 @@ namespace AST {
 		}
 	}
 
-	void Environment::create_static_var(const Declaration& declaration) {
+	void Environment::create_static_var(const Declaration& declaration)
+	{
 
 		// Check this symbol has not been previously declared
 		Global_Symbol* existing_symbol = get_symbol_with_name(declaration.variable->identifier);
 		const bool var_already_exists = existing_symbol != nullptr;
 		const bool init_value_provided = declaration.initialiser.get() != nullptr;
 		const std::string& name = declaration.variable->identifier;
-		
+
 		// global vars may not have the same name as functions
 		if (var_already_exists && existing_symbol->type == Global_Symbol::Global_Symbol_Type::FUNCTION) {
 			throw std::logic_error("Tried to declare a global var with same name as function");
@@ -305,7 +320,8 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Variable> Environment::get_static_var(const std::string& name) {
+	std::shared_ptr<Variable> Environment::get_static_var(const std::string& name)
+	{
 
 		auto symbol = get_declared_symbol_with_name(name);
 		if (symbol != nullptr && symbol->type == Global_Symbol::Global_Symbol_Type::VARIABLE) {
@@ -315,7 +331,8 @@ namespace AST {
 		return nullptr;
 	}
 
-	Environment::Global_Symbol* Environment::get_symbol_with_name(const std::string& name) {
+	Environment::Global_Symbol* Environment::get_symbol_with_name(const std::string& name)
+	{
 		for (auto& symbol : global_symbol_table) {
 			if (symbol.name == name) {
 				return &symbol;
@@ -325,7 +342,8 @@ namespace AST {
 		return nullptr;
 	}
 
-	Environment::Global_Symbol* Environment::get_declared_symbol_with_name(const std::string& name) {
+	Environment::Global_Symbol* Environment::get_declared_symbol_with_name(const std::string& name)
+	{
 		for (auto& symbol : global_symbol_table) {
 			if (!symbol.is_declared) {
 				break;
@@ -339,61 +357,63 @@ namespace AST {
 	}
 
 	// Processes strings and handles escape chars
-	static unsigned char get_next_char_from_string_literal(const std::string& s, size_t* offset) {
+	static unsigned char get_next_char_from_string_literal(const std::string& s, size_t* offset)
+	{
 		if (s.at(*offset) == '\\') {
-			++*offset;
+			++* offset;
 			switch (s.at((*offset)++)) {
-			case '\'':
-				return '\'';
-			case '\"':
-				return '\"';
-			case '?':
-				return '?'; // not sure why ? is even here....
-			case '\\':
-				return '\\';
-			case 'a':
-				return 0x07; // audible bell
-			case 'b':
-				return 0x08; // backspace
-			case 'f':
-				return 0x0c; // form feed
-			case 'n':
-				return '\n'; // line feed
-			case 'r':
-				return '\r'; // carriage return
-			case 't':
-				return '\t'; // horizontal tab
-			case 'v':
-				return '\v'; // vertical tab
-			case 'x':
-			case '0':
-			{
-				--* offset;
-				size_t consumed = 0;
-				std::string temp = s.substr(*offset);
-				if (s.at(*offset) == 'x') {
-					temp = std::string("0") + temp;
-				}
-				int value = std::stoi(temp, &consumed, 0);
-				if (s.at(*offset + 1) == 'x') { --consumed; } // sub off the '0' we added
-				*offset += consumed;
-				unsigned char ret_value = static_cast<unsigned char>(value);
-				if (value != ret_value) {
-					throw std::logic_error("Invalid oct char literal: " + temp);
-				}
-				return ret_value;
-			}
-			default:
-				throw std::logic_error("Unknown escape char: " + s.at(*offset - 1));
+				case '\'':
+					return '\'';
+				case '\"':
+					return '\"';
+				case '?':
+					return '?'; // not sure why ? is even here....
+				case '\\':
+					return '\\';
+				case 'a':
+					return 0x07; // audible bell
+				case 'b':
+					return 0x08; // backspace
+				case 'f':
+					return 0x0c; // form feed
+				case 'n':
+					return '\n'; // line feed
+				case 'r':
+					return '\r'; // carriage return
+				case 't':
+					return '\t'; // horizontal tab
+				case 'v':
+					return '\v'; // vertical tab
+				case 'x':
+				case '0':
+					{
+						--* offset;
+						size_t consumed = 0;
+						std::string temp = s.substr(*offset);
+						if (s.at(*offset) == 'x') {
+							temp = std::string("0") + temp;
+						}
+						int value = std::stoi(temp, &consumed, 0);
+						if (s.at(*offset + 1) == 'x') { --consumed; } // sub off the '0' we added
+						*offset += consumed;
+						unsigned char ret_value = static_cast<unsigned char>(value);
+						if (value != ret_value) {
+							throw std::logic_error("Invalid oct char literal: " + temp);
+						}
+						return ret_value;
+					}
+				default:
+					throw std::logic_error("Unknown escape char: " + s.at(*offset - 1));
 			}
 		} else {
 			return s.at(*offset++);
 		}
 	}
 
-	int constant_from_string(const std::string& s, size_t* offset) {
+	int constant_from_string(const std::string& s, size_t* offset)
+	{
 		if (s.at(0) == '\'') {
-			++*offset; // go past opening '
+			++* offset; // go past opening '
 			return get_next_char_from_string_literal(s, offset);
 		} else {
 			return std::stoi(s, nullptr, 0);

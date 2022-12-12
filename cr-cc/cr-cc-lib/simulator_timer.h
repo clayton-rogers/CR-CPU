@@ -11,8 +11,9 @@
 //   BASE_ADDR + 1 => most significant word
 class Simulator_Timer {
 public:
-	Simulator_Timer(std::shared_ptr<Simulator_Bus> bus, std::uint16_t base_addr) :
-		bus(bus), base_addr(base_addr) {}
+	Simulator_Timer(std::shared_ptr<Simulator_Bus> bus, std::uint16_t base_addr):
+		bus(bus), base_addr(base_addr)
+	{}
 
 	void step();
 

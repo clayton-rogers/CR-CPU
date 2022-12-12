@@ -6,13 +6,15 @@
 static const int PTR_SIZE = 1;
 static const int INT_SIZE = 1;
 
-static int calc_struct_size(const Declaration_Specifier& /*specifer*/) {
+static int calc_struct_size(const Declaration_Specifier& /*specifer*/)
+{
 
 	throw std::logic_error("struct size not yet implemented");
 }
 
 Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& declarator)
-	: declaration_specifiers(specifiers), abstract_declarator(declarator) {
+	: declaration_specifiers(specifiers), abstract_declarator(declarator)
+{
 
 	// Need to determine size and broad type
 
@@ -20,18 +22,18 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 	Specifiers specifier_type = Specifiers::INT;
 	for (const auto& specifier : specifiers.specifier_list) {
 		switch (specifier) {
-		case Specifiers::INT:
-		case Specifiers::VOID:
-		case Specifiers::STRUCT:
-		case Specifiers::ENUM:
-		case Specifiers::TYPEDEF_NAME:
-			if (specifier_type_determined) {
-				throw std::logic_error("Tried to redefied type");
-			}
-			specifier_type = specifier;
-			specifier_type_determined = true;
-			break;
-		default: ; // ignore
+			case Specifiers::INT:
+			case Specifiers::VOID:
+			case Specifiers::STRUCT:
+			case Specifiers::ENUM:
+			case Specifiers::TYPEDEF_NAME:
+				if (specifier_type_determined) {
+					throw std::logic_error("Tried to redefied type");
+				}
+				specifier_type = specifier;
+				specifier_type_determined = true;
+				break;
+			default:; // ignore
 		}
 	}
 
@@ -64,7 +66,8 @@ Type::Type(const Declaration_Specifier& specifiers, const Abstract_Declarator& d
 	}
 }
 
-bool operator==(const Declaration_Specifier& a, const Declaration_Specifier& b) {
+bool operator==(const Declaration_Specifier& a, const Declaration_Specifier& b)
+{
 	if (a.specifier_list.size() != b.specifier_list.size()) {
 		return false;
 	}
@@ -92,7 +95,8 @@ bool operator==(const Declaration_Specifier& a, const Declaration_Specifier& b) 
 	return true;
 }
 
-bool operator==(const Abstract_Declarator& a, const Abstract_Declarator& b) {
+bool operator==(const Abstract_Declarator& a, const Abstract_Declarator& b)
+{
 	if (a.num_pointers != b.num_pointers) {
 		return false;
 	}
@@ -138,7 +142,8 @@ bool Type::is_same(std::shared_ptr<Type> other)
 	return true;
 }
 
-bool Declaration_Specifier::contains(Specifiers specifier) {
+bool Declaration_Specifier::contains(Specifiers specifier)
+{
 	for (Specifiers s : specifier_list) {
 		if (s == specifier) {
 			return true;

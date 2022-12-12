@@ -11,7 +11,8 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-static bool file_exists(std::string filename) {
+static bool file_exists(std::string filename)
+{
 	std::ifstream file(filename);
 	if (!file) {
 		return false;
@@ -20,7 +21,8 @@ static bool file_exists(std::string filename) {
 	}
 }
 
-std::string read_file(std::string filename) {
+std::string read_file(std::string filename)
+{
 	std::ifstream file(filename);
 
 	if (!file) {
@@ -40,13 +42,15 @@ std::string read_file(std::string filename) {
 	return output;
 }
 
-void write_file(std::string filename, std::string data) {
+void write_file(std::string filename, std::string data)
+{
 	std::ofstream file(filename);
 
 	file << data;
 }
 
-std::vector<std::uint16_t> read_bin_file(std::string filename) {
+std::vector<std::uint16_t> read_bin_file(std::string filename)
+{
 	std::ifstream file(filename, std::ios::binary);
 
 	if (!file) {
@@ -60,14 +64,15 @@ std::vector<std::uint16_t> read_bin_file(std::string filename) {
 	if ((file_size_bytes % 2) != 0) {
 		throw std::logic_error("Error file not multiple of 2, is this a binary file?: " + filename);
 	}
-	output.resize(file_size_bytes/2);
+	output.resize(file_size_bytes / 2);
 
 	file.read(reinterpret_cast<char*>(output.data()), file_size_bytes);
 
 	return output;
 }
 
-void write_bin_file(std::string filename, std::vector<std::uint16_t> data) {
+void write_bin_file(std::string filename, std::vector<std::uint16_t> data)
+{
 	std::ofstream file(filename, std::ios::binary);
 	file.write(reinterpret_cast<char*>(data.data()), data.size() * 2); // each element is 16 bits
 }
@@ -116,7 +121,8 @@ std::string FileReader::include_file(std::string from_file, std::string filename
 	throw std::logic_error("Could not find file: " + filename);
 }
 
-std::vector<std::string> read_directory(std::string directory) {
+std::vector<std::string> read_directory(std::string directory)
+{
 	std::vector<std::string> ret;
 
 	for (const auto& entry : fs::directory_iterator(directory)) {
@@ -126,7 +132,8 @@ std::vector<std::string> read_directory(std::string directory) {
 	return ret;
 }
 
-std::string get_base_filename(std::string filename) {
+std::string get_base_filename(std::string filename)
+{
 	auto last_slash = filename.find_last_of("/");
 	auto last_period = filename.find_last_of(".");
 	if (last_slash == std::string::npos) {
@@ -136,11 +143,13 @@ std::string get_base_filename(std::string filename) {
 	}
 }
 
-std::string get_file_extension(std::string filename) {
+std::string get_file_extension(std::string filename)
+{
 	return filename.substr(filename.find_last_of(".") + 1);
 }
 
-std::string get_directory_name(std::string filename) {
+std::string get_directory_name(std::string filename)
+{
 	auto last_slash = filename.find_last_of("/");
 	if (last_slash == std::string::npos) {
 		return "./";

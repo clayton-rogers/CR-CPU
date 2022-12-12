@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-Compiler_Options parse_args(int arc, char** argv) {
+Compiler_Options parse_args(int arc, char** argv)
+{
 	std::vector<std::string> args;
 
 	for (int i = 0; i < arc; ++i) {

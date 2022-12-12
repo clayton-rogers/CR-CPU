@@ -6,9 +6,11 @@
 #include <map>
 #include <string>
 
-namespace AST {
+namespace AST
+{
 
-	static Declaration parse_init_declarator(const Declaration_Specifier& ds, const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	static Declaration parse_init_declarator(const Declaration_Specifier& ds, const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::init_declarator);
 
 		const auto& declarator = node.get_child_with_type(TokenType::declarator);
@@ -52,7 +54,8 @@ namespace AST {
 		return declaration;
 	}
 
-	std::vector<Declaration> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	std::vector<Declaration> parse_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::declaration);
 
 		std::vector<Declaration> declarations;
@@ -66,7 +69,8 @@ namespace AST {
 		return declarations;
 	}
 
-	Declaration parse_parameter_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	Declaration parse_parameter_declaration(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::parameter_declaration);
 
 
@@ -89,7 +93,8 @@ namespace AST {
 		return declaration;
 	}
 
-	Declaration_Specifier parse_declaration_specifier(const ParseNode& node) {
+	Declaration_Specifier parse_declaration_specifier(const ParseNode& node)
+	{
 		node.check_type(TokenType::declaration_specifier);
 
 		Declaration_Specifier ds;
@@ -122,4 +127,3 @@ namespace AST {
 	}
 
 }
-

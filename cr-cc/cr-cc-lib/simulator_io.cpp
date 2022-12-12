@@ -1,7 +1,8 @@
 #include "simulator_io.h"
 
 
-void Simulator_IO::step() {
+void Simulator_IO::step()
+{
 	if (bus->slave_get_read_addr() == base_addr) {
 		bus->slave_return_data(input);
 	}

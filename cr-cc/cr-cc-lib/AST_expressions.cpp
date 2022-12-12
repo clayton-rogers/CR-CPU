@@ -1,50 +1,53 @@
 #include "AST.h"
 
-namespace AST {
+namespace AST
+{
 
-	static std::shared_ptr<Expression> parse_factor(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	static std::shared_ptr<Expression> parse_factor(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::factor);
 
 		auto child = node.children.at(0);
 		switch (child.token.token_type) {
-		case TokenType::constant:
-			return std::make_shared<Constant_Expression>(child, scope);
-		case TokenType::unary_expression:
-			if (child.contains_child_with_type(TokenType::identifier)) {
-				return std::make_shared<Variable_Expression>(child, scope);
-			} else {
-				return std::make_shared<Unary_Expression>(child, scope);
-			}
-		case TokenType::open_parenth:
-			// ( exp )
-			return parse_expression(node.children.at(1), scope);
-		case TokenType::identifier:
-			throw std::logic_error("parse_factor(): should never get here: identifier");
-			//return std::make_shared<Variable_Expression>(child, scope);
-		case TokenType::function_call:
-			return std::make_shared<Function_Call_Expression>(child, scope);
-		default:
-			throw std::logic_error("Tried to parse_factor with invalid expression type: " +
-				tokenType_to_string(child.token.token_type));
+			case TokenType::constant:
+				return std::make_shared<Constant_Expression>(child, scope);
+			case TokenType::unary_expression:
+				if (child.contains_child_with_type(TokenType::identifier)) {
+					return std::make_shared<Variable_Expression>(child, scope);
+				} else {
+					return std::make_shared<Unary_Expression>(child, scope);
+				}
+			case TokenType::open_parenth:
+				// ( exp )
+				return parse_expression(node.children.at(1), scope);
+			case TokenType::identifier:
+				throw std::logic_error("parse_factor(): should never get here: identifier");
+				//return std::make_shared<Variable_Expression>(child, scope);
+			case TokenType::function_call:
+				return std::make_shared<Function_Call_Expression>(child, scope);
+			default:
+				throw std::logic_error("Tried to parse_factor with invalid expression type: " +
+					tokenType_to_string(child.token.token_type));
 		}
 	}
 
-	static std::shared_ptr<Expression> parse_binary(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	static std::shared_ptr<Expression> parse_binary(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		switch (node.token.token_type) {
 			// If this is one of the binary sub expressions we're good
-		case TokenType::term:
-		case TokenType::additive_exp:
-		case TokenType::relational_exp:
-		case TokenType::equality_exp:
-		case TokenType::logical_and_exp:
-		case TokenType::logical_or_exp:
-		case TokenType::expression:
-		case TokenType::shift_exp:
-			break;
-		case TokenType::factor:
-			return parse_factor(node, scope);
-		default:
-			throw std::logic_error("Tried to parse unknown token as binary exp: " + tokenType_to_string(node.token.token_type));
+			case TokenType::term:
+			case TokenType::additive_exp:
+			case TokenType::relational_exp:
+			case TokenType::equality_exp:
+			case TokenType::logical_and_exp:
+			case TokenType::logical_or_exp:
+			case TokenType::expression:
+			case TokenType::shift_exp:
+				break;
+			case TokenType::factor:
+				return parse_factor(node, scope);
+			default:
+				throw std::logic_error("Tried to parse unknown token as binary exp: " + tokenType_to_string(node.token.token_type));
 		}
 
 		// A binary may be
@@ -85,7 +88,8 @@ namespace AST {
 		return left;
 	}
 
-	std::shared_ptr<Expression> parse_conditional(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	std::shared_ptr<Expression> parse_conditional(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::conditional_exp);
 
 		if (node.contains_child_with_type(TokenType::question)) {
@@ -96,7 +100,8 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<VarMap> scope) {
+	std::shared_ptr<Expression> parse_expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
+	{
 		node.check_type(TokenType::expression);
 
 		if (node.contains_child_with_type(TokenType::equals)) {
@@ -108,7 +113,8 @@ namespace AST {
 	}
 
 	Assignment_Expression::Assignment_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::expression);
 
 		auto unary_exp = node.get_child_with_type(TokenType::unary_expression);
@@ -130,7 +136,8 @@ namespace AST {
 	}
 
 	Unary_Expression::Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::unary_expression);
 
 		// unary expression is always of the form <operator> <expression>
@@ -138,24 +145,25 @@ namespace AST {
 		const auto& sub_expression = node.children.at(1);
 
 		switch (the_operator.token.token_type) {
-		case TokenType::sub:
-			type = Unary_Type::negation;
-			break;
-		case TokenType::tilda:
-			type = Unary_Type::bitwise_complement;
-			break;
-		case TokenType::exclam:
-			type = Unary_Type::logical_negation;
-			break;
-		default:
-			throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
+			case TokenType::sub:
+				type = Unary_Type::negation;
+				break;
+			case TokenType::tilda:
+				type = Unary_Type::bitwise_complement;
+				break;
+			case TokenType::exclam:
+				type = Unary_Type::logical_negation;
+				break;
+			default:
+				throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
 		}
 
 		sub = parse_factor(sub_expression, scope);
 	}
 
 	Constant_Expression::Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-			: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::constant);
 		size_t offset = 0;
 		int value = constant_from_string(node.token.value, &offset);
@@ -165,7 +173,8 @@ namespace AST {
 		constant_value = static_cast<std::uint16_t>(value);
 	}
 
-	std::shared_ptr<Type> Constant_Expression::get_type() const {
+	std::shared_ptr<Type> Constant_Expression::get_type() const
+	{
 		// Constant expressions are always of type int
 
 		return INT_TYPE;
@@ -175,45 +184,47 @@ namespace AST {
 		//auto type = std::make_shared<Type>(declaration_specifier, abstract_declarator);
 	}
 
-	Binary_Expression::Bin_Type Binary_Expression::token_to_type(TokenType type) {
+	Binary_Expression::Bin_Type Binary_Expression::token_to_type(TokenType type)
+	{
 		switch (type) {
-		case TokenType::add:
-			return Bin_Type::addition;
-		case TokenType::sub:
-			return Bin_Type::subtraction;
-		case TokenType::star:
-			return Bin_Type::multiplication;
-		case TokenType::div:
-			return Bin_Type::division;
-		case TokenType::percent:
-			return Bin_Type::remainder;
-		case TokenType::and_op:
-			return Bin_Type::logical_and;
-		case TokenType::or_op:
-			return Bin_Type::logical_or;
-		case TokenType::eq_op:
-			return Bin_Type::equal;
-		case TokenType::ne_op:
-			return Bin_Type::not_equal;
-		case TokenType::less_than:
-			return Bin_Type::less_than;
-		case TokenType::le_op:
-			return Bin_Type::less_than_or_equal;
-		case TokenType::greater_than:
-			return Bin_Type::greater_than;
-		case TokenType::ge_op:
-			return Bin_Type::greater_than_or_equal;
-		case TokenType::left_op:
-			return Bin_Type::shift_left;
-		case TokenType::right_op:
-			return Bin_Type::shift_right;
-		default:
-			throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
-				+ tokenType_to_string(type));
+			case TokenType::add:
+				return Bin_Type::addition;
+			case TokenType::sub:
+				return Bin_Type::subtraction;
+			case TokenType::star:
+				return Bin_Type::multiplication;
+			case TokenType::div:
+				return Bin_Type::division;
+			case TokenType::percent:
+				return Bin_Type::remainder;
+			case TokenType::and_op:
+				return Bin_Type::logical_and;
+			case TokenType::or_op:
+				return Bin_Type::logical_or;
+			case TokenType::eq_op:
+				return Bin_Type::equal;
+			case TokenType::ne_op:
+				return Bin_Type::not_equal;
+			case TokenType::less_than:
+				return Bin_Type::less_than;
+			case TokenType::le_op:
+				return Bin_Type::less_than_or_equal;
+			case TokenType::greater_than:
+				return Bin_Type::greater_than;
+			case TokenType::ge_op:
+				return Bin_Type::greater_than_or_equal;
+			case TokenType::left_op:
+				return Bin_Type::shift_left;
+			case TokenType::right_op:
+				return Bin_Type::shift_right;
+			default:
+				throw std::logic_error("Tried to convert invalid TokenType to binary expression: "
+					+ tokenType_to_string(type));
 		}
 	}
 
-	std::shared_ptr<Type> Binary_Expression::get_type() const {
+	std::shared_ptr<Type> Binary_Expression::get_type() const
+	{
 		// TODO need to determine combined expression from two sub expressions
 
 		const auto left_broad_type = sub_left->get_type()->get_broad_type();
@@ -247,7 +258,8 @@ namespace AST {
 	}
 
 	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::unary_expression);
 
 		// Get var reference name
@@ -272,7 +284,8 @@ namespace AST {
 		}
 	}
 
-	std::shared_ptr<Type> Variable_Expression::get_type() const {
+	std::shared_ptr<Type> Variable_Expression::get_type() const
+	{
 		// TODO should be able to query the scope for the type of a given var
 
 		// Default to int for now
@@ -285,7 +298,8 @@ namespace AST {
 	}
 
 	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::conditional_exp);
 		if (!node.contains_child_with_type(TokenType::question)) {
 			throw std::logic_error("Called conditional_expression on not a real conditional");
@@ -296,7 +310,8 @@ namespace AST {
 		false_exp = parse_conditional(node.children.at(4), scope);
 	}
 
-	std::shared_ptr<Type> Conditional_Expression::get_type() const {
+	std::shared_ptr<Type> Conditional_Expression::get_type() const
+	{
 		// In theory both true and false sides of the expresion should be the same time right????
 		auto true_type = true_exp->get_type();
 		auto false_type = false_exp->get_type();
@@ -308,7 +323,8 @@ namespace AST {
 	}
 
 	Function_Call_Expression::Function_Call_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope) {
+		: Expression(scope)
+	{
 		node.check_type(TokenType::function_call);
 
 		name = node.get_child_with_type(TokenType::identifier).token.value;
@@ -329,7 +345,8 @@ namespace AST {
 		scope->env->check_function(name, arguments);
 	}
 
-	std::shared_ptr<Type> Function_Call_Expression::get_type() const {
+	std::shared_ptr<Type> Function_Call_Expression::get_type() const
+	{
 		// The type of a function call will of course be whatever the return type of the function is
 		// We should be able to query the function from the symbol table
 

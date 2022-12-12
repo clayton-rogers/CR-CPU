@@ -7,7 +7,8 @@
 #include <string>
 
 
-namespace AST {
+namespace AST
+{
 	class Expression;
 	class VarMap;
 

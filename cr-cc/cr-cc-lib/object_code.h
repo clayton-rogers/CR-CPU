@@ -6,7 +6,8 @@
 #include <variant>
 
 
-namespace Object {
+namespace Object
+{
 
 	using Stream_Type = std::vector<std::uint16_t>;
 
@@ -31,10 +32,12 @@ namespace Object {
 		HI_LO_TYPE type;
 		std::uint16_t location;
 		std::uint16_t new_offset;
-		Relocation(HI_LO_TYPE type, std::uint16_t location, std::uint16_t offset) :
-			type(type), location(location), new_offset(offset) {}
-		Relocation() :
-			type(HI_LO_TYPE::LO_BYTE), location(0), new_offset(0) {}
+		Relocation(HI_LO_TYPE type, std::uint16_t location, std::uint16_t offset):
+			type(type), location(location), new_offset(offset)
+		{}
+		Relocation():
+			type(HI_LO_TYPE::LO_BYTE), location(0), new_offset(0)
+		{}
 	};
 
 	struct Exported_Symbol {
@@ -82,7 +85,7 @@ namespace Object {
 			EXECUTABLE,
 			MAP,
 		};
-		
+
 		// Methods
 		Stream_Type to_stream() const;
 		static Object_Container from_stream(const Stream_Type& s);
@@ -94,14 +97,14 @@ namespace Object {
 	// **********************************************************************
 	// Operators
 	// **********************************************************************
-	bool operator==(const Object_Container& a,   const Object_Container& b);
-	bool operator==(const Object_Type& a,        const Object_Type& b);
-	bool operator==(const Library_Type& a,       const Library_Type& b);
-	bool operator==(const Executable& a,         const Executable& b);
-	bool operator==(const Map& a,                const Map& b);
-	bool operator==(const Relocation& a,         const Relocation& b);
+	bool operator==(const Object_Container& a, const Object_Container& b);
+	bool operator==(const Object_Type& a, const Object_Type& b);
+	bool operator==(const Library_Type& a, const Library_Type& b);
+	bool operator==(const Executable& a, const Executable& b);
+	bool operator==(const Map& a, const Map& b);
+	bool operator==(const Relocation& a, const Relocation& b);
 	bool operator==(const External_Reference& a, const External_Reference& b);
-	bool operator==(const Exported_Symbol& a,    const Exported_Symbol& b);
+	bool operator==(const Exported_Symbol& a, const Exported_Symbol& b);
 
 	std::string to_string(const Object_Container& obj);
 }

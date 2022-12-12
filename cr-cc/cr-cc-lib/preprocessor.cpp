@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-std::string preprocess(const std::string& tu_filename, FileReader fr) {
+std::string preprocess(const std::string& tu_filename, FileReader fr)
+{
 	std::string preprocessed = read_file(tu_filename);
 
 	while (true) {
@@ -51,7 +52,8 @@ std::string preprocess(const std::string& tu_filename, FileReader fr) {
 	return preprocessed;
 }
 
-std::string strip_comments(const std::string& code) {
+std::string strip_comments(const std::string& code)
+{
 	std::string stripped(code);
 
 	// strip all block comments

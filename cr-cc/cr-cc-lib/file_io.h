@@ -18,7 +18,7 @@ std::string get_directory_name(std::string filename);
 
 class FileReader {
 public:
-	FileReader(std::string stdlib_path) : stdlib_path(stdlib_path) { }
+	FileReader(std::string stdlib_path): stdlib_path(stdlib_path) {}
 
 	void add_directory(const std::string& directory);
 	std::string include_file(std::string from_file, std::string filename, bool stdlib_only = false) const;

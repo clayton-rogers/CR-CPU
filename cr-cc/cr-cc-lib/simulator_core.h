@@ -12,7 +12,8 @@ class Simulator_Core {
 public:
 
 	Simulator_Core(std::shared_ptr<Simulator_Bus> bus)
-		: bus(bus) {}
+		: bus(bus)
+	{}
 	Simulator_Core() = delete;
 
 	void step();
