@@ -106,7 +106,7 @@
 		"label": {
 			"patterns": [
 				{
-					"match": "\\.[a-zA-Z_]+",
+					"match": "\\.[a-zA-Z_0-9]+",
 					"name": "variable.other.cr-asm"
 				}
 			]
