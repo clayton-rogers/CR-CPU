@@ -70,6 +70,10 @@ None.
 
 ## Release Notes
 
+### 0.2.2
+
+Fix order so that conditional jumps get highlighted properly instead of just `jmp.r`.
+
 ### 0.2.0
 
 Added language-configuration.json.

@@ -82,7 +82,7 @@
 		"instruction": {
 			"patterns": [
 				{
-					"match": "\\b(?:add|sub|and|or|xor|shftl|shftr|mov|push|pop|loada|ret|loadi.h|loadi|load.rp|load.sp|store.rp|store.sp|call.r|jmp.r|jmp.r.z|jmp.r.nz|jmp.r.ge|jmp.r.gz)\\b",
+					"match": "\\b(?:add|sub|and|or|xor|shftl|shftr|mov|push|pop|loada|ret|loadi.h|loadi|load.rp|load.sp|store.rp|store.sp|call.r|jmp.r.z|jmp.r.nz|jmp.r.ge|jmp.r.gz|jmp.r)\\b",
 					"name": "keyword.instruction.cr-asm"
 				}
 			]
