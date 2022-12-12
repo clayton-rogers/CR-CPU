@@ -39,12 +39,12 @@ void Simulator_Spi::step() {
 			// reading offset 0x02 is the only valid operation while a transfer is in progress
 			read_addr == 0x03 ||
 
-			bus->slave_is_write_strobe() && (
+			(bus->slave_is_write_strobe() && (
 				write_addr == 0x00 ||
 				write_addr == 0x01 ||
 				write_addr == 0x02 ||
 				write_addr == 0x03
-			)
+			))
 			) {
 			throw std::logic_error("Tried to perform an SPI operation while transfer was in progress. Addr: "
 				+ std::to_string(read_addr) + " " + std::to_string(write_addr));

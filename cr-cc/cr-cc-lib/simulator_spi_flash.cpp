@@ -80,7 +80,7 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 		}
 
 		const int address = get_addr();
-		for (int i = 0; i < transfer->size() - 4; ++i) {
+		for (int i = 0; i < static_cast<int>(transfer->size()) - 4; ++i) {
 			if (!data_erased.at(address + i)) {
 				throw std::logic_error("Tried to write to an already written location: " + std::to_string(address + i));
 			}
@@ -116,7 +116,7 @@ void Simulator_Spi_Flash::transfer(std::vector<std::uint8_t>* transfer) {
 	case READ_MF_ID:
 	{
 		const std::array<BYTE, 3> mf_id = { 0x1F, 0x85, 0x01 };
-		for (int i = 0; i < mf_id.size(); ++i) {
+		for (int i = 0; i < static_cast<int>(mf_id.size()); ++i) {
 			transfer->at(i + 1) = mf_id.at(i);
 		}
 		break;
