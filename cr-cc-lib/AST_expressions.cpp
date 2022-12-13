@@ -12,11 +12,7 @@ namespace AST
 			case TokenType::constant:
 				return std::make_shared<Constant_Expression>(child, scope);
 			case TokenType::unary_expression:
-				if (child.contains_child_with_type(TokenType::identifier)) {
-					return std::make_shared<Variable_Expression>(child, scope);
-				} else {
-					return std::make_shared<Unary_Expression>(child, scope);
-				}
+				return std::make_shared<Unary_Expression>(child, scope);
 			case TokenType::open_parenth:
 				// ( exp )
 				return parse_expression(node.children.at(1), scope);
@@ -118,14 +114,17 @@ namespace AST
 		node.check_type(TokenType::expression);
 
 		auto unary_exp = node.get_child_with_type(TokenType::unary_expression);
-		if (unary_exp.children.size() == 1) {
+		if (unary_exp.children.size() == 1) { // Direct identifier
 			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
-		} else if (unary_exp.contains_child_with_type(TokenType::star)) {
-			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
+		} else if (unary_exp.contains_child_with_type(TokenType::star)) { // Pointer dereference
+			// The target address is whatever the dereferenced expression evaluates to
+			// (ex: the value of ptr in *ptr = x)
+			auto factor = unary_exp.get_child_with_type(TokenType::factor);
+			pointer_rhs = parse_factor(factor, scope);
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 			is_pointer = true;
-		} else if (unary_exp.contains_child_with_type(TokenType::open_square_bracket)) {
+		} else if (unary_exp.contains_child_with_type(TokenType::open_square_bracket)) { // Array dereference
 			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 			array_index_exp = parse_expression(unary_exp.get_child_with_type(TokenType::expression), scope);
@@ -141,8 +140,12 @@ namespace AST
 		node.check_type(TokenType::unary_expression);
 
 		// unary expression is always of the form <operator> <expression>
+		// except in the case of an identifier.
 		const auto& the_operator = node.children.at(0);
-		const auto& sub_expression = node.children.at(1);
+		const auto& sub_expression =
+			(node.children.size() > 1) ?
+			node.children.at(1) :
+			ParseNode(); // unused null node
 
 		switch (the_operator.token.token_type) {
 			case TokenType::sub:
@@ -154,11 +157,47 @@ namespace AST
 			case TokenType::exclam:
 				type = Unary_Type::logical_negation;
 				break;
+			case TokenType::ampersand:
+				type = Unary_Type::reference;
+				if (sub_expression.token.token_type != TokenType::identifier) {
+					throw std::logic_error("Expected identifier when taking address of");
+				}
+				var_name = sub_expression.token.value;
+				break;
+			case TokenType::star:
+				if (sub_expression.token.token_type == TokenType::identifier) {
+					type = Unary_Type::dereference_identifier;
+					var_name = sub_expression.token.value;
+				} else {
+					type = Unary_Type::dereference_expression;
+				}
+				break;
+			case TokenType::inc_op:
+				type = Unary_Type::increment;
+				var_name = sub_expression.token.value;
+				break;
+			case TokenType::dec_op:
+				type = Unary_Type::decrement;
+				var_name = sub_expression.token.value;
+				break;
+			case TokenType::identifier:
+				if (sub_expression.token.token_type == TokenType::open_square_bracket) {
+					type = Unary_Type::array;
+					var_name = the_operator.token.value;
+					sub = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+				} else {
+					type = Unary_Type::direct_identifier;
+					var_name = the_operator.token.value;
+				}
+				break;
 			default:
 				throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
 		}
 
-		sub = parse_factor(sub_expression, scope);
+		// Do this after the operator parse, since it could generate exceptions
+		if (sub_expression.token.token_type == TokenType::factor) {
+			sub = parse_factor(sub_expression, scope);
+		}
 	}
 
 	Constant_Expression::Constant_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
@@ -257,45 +296,18 @@ namespace AST
 		throw std::logic_error("Invalid binary operator on unknown sub-expression types");
 	}
 
-	Variable_Expression::Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
-		: Expression(scope)
-	{
-		node.check_type(TokenType::unary_expression);
+	// std::shared_ptr<Type> Variable_Expression::get_type() const
+	// {
+	// 	// TODO should be able to query the scope for the type of a given var
 
-		// Get var reference name
-		var_name = node.get_child_with_type(TokenType::identifier).token.value;
+	// 	// Default to int for now
+	// 	return INT_TYPE;
 
-		// Get var type
-		if (node.contains_child_with_type(TokenType::ampersand)) {
-			var_type = Variable_Type::reference;
-		} else if (node.contains_child_with_type(TokenType::star)) {
-			var_type = Variable_Type::dereference;
-		} else if (node.contains_child_with_type(TokenType::inc_op)) {
-			var_type = Variable_Type::increment;
-		} else if (node.contains_child_with_type(TokenType::dec_op)) {
-			var_type = Variable_Type::decrement;
-		} else if (node.contains_child_with_type(TokenType::open_square_bracket)) {
-			var_type = Variable_Type::array;
-			array_index = parse_expression(node.get_child_with_type(TokenType::expression), scope);
-		} else if (node.children.size() == 1) {
-			var_type = Variable_Type::direct;
-		} else {
-			throw std::logic_error("Unknown variable expression");
-		}
-	}
-
-	std::shared_ptr<Type> Variable_Expression::get_type() const
-	{
-		// TODO should be able to query the scope for the type of a given var
-
-		// Default to int for now
-		return INT_TYPE;
-
-		//Declaration_Specifier declaration_specifier;
-		//declaration_specifier.specifier_list.push_back(Specifiers::INT);
-		//Abstract_Declarator abstract_declarator;
-		//auto type = std::make_shared<Type>(declaration_specifier, abstract_declarator);
-	}
+	// 	//Declaration_Specifier declaration_specifier;
+	// 	//declaration_specifier.specifier_list.push_back(Specifiers::INT);
+	// 	//Abstract_Declarator abstract_declarator;
+	// 	//auto type = std::make_shared<Type>(declaration_specifier, abstract_declarator);
+	// }
 
 	Conditional_Expression::Conditional_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope)
 		: Expression(scope)
