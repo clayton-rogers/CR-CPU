@@ -1,7 +1,7 @@
 #include "parser.h"
 
 #include <map>
-#include <iostream> // TODO remove
+#include <iostream>
 
 
 using TokenTypeList = std::vector<TokenType>;
@@ -469,12 +469,10 @@ ParseNode parse(TokenList token_list)
 	int tokens_parsed = parse_node(&root, token_list, 0);
 	if (tokens_parsed == 0) {
 		throw std::logic_error("Failed to parse");
-		//std::cout << "FAILED TO PARSE" << std::endl;
 	} else if (tokens_parsed != static_cast<int>(token_list.size())) {
 		throw std::logic_error("Parsed with tokens left over");
-		//std::cout << "Parsed, but leftover tokens..." << std::endl;
 	} else {
-		//std::cout << "Parsed " << tokens_parsed << " tokens!!" << std::endl;
+		// Success
 	}
 
 	return root;
