@@ -20,46 +20,29 @@ static std::map<TokenType, RuleList> C_TOP_LEVEL = {
 			//{{TokenType::function}, TokenType::function_tail},
 		}
 	},
-	{TokenType::compound_statement,
-		{
-			{{TokenType::open_bracket, TokenType::block_item_list, TokenType::close_bracket}, {}},
-			{{TokenType::open_bracket, TokenType::close_bracket}, {}},
-		}
-	},
-	{TokenType::block_item_list,
-		{
-			{{}, TokenType::block_item},
-		}
-	},
-	{TokenType::block_item,
-		{
-			{{TokenType::declaration}, {}},
-			{{TokenType::statement}, {}},
-		}
-	},
-};
-
-static std::map<TokenType, RuleList> C_DECLARATION = {
-	{TokenType::external_declaration_tail,
-		{
-			{{TokenType::external_declaration}, {}},
-		}
-	},
 	{TokenType::external_declaration,
 		{
 			{{TokenType::function}, {}},
 			{{TokenType::declaration}, {}},
 		}
 	},
-	{TokenType::declaration_specifier,
+	{TokenType::external_declaration_tail,
 		{
-			{{TokenType::key_int}, {}},// TODO add other types and specifiers
+			{{TokenType::external_declaration}, {}},
 		}
 	},
+};
+
+static std::map<TokenType, RuleList> C_DECLARATION = {
 	{TokenType::declaration,
 		{
 			//{{TokenType::type_specifier, TokenType::semi_colon}, {}},// TODO for struct declaration
 			{{TokenType::declaration_specifier, TokenType::init_declarator_list, TokenType::semi_colon}, {}},
+		}
+	},
+	{TokenType::declaration_specifier,
+		{
+			{{TokenType::key_int}, {}},// TODO add other types and specifiers
 		}
 	},
 	{TokenType::init_declarator_list,
@@ -173,6 +156,23 @@ static std::map<TokenType, RuleList> C_STATEMENT = {
 			{{TokenType::continue_statement}, {}},
 			{{TokenType::expression_statement}, {}},
 			// TODO add other types of statements
+		}
+	},
+	{TokenType::compound_statement,
+		{
+			{{TokenType::open_bracket, TokenType::block_item_list, TokenType::close_bracket}, {}},
+			{{TokenType::open_bracket, TokenType::close_bracket}, {}},
+		}
+	},
+	{TokenType::block_item_list,
+		{
+			{{}, TokenType::block_item},
+		}
+	},
+	{TokenType::block_item,
+		{
+			{{TokenType::declaration}, {}},
+			{{TokenType::statement}, {}},
 		}
 	},
 	{TokenType::jump_statement,
