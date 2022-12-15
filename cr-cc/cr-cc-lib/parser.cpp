@@ -437,7 +437,7 @@ static int parse_node(ParseNode* node, const TokenList& token_list, int offset)
 						// We did not match any (more) optionals so we're done
 						break;
 					} else {
-						// We actually was this children
+						// We actually have this children
 						for (const auto& child_node : p.children) {
 							node->children.push_back(child_node);
 						}
