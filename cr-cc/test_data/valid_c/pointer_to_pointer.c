@@ -17,7 +17,6 @@ int basic_pointer_to_pointer()
 }
 
 int double_deref() {
-    return 1;
     int a = 11;
     int *pa = &a;
     int ** ppa = &pa;
