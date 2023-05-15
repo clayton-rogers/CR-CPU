@@ -140,9 +140,9 @@ namespace AST
 		// except in the case if an identifier.
 		const auto& the_operator = node.children.at(0);
 		const auto& sub_expression =
-			(the_operator.token.token_type == TokenType::identifier) ?
-			ParseNode() : // unused null node
-			node.children.at(1);
+			(node.children.size() > 1) ?
+			node.children.at(1) :
+			ParseNode(); // unused null node
 
 		switch (the_operator.token.token_type) {
 			case TokenType::sub:
@@ -177,13 +177,15 @@ namespace AST
 				type = Unary_Type::decrement;
 				var_name = sub_expression.token.value;
 				break;
-			case TokenType::open_square_bracket:
-				type = Unary_Type::array;
-				sub = parse_expression(node.get_child_with_type(TokenType::expression), scope);
-				break;
 			case TokenType::identifier:
-				type = Unary_Type::direct_identifier;
-				var_name = the_operator.token.value;
+				if (sub_expression.token.token_type == TokenType::open_square_bracket) {
+					type = Unary_Type::array;
+					var_name = the_operator.token.value;
+					sub = parse_expression(node.get_child_with_type(TokenType::expression), scope);
+				} else {
+					type = Unary_Type::direct_identifier;
+					var_name = the_operator.token.value;
+				}
 				break;
 			default:
 				throw std::logic_error("Invalid unary token: " + tokenType_to_string(the_operator.token.token_type));
