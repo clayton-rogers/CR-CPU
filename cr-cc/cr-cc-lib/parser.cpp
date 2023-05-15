@@ -357,7 +357,7 @@ static std::map<TokenType, RuleList> C_EXPRESSION = {
 			{{TokenType::tilda, TokenType::factor}, {}},
 			{{TokenType::exclam, TokenType::factor}, {}},
 			{{TokenType::ampersand, TokenType::identifier}, {}},
-			{{TokenType::star, TokenType::identifier}, {}},
+			{{TokenType::star, TokenType::factor}, {}},
 			{{TokenType::inc_op, TokenType::identifier}, {}},
 			{{TokenType::dec_op, TokenType::identifier}, {}},
 			{{TokenType::identifier, TokenType::open_square_bracket, TokenType::expression, TokenType::close_square_bracket}, {}},

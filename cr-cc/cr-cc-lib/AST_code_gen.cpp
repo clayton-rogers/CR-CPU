@@ -159,7 +159,9 @@ namespace AST
 		std::stringstream ss;
 
 		// calculate the sub expression and leave it in RA
-		ss << sub->generate_code();
+		if (sub != nullptr) {
+			ss << sub->generate_code();
+		}
 
 		switch (type) {
 			case Unary_Type::negation:
@@ -181,7 +183,66 @@ namespace AST
 					ss << gen_logical_negation(scope);
 					break;
 				}
-
+			case Unary_Type::reference:
+				// need to load the address of the given identifier into RA
+				ss << scope->load_address(var_name, "ra");
+				break;
+			case Unary_Type::dereference_identifier:
+				// need to load the value from the given identifier into RP
+				// then load the value it points to
+				ss << scope->load_word(var_name, "rp");
+				ss << "load.rp ra, 0x00 # dereference pointer\n";
+				break;
+			case Unary_Type::dereference_expression:
+				ss << "mov rp ra\n # move and dereference expression\n";
+				ss << "load.rp ra, 0x00\n";
+				break;
+			case Unary_Type::direct_identifier:
+				// Emit instruction to load var directly into ra
+				if (scope->is_var_array(var_name)) {
+					// Array decays into point to first element
+					ss << scope->load_address(var_name, "ra");
+				} else {
+					ss << scope->load_word(var_name, "ra");
+				}
+				break;
+			case Unary_Type::increment:
+			case Unary_Type::decrement:
+				{
+					if (scope->is_var_array(var_name)) {
+						throw std::logic_error("Cannot increment array: " + var_name);
+					}
+					int inc_amount = 1;
+					if (scope->is_var_ptr(var_name)) {
+						auto type_of_var = scope->get_var_type(var_name);
+						throw std::logic_error("Can't increment pointers yet");
+					}
+					ss << scope->load_word(var_name, "ra");
+					if (type == Unary_Type::increment) {
+						ss << "add ra " << output_byte(inc_amount) << " # increment\n";
+					} else if (type == Unary_Type::decrement) {
+						ss << "sub ra " << output_byte(inc_amount) << " # decrement\n";
+					} else {
+						throw std::logic_error("Variable_Expression::generate_code(): Should never get here");
+					}
+					ss << scope->store_word(var_name, "ra");
+				}
+				break;
+			case Unary_Type::array:
+				// Calculate the offset, then get the dereference
+				ss << "mov rp, ra # move array offset to ptr reg\n";
+				if (scope->is_var_ptr(var_name)) {
+					// Use ptr contents directly
+					ss << scope->load_word(var_name, "ra");
+				} else if (scope->is_var_array(var_name)) {
+					// Array turns into pointer
+					ss << scope->load_address(var_name, "ra");
+				} else {
+					throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
+				}
+				ss << "add rp, ra # calculate final array addr\n";
+				ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
+				break;
 			default:
 				throw std::logic_error("Unary generate code: should never happen");
 		}
@@ -369,7 +430,7 @@ namespace AST
 
 			// Calling convention is that the first two arguments will be in ra and rb in the case of the
 			// compiler, these will be pushed immediately, but it allows for future optimization.
-			// Any additonal argument will be pushed by the caller
+			// Any additional argument will be pushed by the caller
 			// RP will need to be saved as well when it's used in the future.
 			const bool is_ra_argument = arguments.size() >= 1;
 			const bool is_rb_argument = arguments.size() >= 2;
@@ -392,7 +453,7 @@ namespace AST
 			// Code for contents
 			ss << contents->generate_code();
 			// Exit block
-			ss << "loadi ra, 0x00\n"; // In case funtion runs off the end, it should return 0.
+			ss << "loadi ra, 0x00\n"; // In case function runs off the end, it should return 0.
 			ss << scope->env->label_maker.get_fn_end_label() << ":\n";
 			ss << scope->gen_scope_exit();
 			// From above, we always push two int onto the stack, so we always have to remove those
@@ -631,75 +692,6 @@ namespace AST
 			ss << "store.rp ra, 0x00 # store through array\n";
 		} else {
 			ss << scope->store_word(var_name, "ra");
-		}
-
-		return ss.str();
-	}
-
-	std::string Variable_Expression::generate_code() const
-	{
-		std::stringstream ss;
-
-		switch (var_type) {
-			case Variable_Type::reference:
-				// need to load the address of the given identifier into RA
-				ss << scope->load_address(var_name, "ra");
-				break;
-			case Variable_Type::dereference:
-				// need to load the value from the given identifier into RP
-				// then load the value it points to
-				ss << scope->load_word(var_name, "rp");
-				ss << "load.rp ra, 0x00 # dereference pointer\n";
-				break;
-			case Variable_Type::direct:
-				// Emit instruction to load var directly into ra
-				if (scope->is_var_array(var_name)) {
-					// Array decays into point to first element
-					ss << scope->load_address(var_name, "ra");
-				} else {
-					ss << scope->load_word(var_name, "ra");
-				}
-				break;
-			case Variable_Type::increment:
-			case Variable_Type::decrement:
-				{
-					if (scope->is_var_array(var_name)) {
-						throw std::logic_error("Cannot increment array: " + var_name);
-					}
-					int inc_amount = 1;
-					if (scope->is_var_ptr(var_name)) {
-						auto type_of_var = scope->get_var_type(var_name);
-						throw std::logic_error("Can't increment pointers yet");
-					}
-					ss << scope->load_word(var_name, "ra");
-					if (var_type == Variable_Type::increment) {
-						ss << "add ra " << output_byte(inc_amount) << " # increment\n";
-					} else if (var_type == Variable_Type::decrement) {
-						ss << "sub ra " << output_byte(inc_amount) << " # decrement\n";
-					} else {
-						throw std::logic_error("Variable_Expression::generate_code(): Should never get here");
-					}
-					ss << scope->store_word(var_name, "ra");
-				}
-				break;
-			case Variable_Type::array:
-				// Calculate the offset, then get the dereference
-				ss << array_index->generate_code();
-				ss << "mov rp, ra # move array offset to ptr reg\n";
-				if (scope->is_var_ptr(var_name)) {
-					// Use ptr contents directly
-					ss << scope->load_word(var_name, "ra");
-				} else if (scope->is_var_array(var_name)) {
-					// Array turns into pointer
-					ss << scope->load_address(var_name, "ra");
-				} else {
-					throw std::logic_error("Tried to use a non ptr/array as array: " + var_name);
-				}
-				ss << "add rp, ra # calculate final array addr\n";
-				ss << "load.rp ra, 0x00 # load array value " << var_name << "\n";
-				break;
-			default:
-				throw std::logic_error("variable_expression::generate_code(): should never get here: default case");
 		}
 
 		return ss.str();
@@ -990,7 +982,7 @@ namespace AST
 				" with weird number of arguments: " + std::to_string(number_args));
 		}
 
-		// The actual funtion call proper
+		// The actual function call proper
 		ss << "loada ." << name << " # function call\n";
 		ss << "call ." << name << "\n";
 

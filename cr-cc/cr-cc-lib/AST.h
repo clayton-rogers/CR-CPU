@@ -160,39 +160,27 @@ namespace AST
 		std::shared_ptr<Expression> array_index_exp;
 	};
 
-	// For when a variable is referenced
-	class Variable_Expression: public Expression {
-	public:
-		enum class Variable_Type {
-			direct,
-			reference,
-			dereference,
-			array,
-			increment,
-			decrement,
-		};
-
-		Variable_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
-		std::string generate_code() const override;
-		std::shared_ptr<Type> get_type() const override;
-	private:
-		Variable_Type var_type;
-		std::string var_name;
-		std::shared_ptr<Expression> array_index;
-	};
-
+	// Unary and variable expressions
 	class Unary_Expression: public Expression {
 	public:
 		enum class Unary_Type {
 			negation,
 			bitwise_complement,
 			logical_negation,
+			direct_identifier,
+			reference,
+			dereference_identifier,
+			dereference_expression,
+			array,
+			increment,
+			decrement,
 		};
 		Unary_Expression(const ParseNode& node, std::shared_ptr<VarMap> scope);
 		std::string generate_code() const override;
 		std::shared_ptr<Type> get_type() const override { return sub->get_type(); }
 	private:
 		Unary_Type type;
+		std::string var_name;
 		std::shared_ptr<Expression> sub;
 	};
 
