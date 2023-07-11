@@ -137,7 +137,7 @@ namespace AST
 		node.check_type(TokenType::unary_expression);
 
 		// unary expression is always of the form <operator> <expression>
-		// except in the case if an identifier.
+		// except in the case of an identifier.
 		const auto& the_operator = node.children.at(0);
 		const auto& sub_expression =
 			(node.children.size() > 1) ?
