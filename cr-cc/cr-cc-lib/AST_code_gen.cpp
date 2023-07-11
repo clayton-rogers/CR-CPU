@@ -668,13 +668,22 @@ namespace AST
 
 		// Result is now in ra, store in memory location
 		if (is_pointer) {
-			// This is a deref on the LHS, verify this is actually a ptr
-			// ex: *a = <exp>
-			if (!scope->is_var_ptr(var_name)) {
-				throw std::logic_error("Tried to assign to something as a pointer which was not a pointer: " + var_name);
+			// Could be a function or a pointer to arbitrary expression
+			if (pointer_rhs) {
+				//auto unary_expression =
+				// // This is a deref on the LHS, verify this is actually a ptr
+				// // ex: *a = <exp>
+				// if (!scope->is_var_ptr(var_name)) {
+				// 	throw std::logic_error("Tried to assign to something as a pointer which was not a pointer: " + var_name);
+				// }
+			} else {
+				// TODO this should be a function name
+				ss << scope->load_word(var_name, "rp");
+				ss << "store.rp ra, 0x00 # store through pointer\n";
 			}
-			ss << scope->load_word(var_name, "rp");
-			ss << "store.rp ra, 0x00 # store through pointer\n";
+
+
+
 		} else if (is_array) {
 			// Need to calculate the array offset
 			// ex: a[<array_index_exp>] = <exp>

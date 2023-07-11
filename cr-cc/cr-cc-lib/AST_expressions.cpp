@@ -114,14 +114,31 @@ namespace AST
 		node.check_type(TokenType::expression);
 
 		auto unary_exp = node.get_child_with_type(TokenType::unary_expression);
-		if (unary_exp.children.size() == 1) {
+		if (unary_exp.children.size() == 1) { // Direct identifier
 			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
-		} else if (unary_exp.contains_child_with_type(TokenType::star)) {
-			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
+		} else if (unary_exp.contains_child_with_type(TokenType::star)) { // Pointer dereference
+			auto factor = unary_exp.get_child_with_type(TokenType::factor);
+			auto first_child = factor.children.at(0);
+			switch (first_child.token.token_type) {
+				case TokenType::function_call:
+					var_name = first_child.get_child_with_type(TokenType::identifier).token.value;
+					break;
+				case TokenType::unary_expression:
+					{
+						auto unary_expression = first_child;
+						// TODO
+
+					}
+					break;
+				case TokenType::open_bracket:
+				case TokenType::constant:
+				default:
+					throw std::logic_error("Invalid deref type of RHS of assignment");
+			}
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 			is_pointer = true;
-		} else if (unary_exp.contains_child_with_type(TokenType::open_square_bracket)) {
+		} else if (unary_exp.contains_child_with_type(TokenType::open_square_bracket)) { // Array dereference
 			var_name = unary_exp.get_child_with_type(TokenType::identifier).token.value;
 			exp = parse_expression(node.get_child_with_type(TokenType::expression), scope);
 			array_index_exp = parse_expression(unary_exp.get_child_with_type(TokenType::expression), scope);
