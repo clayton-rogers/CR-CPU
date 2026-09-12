@@ -2,7 +2,7 @@
 #include "cast.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include "catch.h"
+#include "catch.hpp"
 
 static constexpr auto SECTION_HEADER_SIZE = 2;
 static constexpr auto OC_HEADER_SIZE = 4;

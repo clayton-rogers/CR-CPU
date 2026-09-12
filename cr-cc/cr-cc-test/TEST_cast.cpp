@@ -1,7 +1,7 @@
 #include "cast.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include "catch.h"
+#include "catch.hpp"
 
 #include <vector>
 

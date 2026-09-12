@@ -8,7 +8,7 @@
 #include "file_io.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include "catch.h"
+#include "catch.hpp"
 
 #include <string>
 #include <iostream>

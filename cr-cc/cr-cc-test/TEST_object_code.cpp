@@ -1,7 +1,7 @@
 #include "object_code.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include "catch.h"
+#include "catch.hpp"
 
 TEST_CASE("Test object serialization", "[obj]")
 {
