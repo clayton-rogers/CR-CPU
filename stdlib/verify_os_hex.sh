@@ -4,7 +4,7 @@
 # FPGA, thus we check each time the stdlib is built to make sure the os
 # is up to date.
 
-fpga_os="../../fpga/top.hex"
+fpga_os="../fpga/top.hex"
 os="os.hex"
 
 if cmp -s $fpga_os $os ; then
