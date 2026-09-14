@@ -8,18 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CRSTDLIBPATH: ${{ github.workspace }}/cr-cc/stdlib
+      CRSTDLIBPATH: ${{ github.workspace }}/stdlib
 
     steps:
     - uses: actions/checkout@v1
-    - name: Get resources
-      run: |
-        cd cr-cc
-        wget https://raw.githubusercontent.com/catchorg/Catch2/v2.x/single_include/catch2/catch.hpp -O cr-cc-test/catch.hpp
-
     - name: Build
       run: |
-        cd cr-cc
         mkdir build
         cd build
         cmake ..
@@ -27,20 +21,19 @@ jobs:
 
     - name: Build stdlib
       run: |
-        PATH=$(pwd)/cr-cc/build/cr-cc/:$PATH
-        cd cr-cc/stdlib
+        PATH=$(pwd)/build/cr-cc/:$PATH
+        cd stdlib
         make
 
     - name: Run unit test
       run: |
-        PATH=$(pwd)/cr-cc/build/cr-cc-test/:$PATH
-        cd cr-cc
+        PATH=$(pwd)/build/cr-cc-test/:$PATH
         cr-cc-test
         cr-cc-test "[bench]" --benchmark-no-analysis --benchmark-samples 25
         cr-cc-test "[long_bench]" --benchmark-no-analysis --benchmark-samples 5
 
     - name: Build and run test code
       run: |
-        PATH=$(pwd)/cr-cc/build/cr-cc/:$PATH
-        cd cr-cc/test_data
+        PATH=$(pwd)/build/cr-cc/:$PATH
+        cd test_data
         ./build_and_run_test_code.sh
